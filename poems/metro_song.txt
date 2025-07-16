@@ -1,0 +1,122 @@
+[genre:rap, orchestral] [mood:dark] [tempo:moderate] [ensemble:symphony orchestra] [instruments:strings, brass, percussion, piano] [vocals:male, rap] [mixing:layered] [eq:bass-heavy] [reverb:hall] [structure: intro, verse1, chorus, verse2, bridge, instrumental, verse3, chorus2, verse4, pre-outro, outro]
+
+[intro]
+[instruments:strings, piano] [mood:mysterious] [eq:midrange-clear]
+На последней ступени бетонных прозрений —
+Гитара дрожит в полутьме.
+В подземных артериях.
+Начинается путь. 
+
+[instrumental:orchestral brass rising] 
+[dynamics:powerful] [focus:texture]
+
+[verse1]
+[rhythm:syncopated] [instruments:strings, percussion] [focus:rhythm, bass]
+Пустые вагоны — гробы стальные,
+                   жрут километры в темноте без края.
+В грязных тоннелях — распадаются кости,
+Время — как змеи, что бьют своим жалом,
+                   песок между пальцев — секунды текут.
+Станции шепчут, что здесь всё по новой,
+                   в мире, где смерть на куски всё дробит.
+
+[chorus]
+[focus:melody] [instruments:full orchestra, piano] [mood:intense] [rhythm:steady]
+Тут ходят фантомы с пустыми глазами —
+               солнце забыли, как детский мультфильм.
+Их кожа — как старый и рваный пергамент,
+               лица закрыты под маской пустой.
+В подземном аду, где закон — только пыль,
+               где каждый твой вдох оставляет лишь яд —
+Тысячи жизней погибли напрасно,
+               тысячи душ тут застряли навек.
+
+[instrumental:dark orchestral interlude]
+[sfx:echo] [focus:bass] [dynamics:subtle]
+
+[verse2]
+[instruments:strings, percussion, piano] [rhythm:complex]
+Я видел тебя среди теней случайно,
+               в отражениях стёкол, в бликах на рельсах.
+Я знал, что ты здесь, под землёй скитаешься,
+               с тех пор как тебя забрал этот поезд.
+И я взял гитару, сошёл по ступеням,
+                   пока твои следы не стёрлись с платформы.
+Играть для теней новые песни,
+                   чтоб вывести тебя снова наверх.
+
+[bridge]
+[rhythm:triplet] [instruments:harp, strings, brass] [texture:polyphonic]
+Я пел им о солнце, что где-то далёко, 
+           что, может быть, светит другим, но не нам.
+О небе, что стало бетонным навеки,
+           забыв про людей в подземельях пустых.
+Струны ломались в руках от усталости,
+           слова замерзали, не долетев до цели.
+И каждая нота звучала как выстрел,
+           для тех, кто давно уже здесь онемел.
+
+[instrumental:orchestral breakdown]
+[instruments:brass, percussion] [texture:rich] [dynamics:powerful]
+[focus:rhythm] [mood:intense] [length:medium]
+
+[verse3]
+[instruments:strings, piano, percussion] [rhythm:syncopated]
+За стеклом в будке — бог этих тоннелей,
+               старик-кукловод с ледяным лицом.
+Считает он души как мелочь в кармане,
+               под шум вечных часов, что не врут никогда.
+Я сыграл ему трек о жизни на солнце,
+                   он слушал с улыбкой, кивая в такт.
+Музыка тронула даже подземку,
+                   и он мне позволил найти тебя.
+
+[chorus2]
+[instruments:full orchestra] [dynamics:powerful] [personae:dramatic]
+"Расскажи мне про мир, где ещё живут люди, —
+               сказал он сквозь стёкла своей паутины, —
+Про мир, где не пахнет болотной гнилью,
+               где всё ещё есть для чего-то причина."
+И память моя утекла как вода —
+               за билет в никуда, без пути назад.
+"Веди её прочь, но помни условие —
+               не смей оглянуться, иначе всё зря."
+
+[instrumental:epic orchestral climax]
+[instruments:full orchestra, percussion] [mood:dark, epic] [dynamics:powerful]
+[texture:rich] [focus:melody, bass] [length:medium]
+
+[verse4]
+[instruments:piano, strings, percussion] [rhythm:syncopated]
+По рельсам ржавым и скользким от крови,
+               вёл я тебя, нарушая табу.
+Ты шла позади, я слышал дыханье,
+               но так хотел видеть глаза твои снова.
+На полпути, не выдержав, обернулся,
+                   нарушив запрет владыки теней.
+Ты таяла сразу, словно не бывшая,
+                   в тёмное марево снова ушла.
+
+[pre-outro]
+[instruments:strings, piano] [dynamics:subtle] [focus:texture]
+Ты таяла тенью на станциях мёртвых,
+               текла как вода сквозь пальцы мои.
+Твой голос звучал как эхо пустыни:
+               "Мы здесь навсегда среди линий метро".
+Теперь я Орфей, потерявший дважды
+               ту, что любил больше жизни своей.
+Моя лира сломана, песня не спета,
+               но я всё равно не вернусь наверх.
+
+[outro]
+[focus:texture] [mood:ethereal] [instruments:strings, piano] [reverb:deep]
+Я остаюсь здесь играть бесконечно,
+               в темноте без границ, как последний диджей.
+Метро невидимо — мир параллельный,
+               где годы стекают в пропасть без дна.
+Призраки пляшут под ритмы стальные,
+               в подземке, где время — как горький наркотик.
+Каждый шаг — это новое прощай,
+               каждый вздох — это дальше и глубже на дно.
+
+[end] 

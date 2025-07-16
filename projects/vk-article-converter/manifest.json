@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "VK Article Converter",
+  "version": "1.0",
+  "description": "Конвертирует статьи ВКонтакте в markdown формат",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://vk.com/*",
+    "https://api.vk.com/*",
+    "https://im.vk.com/*",
+    "https://queuev4.vk.com/*",
+    "https://top-fwz1.mail.ru/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://vk.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["content.js"],
+      "matches": ["*://vk.com/*"]
+    }
+  ]
+} 

@@ -1,0 +1,60 @@
+[120bpm, russian rock, grunge, depressive, folk, acoustic, bardic song, war poetry, melancholic, atmospheric, acoustic guitar, cello, violin, strings, male vocals, raspy voice,]
+[genre:folk] [style:acoustic, ballad] [mood:melancholic, introspective] [tempo:moderate] [instruments:acoustic guitar, strings, cello, violin] [vocals:male, raspy, emotional] [compression:light] [focus:vocals, melody] [reverb:hall]
+
+[intro:soft strings with acoustic guitar picking, melancholic autumn mood for 20 seconds]
+
+[verse]
+Орудия посЕребрило инеем.
+Под гУ-сеницей золотой ковёр.
+ДрожИт лесов каёмка бледносИняя
+Вокруг чужих испУганных озер.
+[/verse]
+
+[instrumental:gentle acoustic guitar solo with subtle string accompaniment]
+
+[verse]
+ПрестУпная поверженная Пруссия!
+И вдруг покой.
+Вокруг такой покой.
+Верба косички распустила русые,
+Совсем как дома над моей рекой.
+[/verse]
+
+[verse]
+Но я не верю тишине обманчивой,
+Которой взвод сегодня оглушен.
+Скорей снаряды загружать заканчивай!
+Еще покой в паёк наш не включен.
+[/verse]
+
+[interlude:melancholic cello solo with distant acoustic guitar strumming]
+
+[verse]
+Туман.
+А нам идти в атаку.
+Противна водка,
+Шутка не острА.
+Бездомную озябшую собаку
+Мы кормим у потухшего костра.
+[/verse]
+
+[bridge]
+Мы нежность отдаем с неслышным стоном.
+Мы не успели нежностью согреть
+Ни наших продолжений нерожденных,
+Ни ту, что нынче может овдоветь.
+[/bridge]
+
+[instrumental:emotional string ensemble crescendo with acoustic guitar arpeggios]
+
+[outro]
+Мы не успели...
+День встает над рощей.
+Атаки ждут машины меж берёз.
+На черных ветках,
+Оголенных,
+Тощих
+Холодные цепочки крупных слёз.
+[/outro]
+
+[fade:fade-out to melancholic acoustic guitar and strings]

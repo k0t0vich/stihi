@@ -1,0 +1,102 @@
+[heavy guitar riffs]
+[intro]
+[Verse, female vocal, melodic]
+Свет и тень 
+игра́ют на стене́  
+Се́рдце стучи́т
+словно́ гром в груди́
+Э́хо в ночи́
+звон в тишине́ 
+крик в немоте́ 
+го́лос во мгле́
+Ты — ого́нь 
+А я — вода́
+Гори́м и га́снем 
+без следа́
+
+[Chorus, male vocal, female vocal, duet]
+Мы противополо́жности 
+Да 
+Но вме́сте
+Как звёзды и тьма в одно́м ме́сте
+Тя́немся 
+Как магни́ты
+друг к дру́гу
+навстре́чу 
+сквозь вре́мя 
+Кали и Шива - две половины
+Вечности бре́мя
+
+[Verse, female vocal]
+Ты кричи́шь
+А я молчу́
+Ты ухо́дишь
+Я ищу́
+Ве́тры с се́вера
+Во́ды ю́га
+В э́том та́нце мы друг для дру́га
+Кали́ Ю́га 
+Кали́ Ю́га
+Ночь без рассве́та
+Ве́чная вью́га
+
+[Chorus, male vocal, female vocal, duet]
+Мы противополо́жности 
+Да 
+Но вме́сте
+Как звёзды и тьма в одно́м ме́сте
+Тя́немся 
+Как магни́ты
+друг к дру́гу
+навстре́чу 
+сквозь вре́мя 
+Кали и Шива - две половины
+Вечности бре́мя
+
+[Interlude]
+[style:indian classical] [instruments:sitar, tabla, bansuri flute, tanpura] [mood:mystical] [tempo:medium]
+[instrumental: meditative indian raga with sitar melody, tabla rhythms, and spiritual atmosphere]
+
+[Verse, female vocal]
+Я танцу́ю
+я кружу́сь
+я лечу́
+на твое́й груди́
+Меч в руке́
+Вре́мя в крови́
+эпо́хи теку́т
+Четы́ре ру́ки
+ты́сяча па́льцев
+бесконе́чность каса́ний
+Трезу́бец блести́т
+я пыла́ю
+горю́
+я взрыва́юсь
+как сверхно́вая
+Смерть и жизнь
+коне́ц и нача́ло
+Эпоха Ка́ли
+Конец сансары
+
+[Drop]
+[genre:metal] [style:heavy, aggressive] [instruments:heavy distorted guitar, breakbeat drums, bass] [mood:dark, powerful] [tempo:fast]
+[drop: massive guitar breakdown with industrial beats and crushing riffs]
+
+[Chorus, male vocal, female vocal, duet]
+Мы противополо́жности 
+Да 
+Но вме́сте
+Как звёзды и тьма в одно́м ме́сте
+Тя́немся 
+Как магни́ты
+друг к дру́гу
+навстре́чу 
+сквозь вре́мя 
+Кали и Шива - две половины
+Вечности бре́мя
+
+[Interlude]
+[style:indian classical] [instruments:sitar, tabla, bansuri flute, tanpura] [mood:mystical] [tempo:medium]
+[instrumental: meditative indian raga with sitar melody, tabla rhythms, and spiritual atmosphere]
+
+[end]
