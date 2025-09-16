@@ -1,5 +1,3 @@
-[genre:rap, orchestral] [mood:dark] [tempo:moderate] [ensemble:symphony orchestra] [instruments:strings, brass, percussion, piano] [vocals:male, rap] [mixing:layered] [eq:bass-heavy] [reverb:hall] [structure: intro, verse1, chorus, verse2, bridge, instrumental, verse3, chorus2, verse4, pre-outro, outro]
-
 [intro]
 [instruments:strings, piano] [mood:mysterious] [eq:midrange-clear]
 На последней ступени бетонных прозрений —

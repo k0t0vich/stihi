@@ -215,6 +215,68 @@
             margin: 10px 0;
         }
 
+        .top-10 {
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #eee;
+        }
+
+        .top-10 h2 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .top-10-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .top-10-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .top-10-rank {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .top-10-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .top-10-song {
+            color: #666;
+            font-style: italic;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .top-10-scores {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+        }
+
+        .top-10-original {
+            color: #28a745;
+        }
+
+        .top-10-adjusted {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
         .podium-name {
             font-size: 1.2em;
             font-weight: bold;
@@ -273,6 +335,13 @@
 
         <div class="podium" id="podium">
             <!-- Подиум будет заполнен JavaScript -->
+        </div>
+
+        <div class="top-10" id="top10">
+            <h2>🏆 Топ-10 участников</h2>
+            <div class="top-10-grid" id="top10Grid">
+                <!-- Топ-10 будет заполнен JavaScript -->
+            </div>
         </div>
 
         <div class="controls">
@@ -374,8 +443,8 @@
                 { name: "Константин Бондаренко (b'n'd)", song: "День Х - b'n'd", score: 0.1, isJudge: true },
                 { name: "Михаил Жаров", song: "Июньский день - Gor Nagat", score: 0.1, isJudge: false }
             ],
-            totalJudges: 44,
-            correctionFactor: 1 + 1/(44-1) // 1 + 1/(N-1) где N = 44 судьи
+            totalJudges: 57, // Исправлено: 57 судей вместо 44
+            correctionFactor: 1 + 1/(57-1) // 1 + 1/(N-1) где N = 57 судей = 1.018
         };
 
         // Функция для расчета скорректированного балла
@@ -424,7 +493,7 @@
                 podiumPlace.className = 'podium-place';
                 podiumPlace.innerHTML = `
                     <div class="podium-rank">${i + 1}</div>
-                    <div class="podium-score">${participant.adjustedScore.toFixed(1)}</div>
+                    <div class="podium-score">${participant.adjustedScore.toFixed(2)}</div>
                     <div class="podium-name">
                         ${participant.name}
                         ${participant.isJudge ? '<span class="judge-participant">Судья</span>' : ''}
@@ -432,6 +501,33 @@
                     <div class="podium-song">${participant.song}</div>
                 `;
                 podium.appendChild(podiumPlace);
+            }
+        }
+
+        // Функция для отображения топ-10
+        function updateTop10(sortedParticipants) {
+            const top10Grid = document.getElementById('top10Grid');
+            top10Grid.innerHTML = '';
+
+            for (let i = 0; i < 10; i++) {
+                const participant = sortedParticipants[i];
+                if (!participant) continue;
+
+                const top10Item = document.createElement('div');
+                top10Item.className = 'top-10-item';
+                top10Item.innerHTML = `
+                    <div class="top-10-rank">#${i + 1}</div>
+                    <div class="top-10-name">
+                        ${participant.name}
+                        ${participant.isJudge ? '<span class="judge-participant">Судья</span>' : ''}
+                    </div>
+                    <div class="top-10-song">${participant.song}</div>
+                    <div class="top-10-scores">
+                        <span class="top-10-original">Исходный: ${participant.score.toFixed(2)}</span>
+                        <span class="top-10-adjusted">Скорректированный: ${participant.adjustedScore.toFixed(2)}</span>
+                    </div>
+                `;
+                top10Grid.appendChild(top10Item);
             }
         }
 
@@ -463,8 +559,8 @@
                         </div>
                     </td>
                     <td class="song-title">${participant.song}</td>
-                    <td class="score">${participant.score.toFixed(1)}</td>
-                    <td class="adjusted-score">${participant.adjustedScore.toFixed(1)}</td>
+                    <td class="score">${participant.score.toFixed(2)}</td>
+                    <td class="adjusted-score">${participant.adjustedScore.toFixed(2)}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -476,6 +572,7 @@
             
             const sortedParticipants = sortParticipants();
             updatePodium(sortedParticipants);
+            updateTop10(sortedParticipants);
             updateTable(sortedParticipants);
 
             // Обработчики событий

@@ -1,0 +1,13 @@
+# OS-specific files
+.DS_Store
+
+# Temporary files and directories
+/tmp/
+
+# Large media files
+/audio/
+*.mp3
+
+# Documents
+*.pdf
+*.xlsx

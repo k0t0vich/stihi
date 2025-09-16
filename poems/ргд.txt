@@ -1,0 +1,79 @@
+[genre:sludge-metal, deathcore]
+[mood:dark, aggressive, misanthropic]
+[tempo:slow, 90bpm]
+[vocals:male, guttural growl, harsh screams]
+[mixing:raw, distorted, heavy]
+[instruments:low-tuned electric guitar, bass, drums]
+
+[intro: slow, heavy, distorted guitar riff]
+
+[Verse]
+Где-то дождик прошел, 
+Кто-то умер во сне 
+С кем-то мне никогда 
+Уж не поговорить 
+
+[Verse]
+А на сердце тоска 
+Отражение боли, 
+Но вздохну кислорода 
+Разлетятся сомненья! 
+
+[pre-chorus] [tempo:120bpm]
+нет не надо кричать,
+нет не надо спешить 
+Ведь всё у нас хорошо 
+Ведь всё у нас заебись! 
+
+[Chorus]
+Всё у нас хорошо 
+Всё у нас заебись! 
+Всё у нас хорошо 
+Всё у нас заебись! 
+
+[breakdown: heavy, slow, chugging guitars with blast beats]
+[instrumental: grind bassline with dissonant guitar chords]
+
+[Verse]
+Над последним приютом 
+Где мы будем когда-то 
+Реет ворон крылатый 
+Да склонилася ива.
+
+[Verse]
+На душе хорошо, 
+А за сердцем в груди 
+С часовым механизмом 
+Эр Гэ Дэ без чеки. 
+
+[instrumental: fast tremolo picking riff]
+[drum-fill]
+
+[Verse]
+Чей-то голос внутри 
+Чей-то звук в голове,
+Пробивают мозги 
+Перекрестным огнем,
+
+[Verse]
+Затуманенный мозг 
+Может не говорить,
+Может не отвечать 
+За движенье вперед!
+
+[Bridge] [tempo:120bpm] [rise]
+нет не надо кричать,
+нет не надо спешить 
+Ведь всё у нас хорошо 
+Ведь всё у нас заебись! 
+
+[Chorus] [tempo:fast, 200bpm]
+Всё у нас хорошо 
+Всё у нас заебись! 
+Всё у нас хорошо 
+Всё у нас заебись! 
+
+[outro]
+[instrumental: slow, crushing guitar riff with feedback]
+[fade: fade-out]
+[end]
