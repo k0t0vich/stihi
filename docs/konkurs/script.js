@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Элементы интерфейса
     const csvFileInput = document.getElementById('csvFileInput');
     const useFileUploadBtn = document.getElementById('useFileUpload');
-    const applySettingsBtn = document.getElementById('applySettingsBtn');
     const topMSlider = document.getElementById('topMSlider');
     const topMValue = document.getElementById('topMValue');
     
@@ -11,6 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
     topMSlider.addEventListener('input', function() {
         topMValue.textContent = this.value;
         currentCutoffValue = parseInt(this.value); // Обновляем глобальную переменную
+        
+        // Автоматически пересчитываем и отображаем результаты
+        if (originalData && originalData.length > 0) {
+            calculateAndDisplayAllResults(currentCutoffValue);
+        }
     });
     
     // Автоматически обрабатываем встроенные данные при загрузке страницы
@@ -49,13 +53,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Обработка выбора файла
     csvFileInput.addEventListener('change', handleFileSelect);
-    
-    // Кнопка применения настроек
-    applySettingsBtn.addEventListener('click', function() {
-        const newCutoffValue = parseInt(topMSlider.value);
-        currentCutoffValue = newCutoffValue; // Обновляем глобальную переменную
-        calculateAndDisplayAllResults(newCutoffValue);
-    });
 });
 
 // Показать сообщение об ошибке
