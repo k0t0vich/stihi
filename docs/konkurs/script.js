@@ -1727,18 +1727,41 @@ function drawChart(chartData, participantName) {
     const canvas = document.getElementById('chartCanvas');
     const ctx = canvas.getContext('2d');
     
+    // Адаптивный размер canvas в зависимости от ширины экрана
+    const isMobile = window.innerWidth <= 768;
+    const isSmallMobile = window.innerWidth <= 480;
+    
+    if (isSmallMobile) {
+        canvas.width = window.innerWidth - 40; // Оставляем небольшие отступы
+        canvas.height = 400;
+    } else if (isMobile) {
+        canvas.width = window.innerWidth - 60;
+        canvas.height = 450;
+    } else {
+        canvas.width = 900;
+        canvas.height = 550;
+    }
+    
     // Очищаем canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Параметры графика
-    const padding = 60;
+    // Параметры графика с адаптивными отступами
+    const padding = isMobile ? 40 : 60;
     const chartWidth = canvas.width - 2 * padding;
     const chartHeight = canvas.height - 2 * padding;
+    
+    // Адаптивные размеры шрифтов
+    const fontSize = {
+        title: isMobile ? 16 : 20,
+        axis: isMobile ? 11 : 14,
+        labels: isMobile ? 10 : 12,
+        legend: isMobile ? 9 : 11
+    };
     
     // Находим диапазон данных
     const validData = chartData.filter(d => d.rank !== null);
     if (validData.length === 0) {
-        ctx.font = '20px Arial';
+        ctx.font = `${fontSize.title}px Arial`;
         ctx.fillStyle = '#333';
         ctx.textAlign = 'center';
         ctx.fillText('Нет данных для отображения', canvas.width / 2, canvas.height / 2);
@@ -1773,7 +1796,7 @@ function drawChart(chartData, participantName) {
     ctx.stroke();
     
     // Подписи осей
-    ctx.font = '14px Arial';
+    ctx.font = `${fontSize.axis}px Arial`;
     ctx.fillStyle = '#333';
     ctx.textAlign = 'center';
     
@@ -1788,7 +1811,7 @@ function drawChart(chartData, participantName) {
     ctx.restore();
     
     // Разметка оси X - адаптивный шаг
-    ctx.font = '12px Arial';
+    ctx.font = `${fontSize.labels}px Arial`;
     ctx.textAlign = 'center';
     const rangeX = maxM - minM;
     let stepX;
@@ -1946,7 +1969,7 @@ function drawChart(chartData, participantName) {
             ctx.fill();
             
             // Подпись
-            ctx.font = 'bold 12px Arial';
+            ctx.font = `bold ${fontSize.labels}px Arial`;
             ctx.fillStyle = '#FF5722';
             ctx.textAlign = 'center';
             ctx.fillText(`M=${currentM}, Место=${currentData.rank}`, x, y - 15);
@@ -1965,7 +1988,7 @@ function drawChart(chartData, participantName) {
             ctx.setLineDash([]);
             
             // Подпись внизу
-            ctx.font = 'bold 12px Arial';
+            ctx.font = `bold ${fontSize.labels}px Arial`;
             ctx.fillStyle = '#FF5722';
             ctx.textAlign = 'center';
             ctx.fillText(`M=${currentM}: вне рейтинга`, x, canvas.height - padding + 40);
@@ -1977,7 +2000,7 @@ function drawChart(chartData, participantName) {
     const firstRankedPoint = chartData.find(d => d.rank !== null);
     const minMInRank = firstRankedPoint ? firstRankedPoint.m : null;
     
-    ctx.font = '11px Arial';
+    ctx.font = `${fontSize.legend}px Arial`;
     ctx.fillStyle = '#666';
     ctx.textAlign = 'left';
     

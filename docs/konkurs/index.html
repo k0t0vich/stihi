@@ -229,6 +229,64 @@
         #chartCanvas {
             border: 1px solid #ddd;
             margin-top: 20px;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Адаптивные стили для мобильных устройств */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                margin: 10px auto;
+                padding: 15px;
+                max-height: 95vh;
+                overflow-y: auto;
+            }
+            
+            #chartCanvas {
+                width: 100% !important;
+                height: auto !important;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            h2 {
+                font-size: 1.2em;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+            
+            th, td {
+                padding: 6px 8px;
+            }
+            
+            .settings-panel {
+                padding: 15px;
+            }
+            
+            .chart-btn {
+                font-size: 0.85em;
+                padding: 4px 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .modal-content {
+                width: 98%;
+                padding: 10px;
+            }
+            
+            table {
+                font-size: 0.8em;
+            }
+            
+            th, td {
+                padding: 4px 6px;
+            }
         }
     </style>
 </head>
