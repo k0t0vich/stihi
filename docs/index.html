@@ -2,34 +2,117 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=konkurs/index.html">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Перенаправление...</title>
+    <title>Проекты</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f5f5f5;
+            padding: 20px;
         }
-        .message {
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .project-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .project-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
             text-align: center;
         }
-        a {
-            color: #4CAF50;
-            text-decoration: none;
+        
+        .project-title {
+            font-size: 1.5em;
             font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .project-description {
+            color: #666;
+            line-height: 1.6;
+            text-align: center;
+            font-size: 0.95em;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="message">
-        <h1>Перенаправление...</h1>
-        <p>Если автоматическое перенаправление не работает, <a href="konkurs/index.html">нажмите здесь</a>.</p>
+    <div class="container">
+        <h1>Проекты</h1>
+        
+        <div class="projects-grid">
+            <a href="konkurs/" class="project-card">
+                <div class="project-icon">🏆</div>
+                <div class="project-title">Конкурс</div>
+                <div class="project-description">
+                    Система подсчета результатов конкурса методом Борда с отсечением. 
+                    Анализ оценок судей и построение рейтингов участников.
+                </div>
+            </a>
+            
+            <!-- Добавьте сюда новые проекты по мере необходимости -->
+            <!-- 
+            <a href="project2/" class="project-card">
+                <div class="project-icon">📊</div>
+                <div class="project-title">Название проекта</div>
+                <div class="project-description">
+                    Описание проекта
+                </div>
+            </a>
+            -->
+        </div>
     </div>
 </body>
 </html>
-
