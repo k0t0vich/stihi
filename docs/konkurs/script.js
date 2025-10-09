@@ -1718,8 +1718,10 @@ function showParticipantChart(participantName) {
     const modal = document.getElementById('chartModal');
     modal.style.display = 'block';
     
-    // Рисуем график
-    drawChart(chartData, participantName);
+    // Рисуем график с небольшой задержкой, чтобы модальное окно успело отрендериться
+    setTimeout(() => {
+        drawChart(chartData, participantName);
+    }, 10);
 }
 
 // Функция для отрисовки графика на canvas
@@ -1731,11 +1733,15 @@ function drawChart(chartData, participantName) {
     const isMobile = window.innerWidth <= 768;
     const isSmallMobile = window.innerWidth <= 480;
     
+    // Получаем доступную ширину из модального окна
+    const modalContent = document.querySelector('.modal-content');
+    const availableWidth = modalContent ? modalContent.clientWidth - 40 : window.innerWidth - 40; // Вычитаем padding
+    
     if (isSmallMobile) {
-        canvas.width = window.innerWidth - 40; // Оставляем небольшие отступы
+        canvas.width = Math.min(availableWidth, window.innerWidth - 40);
         canvas.height = 400;
     } else if (isMobile) {
-        canvas.width = window.innerWidth - 60;
+        canvas.width = Math.min(availableWidth, window.innerWidth - 60);
         canvas.height = 450;
     } else {
         canvas.width = 900;
@@ -1746,16 +1752,16 @@ function drawChart(chartData, participantName) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Параметры графика с адаптивными отступами
-    const padding = isMobile ? 40 : 60;
+    const padding = isSmallMobile ? 35 : (isMobile ? 40 : 60);
     const chartWidth = canvas.width - 2 * padding;
     const chartHeight = canvas.height - 2 * padding;
     
     // Адаптивные размеры шрифтов
     const fontSize = {
-        title: isMobile ? 16 : 20,
-        axis: isMobile ? 11 : 14,
-        labels: isMobile ? 10 : 12,
-        legend: isMobile ? 9 : 11
+        title: isSmallMobile ? 14 : (isMobile ? 16 : 20),
+        axis: isSmallMobile ? 10 : (isMobile ? 11 : 14),
+        labels: isSmallMobile ? 9 : (isMobile ? 10 : 12),
+        legend: isSmallMobile ? 8 : (isMobile ? 9 : 11)
     };
     
     // Находим диапазон данных

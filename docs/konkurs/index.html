@@ -197,6 +197,7 @@
             width: 80%;
             max-width: 900px;
             border-radius: 5px;
+            overflow-x: hidden;
         }
         
         .close {
@@ -229,8 +230,7 @@
         #chartCanvas {
             border: 1px solid #ddd;
             margin-top: 20px;
-            max-width: 100%;
-            height: auto;
+            display: block;
         }
         
         /* Адаптивные стили для мобильных устройств */
@@ -241,11 +241,6 @@
                 padding: 15px;
                 max-height: 95vh;
                 overflow-y: auto;
-            }
-            
-            #chartCanvas {
-                width: 100% !important;
-                height: auto !important;
             }
             
             h1 {
