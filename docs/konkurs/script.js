@@ -1761,7 +1761,8 @@ function drawChart(chartData, participantName) {
     
     // Функция для преобразования координат
     const getX = (m) => padding + (m - minM) * scaleX;
-    const getY = (rank) => canvas.height - padding - (rank - minRank) * scaleY;
+    // Инвертированная ось Y: 1 место вверху, максимальное место внизу
+    const getY = (rank) => padding + (rank - minRank) * scaleY;
     
     // Рисуем оси
     ctx.strokeStyle = '#333';
