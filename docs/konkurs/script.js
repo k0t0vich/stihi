@@ -1718,10 +1718,8 @@ function showParticipantChart(participantName) {
     const modal = document.getElementById('chartModal');
     modal.style.display = 'block';
     
-    // Рисуем график с небольшой задержкой, чтобы модальное окно успело отрендериться
-    setTimeout(() => {
-        drawChart(chartData, participantName);
-    }, 10);
+    // Рисуем график
+    drawChart(chartData, participantName);
 }
 
 // Функция для отрисовки графика на canvas
@@ -1729,45 +1727,18 @@ function drawChart(chartData, participantName) {
     const canvas = document.getElementById('chartCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Адаптивный размер canvas в зависимости от ширины экрана
-    const isMobile = window.innerWidth <= 768;
-    const isSmallMobile = window.innerWidth <= 480;
-    
-    // Получаем доступную ширину из модального окна
-    const modalContent = document.querySelector('.modal-content');
-    const availableWidth = modalContent ? modalContent.clientWidth - 40 : window.innerWidth - 40; // Вычитаем padding
-    
-    if (isSmallMobile) {
-        canvas.width = Math.min(availableWidth, window.innerWidth - 40);
-        canvas.height = 400;
-    } else if (isMobile) {
-        canvas.width = Math.min(availableWidth, window.innerWidth - 60);
-        canvas.height = 450;
-    } else {
-        canvas.width = 900;
-        canvas.height = 550;
-    }
-    
     // Очищаем canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Параметры графика с адаптивными отступами
-    const padding = isSmallMobile ? 35 : (isMobile ? 40 : 60);
+    // Параметры графика
+    const padding = 60;
     const chartWidth = canvas.width - 2 * padding;
     const chartHeight = canvas.height - 2 * padding;
-    
-    // Адаптивные размеры шрифтов
-    const fontSize = {
-        title: isSmallMobile ? 14 : (isMobile ? 16 : 20),
-        axis: isSmallMobile ? 10 : (isMobile ? 11 : 14),
-        labels: isSmallMobile ? 9 : (isMobile ? 10 : 12),
-        legend: isSmallMobile ? 8 : (isMobile ? 9 : 11)
-    };
     
     // Находим диапазон данных
     const validData = chartData.filter(d => d.rank !== null);
     if (validData.length === 0) {
-        ctx.font = `${fontSize.title}px Arial`;
+        ctx.font = '20px Arial';
         ctx.fillStyle = '#333';
         ctx.textAlign = 'center';
         ctx.fillText('Нет данных для отображения', canvas.width / 2, canvas.height / 2);
@@ -1802,7 +1773,7 @@ function drawChart(chartData, participantName) {
     ctx.stroke();
     
     // Подписи осей
-    ctx.font = `${fontSize.axis}px Arial`;
+    ctx.font = '14px Arial';
     ctx.fillStyle = '#333';
     ctx.textAlign = 'center';
     
@@ -1817,7 +1788,7 @@ function drawChart(chartData, participantName) {
     ctx.restore();
     
     // Разметка оси X - адаптивный шаг
-    ctx.font = `${fontSize.labels}px Arial`;
+    ctx.font = '12px Arial';
     ctx.textAlign = 'center';
     const rangeX = maxM - minM;
     let stepX;
@@ -1975,7 +1946,7 @@ function drawChart(chartData, participantName) {
             ctx.fill();
             
             // Подпись
-            ctx.font = `bold ${fontSize.labels}px Arial`;
+            ctx.font = 'bold 12px Arial';
             ctx.fillStyle = '#FF5722';
             ctx.textAlign = 'center';
             ctx.fillText(`M=${currentM}, Место=${currentData.rank}`, x, y - 15);
@@ -1994,7 +1965,7 @@ function drawChart(chartData, participantName) {
             ctx.setLineDash([]);
             
             // Подпись внизу
-            ctx.font = `bold ${fontSize.labels}px Arial`;
+            ctx.font = 'bold 12px Arial';
             ctx.fillStyle = '#FF5722';
             ctx.textAlign = 'center';
             ctx.fillText(`M=${currentM}: вне рейтинга`, x, canvas.height - padding + 40);
@@ -2006,7 +1977,7 @@ function drawChart(chartData, participantName) {
     const firstRankedPoint = chartData.find(d => d.rank !== null);
     const minMInRank = firstRankedPoint ? firstRankedPoint.m : null;
     
-    ctx.font = `${fontSize.legend}px Arial`;
+    ctx.font = '11px Arial';
     ctx.fillStyle = '#666';
     ctx.textAlign = 'left';
     
