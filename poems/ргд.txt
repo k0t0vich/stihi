@@ -1,11 +1,3 @@
-[genre:sludge-metal, deathcore]
-[mood:dark, aggressive, misanthropic]
-[tempo:slow, 90bpm]
-[vocals:male, guttural growl, harsh screams]
-[mixing:raw, distorted, heavy]
-[instruments:low-tuned electric guitar, bass, drums]
-
-[intro: slow, heavy, distorted guitar riff]
 
 [Verse]
 Где-то дождик прошел, 
@@ -23,13 +15,13 @@
 нет не надо кричать,
 нет не надо спешить 
 Ведь всё у нас хорошо 
-Ведь всё у нас заебись! 
+Ведь всё у нас зашибись! 
 
 [Chorus]
 Всё у нас хорошо 
-Всё у нас заебись! 
+Всё у нас зашибись! 
 Всё у нас хорошо 
-Всё у нас заебись! 
+Всё у нас зашибись! 
 
 [breakdown: heavy, slow, chugging guitars with blast beats]
 [instrumental: grind bassline with dissonant guitar chords]
@@ -53,7 +45,7 @@
 Чей-то голос внутри 
 Чей-то звук в голове,
 Пробивают мозги 
-Перекрестным огнем,
+Перекрёстным огнем,
 
 [Verse]
 Затуманенный мозг 
@@ -65,13 +57,13 @@
 нет не надо кричать,
 нет не надо спешить 
 Ведь всё у нас хорошо 
-Ведь всё у нас заебись! 
+Ведь всё у нас зашибись! 
 
 [Chorus] [tempo:fast, 200bpm]
 Всё у нас хорошо 
-Всё у нас заебись! 
+Всё у нас зашибись! 
 Всё у нас хорошо 
-Всё у нас заебись! 
+Всё у нас зашибись! 
 
 [outro]
 [instrumental: slow, crushing guitar riff with feedback]
