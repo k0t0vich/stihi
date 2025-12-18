@@ -205,7 +205,7 @@ class VotingSystem {
 					.track-card.my-track { opacity: 0.6; border: 1px dashed #666; }
                     
                     .submit-votes-panel {
-						position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+						position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%);
 						background: #1a1a1a; padding: 15px 30px; border-radius: 50px;
 						z-index: 9999; display: flex; gap: 15px; align-items: center; border: 1px solid #333;
 					}
