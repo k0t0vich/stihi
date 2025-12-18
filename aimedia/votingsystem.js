@@ -5,40 +5,29 @@ function detectIsMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 }
 
-//const isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop system
-const isOld = true; // Force Old system
+const isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop system
+// const isOld = true; // Force Old system
 // const isOld = false; // Force New system
 
 class VotingSystem {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
-        
-        $('.voting-alert').remove();
 
-        // Handle User - ВОЗМОЖНО ЛИШНЕЕ
+        //$('.voting-alert').remove();
+
         if (!user) {
-            if (isDebug) {
-                console.warn("User ID is not defined (Test Mode)");
-                this.user = { id: 99999, uid: 'test-user-uid' };
-            } else {
-                console.error("User ID is not defined");
-                // Можно добавить UI уведомление, если критично
-                return;
-            }
-        } else {
-            this.user = user;
+            console.error("User ID is not defined");
+            return;
         }
 
         this.player = player;
         this.containerSelector = containerSelector;
+        this.user = user;
+        this.votes = {}; // { trackUid: place }
         this.MAX_VOTES = voitedCount;
+        this.remainingPlaces = Array.from({ length: this.MAX_VOTES }, (_, i) => i + 1);
+        this.tracks = []; // Array of track objects
         this.eventUid = eventUid;
         this.tourUid = tourUid;
-        
-        this.tracks = []; 
-        this.votes = {}; // { trackUid: place }
-
-        // Specific to Old/Mobile system
-        this.remainingPlaces = Array.from({ length: this.MAX_VOTES }, (_, i) => i + 1);
 
         this.init();
     }
@@ -81,13 +70,15 @@ class VotingSystem {
             };
         }).get();
 
-        // If we are recovering state (Old system logic mainly, but useful for sync)
-        this.tracks.forEach(track => {
-            if (track.isVoted && track.place !== null) {
-                this.votes[track.uid] = track.place;
-                this.remainingPlaces = this.remainingPlaces.filter(p => p !== track.place);
-            }
-        });
+        // В New System голоса определяются порядком сортировки, старые данные не нужны
+        if (isOld) {
+            this.tracks.forEach(track => {
+                if (track.isVoted && track.place !== null) {
+                    this.votes[track.uid] = track.place;
+                    this.remainingPlaces = this.remainingPlaces.filter(p => p !== track.place);
+                }
+            });
+        }
     }
 
     _checkPermissions() {
@@ -317,8 +308,9 @@ class VotingSystem {
     }
 
     _checkAndRenderResultsButton() {
-        if (Object.keys(this.votes).length === this.MAX_VOTES) {
-             // In old system logic, this often triggers modal immediately or shows button
+        const votedInDomCount = $(this.containerSelector).find('[data-isvoted="1"]').length;
+        
+        if (Object.keys(this.votes).length === this.MAX_VOTES && votedInDomCount < this.MAX_VOTES) {
              this.showResultsModal(); 
         }
     }
