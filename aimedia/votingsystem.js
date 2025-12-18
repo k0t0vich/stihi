@@ -1,28 +1,19 @@
-//-- VotingSystem (Drag & Drop Refactor - STEP 1: Basic Logic v6) --
-alert("SCRIPT LOADED: v6 (Clean Drag & Drop, No Player Hacks)");
 
-// Подгрузка Sortable, если нет
-if (typeof Sortable === 'undefined') {
-    let script = document.createElement('script');
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js";
-    document.head.appendChild(script);
-}
 
 class VotingSystem {
 	constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
-		
-        // Очищаем старые алерты
+
+
 		$('.voting-alert').remove();
 
 		if (!user) {
 			console.warn("User ID is not defined (Test Mode)");
-            // Для теста можно оставить заглушку, или вернуть return
 			this.user = { id: 99999, uid: 'test-user-uid' };
 		} else {
 			this.user = user;
 		}
 		
-		this.player = player; // Плеер просто храним, не трогаем
+		this.player = player;
 		this.containerSelector = containerSelector;
 		this.votes = {}; 
 		this.MAX_VOTES = voitedCount;
@@ -30,31 +21,27 @@ class VotingSystem {
 		this.eventUid = eventUid;
 		this.tourUid = tourUid;
 		
-		// Ждем Sortable
-		if (typeof Sortable === 'undefined') {
-			setTimeout(() => this.init(), 1000);
-		} else {
-			this.init();
-		}
+
 	}
 
 	init() {
 		this._collectTracks();
 		this._checkPermissions();
-        
-        // 1. Сортировка (Рандом + Свой вниз) - оставляем, это полезно
-		this._initialRandomSort();
 		
-        // 2. Инициализация Drag & Drop
+        // 1. Сортируем 
+		this._initialRandomSort(); 
+		
+        // 2. Инициализируем перетаскивание
 		this._setupDragAndDrop();
 		
-        // 3. Кнопка "Отправить"
+        // 3. Рисуем кнопку
 		this._renderSubmitControl();
+        
+        // 4. Обновляем цифры и данные плеера
+        this._updateRankings();
+        this._setPlayerPlayList(); 
 		
-        // 4. Первичный расчёт мест
-		this._updateRankings();
-		
-		console.log("VotingSystem v6 initialized");
+		console.log("VotingSystem v10 initialized");
 	}
 
 	_collectTracks() {
@@ -78,12 +65,14 @@ class VotingSystem {
 	_checkPermissions() {
 		const $container = $(this.containerSelector);
 		$('.voting-alert').remove();
-        // Убираем старые кнопки голосования, так как у нас теперь Drag & Drop
         $container.find('.vote-button').remove();
 		return true;
 	}
 
 	_initialRandomSort() {
+        if (this.sortedOnce) return;
+        this.sortedOnce = true;
+
 		const $container = $(this.containerSelector);
 		const $cards = $container.find('.track-card').toArray();
         const self = this;
@@ -108,6 +97,8 @@ class VotingSystem {
 
         const sortedCards = [...otherTracks, ...myTracks];
         $container.append(sortedCards);
+        
+        console.log("--- Initial Random Sort Done ---");
 	}
 
 	_setupDragAndDrop() {
@@ -115,26 +106,95 @@ class VotingSystem {
 		const self = this;
 		if (!container) return;
 
-        // Минимальные стили только для курсора и бейджиков (без них непонятно место)
+        if (this.sortableInstance) return;
+
 		$(this.containerSelector).find('.track-card').css('cursor', 'grab');
         this._injectMinimalStyles(); 
 
-		Sortable.create(container, {
+		this.sortableInstance = Sortable.create(container, {
 			animation: 150,
 			handle: '.track-card',
 			filter: '.my-track', 
 			onEnd: function(evt) {
-                // Только обновляем цифры, плеер НЕ трогаем
-				self._updateRankings();
+				self._updateRankings(); 
+                self._setPlayerPlayList(); 
 			}
 		});
 	}
+
+    _setPlayerPlayList() {
+        // Debounce на всякий случай
+        if (this._updateTimeout) clearTimeout(this._updateTimeout);
+        
+        this._updateTimeout = setTimeout(() => {
+            const container = this.containerSelector;
+            const $cards = $(container).find('.track-card');
+            const newList = [];
+
+
+            $cards.each(function(index) {
+                const $el = $(this);
+                // Собираем объект трека полностью
+                const trackData = {
+                    uid: $el.data('uid'),
+                    id: $el.data('uid'),
+                    title: $el.data('title'),
+                    artist: $el.data('artist'),
+                    file: $el.data('audio') || $el.data('url'), 
+                    cover: $el.data('cover'),
+                    duration: $el.data('duration'),
+                    genre: $el.data('genre'),
+                    // Дополнительные поля если нужны
+                };
+                
+                // Формат хранения в плеере: { data: ..., $el: ... }
+                newList.push({
+                    data: trackData,
+                    $el: $el
+                });
+            });
+
+            if (this.player) {
+                // Если плейлиста еще нет в памяти плеера - создаем структуру
+                if (!this.player.playlists[container]) {
+                     this.player.playlists[container] = { 
+                        list: [], 
+                        currentIndex: -1, 
+                        options: { 
+                            playlistName: 'Voting Playlist', 
+                            isFolder: true 
+                        } 
+                     };
+                }
+                
+                // 1. Обновляем список треков в памяти плеера
+                this.player.playlists[container].list = newList;
+                
+                // 2. Синхронизируем индексы (атрибут data-item-idx на DOM элементах)
+                // Используем встроенный метод плеера если есть, или делаем сами
+                if (typeof this.player._resyncPlaylistIndexes === 'function') {
+                    this.player._resyncPlaylistIndexes(container);
+                } else {
+                     $cards.each(function(i) {
+                         $(this).attr('data-item-idx', i);
+                     });
+                }
+                
+                // 3. Если сейчас играет трек из этого плейлиста - обновляем currentIndex
+                if (this.player.currentPlaylist === container && this.player.currentTrack) {
+                    const newIndex = newList.findIndex(item => item.data.uid === this.player.currentTrack.uid);
+                    this.player.playlists[container].currentIndex = newIndex !== -1 ? newIndex : -1;
+                }
+
+                console.log(">>> Player Data Updated DIRECTLY (" + newList.length + " tracks)");
+            }
+        }, 50);
+    }
 
     _injectMinimalStyles() {
         if (!$('#ranking-styles').length) {
 			$('head').append(`
 				<style id="ranking-styles">
-                    /* Только самые необходимые стили для бейджиков с цифрами */
 					.rank-badge {
 						position: absolute; top: -10px; left: -10px; width: 40px; height: 40px;
 						background: #ff0055; color: white; border-radius: 50%;
@@ -142,12 +202,11 @@ class VotingSystem {
 						font-weight: bold; font-size: 18px; z-index: 10;
 						box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid white;
 						pointer-events: none;
-                        display: none; /* Скрыты по умолчанию */
+                        display: none; 
 					}
 					.rank-badge.visible { display: flex; }
 					.track-card.my-track { opacity: 0.6; border: 1px dashed #666; }
                     
-                    /* Панель с кнопкой внизу */
                     .submit-votes-panel {
 						position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
 						background: #1a1a1a; padding: 15px 30px; border-radius: 50px;
@@ -157,7 +216,6 @@ class VotingSystem {
                     .submit-btn { background: #ff0055; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
                     .vote-count-info { color: white; }
                     
-                    /* Стили для модалки из старого файла */
                     .modal-results .sortable-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; background: #222; margin-bottom: 5px; }
                     .modal-results .place-circle { width: 30px; height: 30px; background: #ff0055; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-weight: bold; }
                     .modal-results .track-info-text { flex-grow: 1; color: white; }
@@ -177,7 +235,6 @@ class VotingSystem {
 			const trackUid = $card.data('uid');
 			const trackUserId = parseInt($card.data('userid'), 10);
             
-			// Бейджики
 			let $badge = $card.find('.rank-badge');
 			if ($badge.length === 0) {
 				$badge = $('<div>').addClass('rank-badge');
@@ -190,7 +247,6 @@ class VotingSystem {
 				return;
 			}
             
-            // Чистим старые кнопки
             $card.find('.vote-button').remove();
 
 			if (currentPlace <= self.MAX_VOTES) {
@@ -201,8 +257,6 @@ class VotingSystem {
 				$badge.removeClass('visible');
 			}
 		});
-
-        // ПЛЕЕР НЕ ТРОГАЕМ (setPlayList убран)
 
 		this._updateSubmitButtonState();
 	}
@@ -227,7 +281,6 @@ class VotingSystem {
 		}
 	}
 
-    // --- МОДАЛЬНОЕ ОКНО СО СПИСКОМ (как в старой версии) ---
     showResultsModal() {
 		const sortedVotes = Object.entries(this.votes).sort((a, b) => a[1] - b[1]);
 		
@@ -311,7 +364,6 @@ class VotingSystem {
         }, 10);
 	}
     
-    // Заглушки для старых методов
     _createVoteModal() {}
     _createCancelModal() {}
 }
