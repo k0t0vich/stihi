@@ -1,8 +1,10 @@
 
+// DEBUG
+const isDebug = true;
+const isMobile = false;
 
 class VotingSystem {
 	constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
-
 
 		$('.voting-alert').remove();
 
@@ -20,8 +22,7 @@ class VotingSystem {
 		this.tracks = []; 
 		this.eventUid = eventUid;
 		this.tourUid = tourUid;
-		
-
+		this.init();
 	}
 
 	init() {
@@ -152,38 +153,14 @@ class VotingSystem {
             });
 
             if (this.player) {
-                // Если плейлиста еще нет в памяти плеера - создаем структуру
-                if (!this.player.playlists[container]) {
-                     this.player.playlists[container] = { 
-                        list: [], 
-                        currentIndex: -1, 
-                        options: { 
-                            playlistName: 'Voting Playlist', 
-                            isFolder: true 
-                        } 
-                     };
-                }
-                
-                // 1. Обновляем список треков в памяти плеера
                 this.player.playlists[container].list = newList;
-                
-                // 2. Синхронизируем индексы (атрибут data-item-idx на DOM элементах)
-                // Используем встроенный метод плеера если есть, или делаем сами
-                if (typeof this.player._resyncPlaylistIndexes === 'function') {
-                    this.player._resyncPlaylistIndexes(container);
-                } else {
-                     $cards.each(function(i) {
-                         $(this).attr('data-item-idx', i);
-                     });
-                }
-                
-                // 3. Если сейчас играет трек из этого плейлиста - обновляем currentIndex
+				console.log("VotingSystem._setPlayerPlayList: Обновляем список треков плеера");
+				this.player._resyncPlaylistIndexes(container);
+                // Если сейчас играет трек из этого плейлиста - обновляем currentIndex
                 if (this.player.currentPlaylist === container && this.player.currentTrack) {
                     const newIndex = newList.findIndex(item => item.data.uid === this.player.currentTrack.uid);
                     this.player.playlists[container].currentIndex = newIndex !== -1 ? newIndex : -1;
                 }
-
-
             }
         }, 50);
     }
@@ -205,7 +182,7 @@ class VotingSystem {
 					.track-card.my-track { opacity: 0.6; border: 1px dashed #666; }
                     
                     .submit-votes-panel {
-						position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%);
+						position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
 						background: #1a1a1a; padding: 15px 30px; border-radius: 50px;
 						z-index: 9999; display: flex; gap: 15px; align-items: center; border: 1px solid #333;
 					}
@@ -213,9 +190,9 @@ class VotingSystem {
                     .submit-btn { background: #ff0055; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
                     .vote-count-info { color: white; }
                     
-                    .modal-results .sortable-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; background: #222; margin-bottom: 5px; }
-                    .modal-results .place-circle { width: 30px; height: 30px; background: #ff0055; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-weight: bold; }
-                    .modal-results .track-info-text { flex-grow: 1; color: white; }
+                    /*.modal-results .sortable-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; background: #222; margin-bottom: 5px; }*/
+                    /*.modal-results .place-circle { width: 30px; height: 30px; background: #ff0055; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-weight: bold; }*/
+                    /*.modal-results .track-info-text { flex-grow: 1; color: white; }*/
 				</style>
 			`);
 		}
@@ -278,7 +255,119 @@ class VotingSystem {
 		}
 	}
 
-    showResultsModal() {
+	showResultsModal() {
+		// Get sorted votes by place
+		const sortedVotes = Object.entries(this.votes).sort((a, b) => a[1] - b[1]);
+
+		const $modal = $('<div>').addClass('modal-overlay modal-results');
+		const $modalContent = $('<div>').addClass('modal-content');
+
+		const $heading = $('<h5>').addClass('modal-title').text('Результаты голосования');
+
+		const $votesContainer = $('<div>').addClass('sortable-container');
+
+		// Create sortable items
+		sortedVotes.forEach(([trackUid, place]) => {
+			// Find track by UID
+			const track = this.tracks.find(t => t.uid === trackUid);
+			if (!track) return;
+
+			const $item = $('<div>')
+				.addClass('sortable-item')
+				.attr('draggable', true)
+				.attr('data-track-uid', trackUid)
+				.attr('data-place', place);
+
+			const $itemContent = $('<div>').addClass('sortable-item-content');
+
+			const $placeCircle = $('<span>')
+				.addClass('place-circle')
+				.text(place);
+
+			const $trackInfo = $('<span>')
+				.addClass('track-info-text')
+				.html(`<div class="text-pink marquee-container">
+				<span class="track-title text-black  marquee-text">${track.artist} — ${track.title}</span></div>
+			`);
+
+			const $titleContainer = $trackInfo;
+			$titleContainer
+				.data('marquee-initialized', false)
+				.marquee();
+
+			$itemContent.append($placeCircle).append($trackInfo);
+
+			const $dragHandle = $('<div>')
+				.addClass('drag-handle')
+				.html('<i class="las la-arrows-alt-v"></i>');
+
+			$item.append($itemContent).append($dragHandle);
+			$votesContainer.append($item);
+		});
+
+		// Add jQuery UI sortable functionality
+		/*$votesContainer.sortable({
+			handle: '.drag-handle',
+			update: function(event, ui) {
+				// Update place numbers after sorting
+				$(this).find('.sortable-item').each(function(index) {
+				$(this).find('.place-circle').text(index + 1);
+				$(this).data('place', index + 1);
+				});
+			}
+		});*/
+
+		Sortable.create($votesContainer[0], {
+			handle: '.drag-handle',
+			animation: 150,
+			onEnd: function () {
+				$votesContainer.find('.sortable-item').each(function(index) {
+					$(this).find('.place-circle').text(index + 1);
+					$(this).attr('data-place', index + 1);
+				});
+			}
+		});
+
+
+		// Add buttons
+		const $buttonContainer = $('<div>').addClass('modal-actions');
+
+		const $confirmButton = $('<button>')
+			.addClass('confirm-button')
+			.text('Подтвердить');
+
+		const $cancelButton = $('<button>')
+			.addClass('cancel-button')
+			.text('Отменить');
+
+		$buttonContainer.append($confirmButton).append($cancelButton);
+
+		// Build modal
+		$modalContent.append($heading).append($votesContainer).append($buttonContainer);
+		$modal.append($modalContent);
+		$('body').append($modal);
+
+		// Handle button clicks
+		const self = this;
+
+		$confirmButton.on('click', function() {
+			const updatedVotes = self._collectSortedVotes($votesContainer);
+			self._updateVotesFromSortedList(updatedVotes);
+			$modal.remove();
+			self.showConfirmModal(updatedVotes);
+		});
+
+		$cancelButton.on('click', function() {
+			$modal.remove();
+		});
+
+		// Close when clicking overlay
+		$modal.on('click', function(e) {
+			if (e.target === this) $modal.remove();
+		});
+	}
+
+    showResultsModal_new() {
 		const sortedVotes = Object.entries(this.votes).sort((a, b) => a[1] - b[1]);
 		
 		const $modal = $('<div>').addClass('modal-overlay modal-results');
