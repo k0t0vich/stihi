@@ -40,8 +40,6 @@ class VotingSystem {
         // 4. Обновляем цифры и данные плеера
         this._updateRankings();
         this._setPlayerPlayList(); 
-		
-		console.log("VotingSystem v10 initialized");
 	}
 
 	_collectTracks() {
@@ -98,7 +96,6 @@ class VotingSystem {
         const sortedCards = [...otherTracks, ...myTracks];
         $container.append(sortedCards);
         
-        console.log("--- Initial Random Sort Done ---");
 	}
 
 	_setupDragAndDrop() {
@@ -186,7 +183,7 @@ class VotingSystem {
                     this.player.playlists[container].currentIndex = newIndex !== -1 ? newIndex : -1;
                 }
 
-                console.log(">>> Player Data Updated DIRECTLY (" + newList.length + " tracks)");
+
             }
         }, 50);
     }
