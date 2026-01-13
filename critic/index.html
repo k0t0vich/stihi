@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Музыкальный Критик</title>
+    <link rel="stylesheet" href="index.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
+          "marked": "https://esm.sh/marked@^15.0.7",
+          "dompurify": "https://esm.sh/dompurify@^3.0.6"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="app-layout">
+      <div class="input-side">
+        <header>
+          <h1>Музыкальный Критик</h1>
+          <p>Получите технический анализ вашей песни или текста с помощью ИИ.</p>
+        </header>
+
+          <div class="settings-container">
+            <div class="setting-item full-width">
+              <div class="key-control">
+                  <button id="select-key-btn" class="key-btn">🔑 Выбрать API ключ</button>
+                  <span id="key-status" class="key-status">○ Проверка...</span>
+              </div>
+              <div id="connection-hint" class="hint-text" hidden>
+                  Для работы приложения необходимо подключить ваш API ключ Google AI Studio. 
+                  Это безопасно — ключ используется только в вашем браузере.
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-container">
+          <div class="setting-item">
+            <label for="model-selector">Модель</label>
+            <select id="model-selector">
+              <option value="gemini-3-pro-preview" selected>Gemini 3.0 Pro Preview (Новинка)</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Быстрая)</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label for="tone-selector">Тон рецензии</label>
+            <select id="tone-selector">
+              <option value="neutral" selected>⚖️ Взвешенно (Объективно)</option>
+              <option value="praise">😍 Хвалить</option>
+              <option value="roast">😈 Критика</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button id="tab-upload" class="tab-button active" aria-selected="true">Загрузить песню</button>
+          <button id="tab-lyrics" class="tab-button" aria-selected="false">Ввести текст</button>
+        </div>
+
+        <div id="panel-upload" class="input-container">
+          <label for="file-upload" class="custom-file-upload">
+            &#127925; Выберите аудиофайл
+          </label>
+          <input id="file-upload" type="file" accept="audio/*"/>
+          <span id="file-name">Файл не выбран</span>
+          
+          <div id="audio-player-container" class="audio-player" hidden>
+            <audio id="audio-element" hidden></audio>
+            <div class="player-controls">
+              <button id="play-pause-btn" class="player-btn">▶</button>
+              <div class="progress-container">
+                <div id="progress-bar" class="progress-bar"></div>
+              </div>
+              <span id="time-display">0:00 / 0:00</span>
+            </div>
+          </div>
+        </div>
+        <div id="panel-lyrics" class="input-container" hidden>
+          <textarea id="lyrics-input" placeholder="Вставьте текст песни сюда..."></textarea>
+        </div>
+
+        <button id="submit-button" disabled>Получить анализ</button>
+
+        <section id="score-summary-container" hidden></section>
+      </div>
+
+      <div class="output-side">
+        <section id="result-container" aria-live="polite">
+          <div id="loader" class="loader" hidden></div>
+          <div id="result-text">Ваш музыкальный анализ появится здесь.</div>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="index.tsx"></script>
+    <style>
+      .settings-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .setting-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .setting-item label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+      }
+      .setting-item select {
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        width: 100%;
+      }
+    </style>
+  </body>
+</html>
