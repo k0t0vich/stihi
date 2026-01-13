@@ -16,112 +16,109 @@
     </script>
   </head>
   <body>
+    <!-- Top Header with Controls -->
+    <header class="app-header">
+        <div class="logo-section">
+            <div class="logo-icon">⚖️</div>
+            <div class="logo-text">
+                <h1>AI CRITIC</h1>
+                <p>Music Analysis Tool</p>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <!-- Key Control -->
+            <div class="control-group">
+                <button id="select-key-btn" class="header-btn">🔑 API Key</button>
+                <span id="key-status" class="status-indicator" title="Статус ключа">●</span>
+                <div id="connection-hint" hidden></div> <!-- Hidden hint for logic -->
+            </div>
+
+            <!-- Tone Selector -->
+            <div class="control-group">
+                <select id="tone-selector" class="header-select">
+                  <option value="neutral" selected>⚖️ Объективно</option>
+                  <option value="praise">😍 Хвалить</option>
+                  <option value="roast">😈 Критика</option>
+                </select>
+            </div>
+
+            <!-- Model Selector -->
+            <div class="control-group">
+                <select id="model-selector" class="header-select">
+                  <option value="gemini-3-pro-preview" selected>Gemini 3.0 Pro</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
     <main class="app-layout">
-      <div class="input-side">
-        <header>
-          <h1>Музыкальный Критик</h1>
-          <p>Получите технический анализ вашей песни или текста с помощью ИИ.</p>
-        </header>
-
-          <div class="settings-container">
-            <div class="setting-item full-width">
-              <div class="key-control">
-                  <button id="select-key-btn" class="key-btn">🔑 Выбрать API ключ</button>
-                  <span id="key-status" class="key-status">○ Проверка...</span>
-              </div>
-              <div id="connection-hint" class="hint-text" hidden>
-                  Для работы приложения необходимо подключить ваш API ключ Google AI Studio. 
-                  Это безопасно — ключ используется только в вашем браузере.
-              </div>
+      <!-- Left Sidebar: Content Inputs -->
+      <aside class="input-side">
+        
+        <!-- File Upload Area -->
+        <div id="panel-upload" class="input-card compact">
+            <label for="file-upload" class="custom-file-upload">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Выбрать файл</div>
+                <span id="file-name">MP3, WAV, M4A</span>
+            </label>
+            <input id="file-upload" type="file" accept="audio/*"/>
+            
+            <div id="audio-player-container" class="audio-player" hidden>
+                <audio id="audio-element" hidden></audio>
+                <div class="player-controls">
+                  <button id="play-pause-btn" class="player-btn">▶</button>
+                  <div class="progress-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                  </div>
+                  <span id="time-display">0:00</span>
+                </div>
             </div>
-          </div>
-
-          <div class="settings-container">
-          <div class="setting-item">
-            <label for="model-selector">Модель</label>
-            <select id="model-selector">
-              <option value="gemini-3-pro-preview" selected>Gemini 3.0 Pro Preview (Новинка)</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Быстрая)</option>
-              <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-            </select>
-            <!-- <button id="load-models-btn" style="margin-top: 5px; font-size: 0.8em; padding: 4px; background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; color: var(--on-surface-color);">🔄 Загрузить список моделей (тест)</button> -->
-          </div>
-
-          <div class="setting-item">
-            <label for="tone-selector">Тон рецензии</label>
-            <select id="tone-selector">
-              <option value="neutral" selected>⚖️ Взвешенно (Объективно)</option>
-              <option value="praise">😍 Хвалить</option>
-              <option value="roast">😈 Критика</option>
-            </select>
-          </div>
         </div>
 
-        <div class="tabs">
-          <button id="tab-upload" class="tab-button active" aria-selected="true">Загрузить песню</button>
-          <button id="tab-lyrics" class="tab-button" aria-selected="false">Ввести текст</button>
-        </div>
-
-        <div id="panel-upload" class="input-container">
-          <label for="file-upload" class="custom-file-upload">
-            &#127925; Выберите аудиофайл
-          </label>
-          <input id="file-upload" type="file" accept="audio/*"/>
-          <span id="file-name">Файл не выбран</span>
-          
-          <div id="audio-player-container" class="audio-player" hidden>
-            <audio id="audio-element" hidden></audio>
-            <div class="player-controls">
-              <button id="play-pause-btn" class="player-btn">▶</button>
-              <div class="progress-container">
-                <div id="progress-bar" class="progress-bar"></div>
-              </div>
-              <span id="time-display">0:00 / 0:00</span>
+        <!-- Text Inputs -->
+        <div id="panel-lyrics" class="input-card flex-grow">
+            <div class="input-group">
+                <label for="track-note">Контекст / Пожелания</label>
+                <textarea id="track-note" placeholder="Например: 'Это демо запись', 'Хочу жесткой критики', 'Стиль: Панк-рок'..."></textarea>
             </div>
-          </div>
-        </div>
-        <div id="panel-lyrics" class="input-container" hidden>
-          <label for="track-note" style="font-weight: bold; display: block; margin-bottom: 5px;">Примечание (контекст, пожелания):</label>
-          <textarea id="track-note" placeholder="Например: 'Вдохновлено книгой...', 'Живая запись', 'Добавь панк-угара'..." style="box-sizing: border-box; width: 100%; height: 80px; background-color: var(--background-color); color: var(--on-surface-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; font-size: 1rem; resize: vertical; margin-bottom: 15px;"></textarea>
-          
-          <textarea id="lyrics-input" placeholder="Вставьте текст песни сюда..."></textarea>
+            
+            <div class="input-group flex-grow-child">
+                <label for="lyrics-input">Текст песни</label>
+                <textarea id="lyrics-input" placeholder="Вставьте текст песни сюда для лучшего анализа..."></textarea>
+            </div>
         </div>
 
-        <button id="submit-button" disabled>Получить анализ</button>
-
+        <button id="submit-button" disabled>ЗАПУСТИТЬ АНАЛИЗ</button>
+        
         <section id="score-summary-container" hidden></section>
-      </div>
+        
+        <!-- Hidden elements required by TS logic -->
+        <div class="tabs" style="display:none;"></div> 
+        <div id="manual-key-container" style="display: none;">
+            <input id="use-manual-key" type="checkbox">
+            <input id="manual-api-key" type="password">
+        </div>
 
-      <div class="output-side">
-        <section id="result-container" aria-live="polite">
+      </aside>
+
+      <!-- Right Side: Output -->
+      <section class="output-side">
+        <div id="result-container" aria-live="polite">
           <div id="loader" class="loader" hidden></div>
-          <div id="result-text">Ваш музыкальный анализ появится здесь.</div>
-        </section>
-      </div>
+          <div id="result-text">
+              <div class="placeholder-state">
+                  <h2>Ожидание данных...</h2>
+                  <p>Загрузите трек и нажмите кнопку запуска, чтобы получить подробную рецензию.</p>
+              </div>
+          </div>
+        </div>
+      </section>
     </main>
+
     <script type="module" src="index.tsx"></script>
-    <style>
-      .settings-container {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-      }
-      .setting-item {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-      }
-      .setting-item label {
-        font-weight: bold;
-        margin-bottom: 5px;
-        font-size: 0.9em;
-      }
-      .setting-item select {
-        padding: 8px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        width: 100%;
-      }
-    </style>
   </body>
 </html>

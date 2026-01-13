@@ -8,35 +8,40 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
-// --- DOM Elements ---
-const panelUpload = document.getElementById('panel-upload') as HTMLDivElement;
-const panelLyrics = document.getElementById('panel-lyrics') as HTMLDivElement;
-const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-const fileNameSpan = document.getElementById('file-name') as HTMLSpanElement;
-const lyricsInput = document.getElementById('lyrics-input') as HTMLTextAreaElement;
-const trackNoteInput = document.getElementById('track-note') as HTMLTextAreaElement;
-const submitButton = document.getElementById('submit-button') as HTMLButtonElement;
-const loader = document.getElementById('loader') as HTMLDivElement;
-const resultText = document.getElementById('result-text') as HTMLDivElement;
-const modelSelector = document.getElementById('model-selector') as HTMLSelectElement;
-// const loadModelsBtn = document.getElementById('load-models-btn') as HTMLButtonElement;
-const toneSelector = document.getElementById('tone-selector') as HTMLSelectElement;
-const scoreSummaryContainer = document.getElementById('score-summary-container') as HTMLElement;
+// --- Safe Element Getter ---
+function getEl<T extends HTMLElement>(id: string): T | null {
+    const el = document.getElementById(id);
+    if (!el) {
+        console.warn(`Element with ID '${id}' not found.`);
+        return null;
+    }
+    return el as T;
+}
 
-const selectKeyBtn = document.getElementById('select-key-btn') as HTMLButtonElement;
-const keyStatus = document.getElementById('key-status') as HTMLSpanElement;
-const connectionHint = document.getElementById('connection-hint') as HTMLDivElement;
+// --- DOM Elements ---
+// We use a lazy initialization or checks to prevent crashes if HTML structure changes
+const fileInput = getEl<HTMLInputElement>('file-upload');
+const fileNameSpan = getEl<HTMLSpanElement>('file-name');
+const lyricsInput = getEl<HTMLTextAreaElement>('lyrics-input');
+const trackNoteInput = getEl<HTMLTextAreaElement>('track-note');
+const submitButton = getEl<HTMLButtonElement>('submit-button');
+const loader = getEl<HTMLDivElement>('loader');
+const resultText = getEl<HTMLDivElement>('result-text');
+const modelSelector = getEl<HTMLSelectElement>('model-selector');
+const toneSelector = getEl<HTMLSelectElement>('tone-selector');
+const scoreSummaryContainer = getEl<HTMLElement>('score-summary-container');
+
+const selectKeyBtn = getEl<HTMLButtonElement>('select-key-btn');
+const keyStatus = getEl<HTMLSpanElement>('key-status');
+const connectionHint = getEl<HTMLDivElement>('connection-hint');
 
 // Player Elements
-const audioPlayerContainer = document.getElementById('audio-player-container') as HTMLDivElement;
-const audioElement = document.getElementById('audio-element') as HTMLAudioElement;
-const playPauseBtn = document.getElementById('play-pause-btn') as HTMLButtonElement;
-const progressBar = document.getElementById('progress-bar') as HTMLDivElement;
+const audioPlayerContainer = getEl<HTMLDivElement>('audio-player-container');
+const audioElement = getEl<HTMLAudioElement>('audio-element');
+const playPauseBtn = getEl<HTMLButtonElement>('play-pause-btn');
+const progressBar = getEl<HTMLDivElement>('progress-bar');
 const progressContainer = document.querySelector('.progress-container') as HTMLDivElement;
-const timeDisplay = document.getElementById('time-display') as HTMLSpanElement;
-
-// The tabs container itself needs to be hidden or removed
-const tabsContainer = document.querySelector('.tabs') as HTMLElement;
+const timeDisplay = getEl<HTMLSpanElement>('time-display');
 
 // --- App State ---
 let audioFile: File | null = null;
@@ -47,31 +52,34 @@ let animationFrameId: number;
 // --- API Key Management ---
 async function checkKeyStatus() {
   const isAIStudio = !!(window as any).aistudio;
+  
+  if (!selectKeyBtn || !keyStatus || !submitButton) return;
 
   // 1. Check if we are in AI Studio environment
   if (isAIStudio) {
-      // Always show the select key button in AI Studio
       selectKeyBtn.hidden = false;
 
       const hasKey = await (window as any).aistudio.hasSelectedApiKey();
       if (hasKey) {
-        keyStatus.textContent = '● Выбран ключ (AI Studio)';
-        keyStatus.className = 'key-status key-ok';
+        keyStatus.textContent = '● AI Studio';
+        keyStatus.className = 'status-indicator key-status key-ok';
+        keyStatus.title = "Ключ успешно подключен через AI Studio";
         if (connectionHint) connectionHint.hidden = true;
-        submitButton.textContent = 'Получить анализ';
+        
+        submitButton.textContent = 'ЗАПУСТИТЬ АНАЛИЗ';
         updateSubmitButtonState();
         return;
       }
   } 
   
-  // 2. Check if API Key is already provided via Environment (Deployment or injected)
+  // 2. Check if API Key is already provided via Environment
   if (process.env.API_KEY && process.env.API_KEY.length > 0) {
-      keyStatus.textContent = '● Подключено (Server/Env)';
-      keyStatus.className = 'key-status key-ok';
+      keyStatus.textContent = '● Server';
+      keyStatus.className = 'status-indicator key-status key-ok';
+      keyStatus.title = "Используется системный ключ";
       if (connectionHint) connectionHint.hidden = true;
-      submitButton.textContent = 'Получить анализ';
+      submitButton.textContent = 'ЗАПУСТИТЬ АНАЛИЗ';
       
-      // Hide button ONLY if NOT in AI Studio
       if (!isAIStudio) {
         selectKeyBtn.hidden = true;
       }
@@ -81,39 +89,33 @@ async function checkKeyStatus() {
   }
 
   // 3. Not connected
-  keyStatus.textContent = '○ Не подключено';
-  keyStatus.className = 'key-status key-missing';
+  keyStatus.textContent = '○ Нет ключа';
+  keyStatus.className = 'status-indicator key-status key-missing';
   if (connectionHint) connectionHint.hidden = false;
-  submitButton.textContent = 'Сначала подключите ключ';
-  submitButton.disabled = true;
+  // submitButton.textContent = 'Сначала подключите ключ';
+  // submitButton.disabled = true;
+  updateSubmitButtonState(); // Let the button state update handle disabled/enabled based on file too
   
   if (!isAIStudio) {
     selectKeyBtn.hidden = true;
   }
 }
 
-/*
-async function fetchModels() {
-    // ... (fetchModels logic remains same but commented out)
+if (selectKeyBtn) {
+    selectKeyBtn.addEventListener('click', async () => {
+      if ((window as any).aistudio) {
+          await (window as any).aistudio.openSelectKey();
+          
+          keyStatus!.textContent = '⟳ ...';
+          
+          setTimeout(() => {
+              checkKeyStatus();
+          }, 500);
+      } else {
+          alert("В этом режиме выбор ключа недоступен.");
+      }
+    });
 }
-// loadModelsBtn.addEventListener('click', fetchModels);
-*/
-
-selectKeyBtn.addEventListener('click', async () => {
-  if ((window as any).aistudio) {
-      await (window as any).aistudio.openSelectKey();
-      
-      // Visual feedback and slight delay to ensure env is updated
-      keyStatus.textContent = '⟳ Применение ключа...';
-      keyStatus.className = 'key-status';
-      
-      setTimeout(() => {
-          checkKeyStatus();
-      }, 500);
-  } else {
-      alert("В этом режиме выбор ключа недоступен. Используется ключ сервера.");
-  }
-});
 
 // --- Audio Player Functions ---
 function formatTime(seconds: number): string {
@@ -123,6 +125,8 @@ function formatTime(seconds: number): string {
 }
 
 function updateProgress() {
+  if (!audioElement || !progressBar || !timeDisplay) return;
+
   if (audioElement.duration) {
     const percent = (audioElement.currentTime / audioElement.duration) * 100;
     progressBar.style.width = `${percent}%`;
@@ -135,6 +139,8 @@ function updateProgress() {
 }
 
 function togglePlayPause() {
+  if (!audioElement || !playPauseBtn) return;
+
   if (audioElement.paused) {
     audioElement.play();
     isPlaying = true;
@@ -149,19 +155,22 @@ function togglePlayPause() {
 }
 
 function stopAudio() {
+    if (!audioElement || !playPauseBtn) return;
+
     audioElement.pause();
     audioElement.currentTime = 0;
     isPlaying = false;
     playPauseBtn.textContent = '▶';
     cancelAnimationFrame(animationFrameId);
-    updateProgress(); // reset UI
+    updateProgress();
 }
 
 function setupAudioPlayer(file: File) {
+  if (!audioElement || !audioPlayerContainer || !timeDisplay || !playPauseBtn) return;
+
   const url = URL.createObjectURL(file);
   audioElement.src = url;
   
-  // Reset state
   stopAudio();
   audioPlayerContainer.hidden = false;
   
@@ -176,23 +185,26 @@ function setupAudioPlayer(file: File) {
   };
 }
 
-playPauseBtn.addEventListener('click', togglePlayPause);
+if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlayPause);
 
-progressContainer.addEventListener('click', (e) => {
-  const width = progressContainer.clientWidth;
-  const clickX = e.offsetX;
-  const duration = audioElement.duration;
-  
-  if (duration) {
-      audioElement.currentTime = (clickX / width) * duration;
-      // If paused, just update UI once, don't start loop unless playing
-      if (!isPlaying) {
-          const percent = (audioElement.currentTime / duration) * 100;
-          progressBar.style.width = `${percent}%`;
-          timeDisplay.textContent = `${formatTime(audioElement.currentTime)} / ${formatTime(duration)}`;
+if (progressContainer) {
+    progressContainer.addEventListener('click', (e) => {
+      if (!audioElement || !progressBar || !timeDisplay) return;
+
+      const width = progressContainer.clientWidth;
+      const clickX = e.offsetX;
+      const duration = audioElement.duration;
+      
+      if (duration) {
+          audioElement.currentTime = (clickX / width) * duration;
+          if (!isPlaying) {
+              const percent = (audioElement.currentTime / duration) * 100;
+              progressBar.style.width = `${percent}%`;
+              timeDisplay.textContent = `${formatTime(audioElement.currentTime)} / ${formatTime(duration)}`;
+          }
       }
-  }
-});
+    });
+}
 
 // --- Gemini AI Setup ---
 
@@ -312,7 +324,7 @@ const responseSchema = {
     required: ["technicalReport", "poeticAnalysis"]
 };
 
-function getSystemInstruction(tone: 'neutral' | 'praise' | 'roast') {
+function getFullSystemInstruction(tone: string) {
     let roleDescription = "";
     let toneDescription = "";
     let scoreGuidelines = "";
@@ -547,40 +559,42 @@ ${scoreGuidelines}
 `;
 }
 
+
 // --- Utility Functions ---
-/**
- * Converts a file to a base64 encoded string.
- */
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
       const result = reader.result as string;
-      // remove the "data:mime/type;base64," prefix
       resolve(result.split(',')[1]);
     };
     reader.onerror = (error) => reject(error);
   });
 }
 
-/**
- * Updates the state of the submit button.
- */
 function updateSubmitButtonState() {
+  if (!submitButton || !fileInput) return;
+  
   const file = fileInput.files?.[0];
+  const hasKey = (window as any).aistudio?.hasSelectedApiKey() || (process.env.API_KEY && process.env.API_KEY.length > 0);
+  
+  // Note: hasSelectedApiKey is async usually, but we rely on keyStatus class for UI state mostly.
+  // We'll trust that if a file is selected, we let them try to click submit, and handle key error there if needed.
   
   if (file) {
     submitButton.disabled = false;
+    submitButton.style.opacity = '1';
+    submitButton.style.cursor = 'pointer';
   } else {
     submitButton.disabled = true;
+    submitButton.style.opacity = '0.5';
+    submitButton.style.cursor = 'not-allowed';
   }
 }
 
-/**
- * Renders the critique from a structured JSON object into the main output panel.
- */
 async function renderCritique(critiqueData: any) {
+  if (!resultText) return;
   currentCritiqueData = critiqueData;
   let finalHtml = '';
   const report = critiqueData.technicalReport;
@@ -590,7 +604,7 @@ async function renderCritique(critiqueData: any) {
       return;
   }
 
-  // --- Technical Report ---
+  // Simplified Render Logic for stability
   finalHtml += `<h1>Технический Отчет</h1>`;
   
   // 1. Structure
@@ -625,14 +639,8 @@ async function renderCritique(critiqueData: any) {
     finalHtml += `<li><strong>Мелодические ходы:</strong> ${await marked.parseInline(report.harmonyAndMelody.melodicProgressions)}</li>`;
   }
   if (report.harmonyAndMelody.chords) {
-      const formattedChords = report.harmonyAndMelody.chords.replace(/\|/g, '\n').trim();
-      finalHtml += `<li style="display: block;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px; margin-bottom: 5px;">
-            <strong>Аккорды:</strong>
-            <button class="copy-btn" data-type="chords" title="Скопировать аккорды" style="font-size: 0.8em; padding: 2px 6px;">Копировать</button>
-        </div>
-        <div class="chords-container" style="padding: 10px; background: var(--background-color); border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${formattedChords}</div>
-      </li>`;
+      finalHtml += `<h2>3. Аккорды <button class="copy-btn" data-type="chords">Копировать</button></h2>`;
+      finalHtml += `<div class="chords-container">${report.harmonyAndMelody.chords}</div>`;
   }
   finalHtml += `</ul>`;
 
@@ -677,225 +685,158 @@ async function renderCritique(critiqueData: any) {
       finalHtml += `<div class="tags-container" style="padding: 10px; background: #f0f0f0; border-radius: 4px; margin-top: 10px;"><code>${report.tags}</code></div>`;
   }
 
-  // --- Poetic Analysis ---
   if (critiqueData.poeticAnalysis) {
-      finalHtml += `<hr style="margin: 40px 0; border-top: 2px solid #ccc;">`;
-      finalHtml += `<h1>Рецензия <button class="copy-btn" data-type="review" title="Скопировать рецензию">Копировать</button></h1>`;
+      finalHtml += `<hr><h1>Рецензия <button class="copy-btn" data-type="review">Копировать</button></h1>`;
       finalHtml += await marked.parse(critiqueData.poeticAnalysis);
   }
   
   resultText.innerHTML = DOMPurify.sanitize(finalHtml, { ADD_ATTR: ['target', 'class', 'data-type', 'title'] });
-  setupCopyButtons();
-}
-
-function setupCopyButtons() {
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const button = e.target as HTMLButtonElement;
-            const type = button.dataset.type;
-            let textToCopy = '';
-
-            if (currentCritiqueData) {
-                switch (type) {
-                    case 'structure':
-                        textToCopy = currentCritiqueData.technicalReport?.structureAndComposition?.structureMap || '';
-                        break;
-                    case 'style':
-                        textToCopy = currentCritiqueData.technicalReport?.sunoStylePrompt?.styleDescription || '';
-                        break;
-                    case 'tags':
-                        textToCopy = currentCritiqueData.technicalReport?.tags || '';
-                        break;
-                    case 'chords':
-                        textToCopy = currentCritiqueData.technicalReport?.harmonyAndMelody?.chords || '';
-                        break;
-                    case 'review':
-                        textToCopy = currentCritiqueData.poeticAnalysis || '';
-                        break;
-                }
-            }
-
-            if (textToCopy) {
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    const originalText = button.textContent;
-                    button.textContent = 'Скопировано!';
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Failed to copy: ', err);
-                });
-            }
-        });
-    });
+  
+  // Re-attach copy listeners
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+          const button = e.target as HTMLButtonElement;
+          const type = button.dataset.type;
+          let text = '';
+          if (type === 'structure') text = report.structureAndComposition.structureMap;
+          if (type === 'style') text = report.sunoStylePrompt.styleDescription;
+          if (type === 'chords') text = report.harmonyAndMelody.chords;
+          if (type === 'review') text = critiqueData.poeticAnalysis;
+          
+          if (text) navigator.clipboard.writeText(text);
+          const oldText = button.textContent;
+          button.textContent = 'Скопировано!';
+          setTimeout(() => button.textContent = oldText, 2000);
+      });
+  });
 }
 
 function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
+  
   if (file) {
     audioFile = file;
-    fileNameSpan.textContent = file.name;
+    if (fileNameSpan) fileNameSpan.textContent = file.name;
+    // Show player
     setupAudioPlayer(file);
   } else {
     audioFile = null;
-    fileNameSpan.textContent = 'Файл не выбран';
-    audioPlayerContainer.hidden = true;
+    if (fileNameSpan) fileNameSpan.textContent = 'Выберите файл';
+    if (audioPlayerContainer) audioPlayerContainer.hidden = true;
     stopAudio();
   }
   updateSubmitButtonState();
 }
 
 async function handleSubmit() {
-  // Logic: Use Env Key if available (includes server-injected or AI Studio selected key)
-  // We do NOT force openSelectKey here anymore to avoid the modal popup if a server key is present.
   const apiKeyToUse = process.env.API_KEY;
 
-  if (!apiKeyToUse) {
-      // If no key at all, AND we are in AI Studio, prompt now.
-      if ((window as any).aistudio) {
-          await (window as any).aistudio.openSelectKey();
-          checkKeyStatus();
-          return;
-      } else {
-          alert("API Key не найден. Убедитесь, что он настроен в переменных окружения.");
-          return;
-      }
+  if (!apiKeyToUse && !(window as any).aistudio) {
+       alert("API Key не найден.");
+       return;
+  }
+  
+  // If no Env key, try to force select in Studio
+  if (!apiKeyToUse && (window as any).aistudio) {
+       const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+       if (!hasKey) {
+           await (window as any).aistudio.openSelectKey();
+           checkKeyStatus(); // Update UI
+           return; // User needs to click submit again after selecting
+       }
   }
 
-  submitButton.disabled = true;
-  loader.hidden = false;
-  resultText.innerHTML = 'Ваш анализ появится здесь.';
-  scoreSummaryContainer.hidden = true;
-  scoreSummaryContainer.innerHTML = '';
+  if (submitButton) submitButton.disabled = true;
+  if (loader) loader.hidden = false;
+  if (resultText) resultText.innerHTML = '<div style="text-align:center; padding: 20px;">Анализирую трек...<br>Это может занять до минуты.</div>';
 
   try {
-    let contents;
+    const ai = new GoogleGenAI({ apiKey: apiKeyToUse || process.env.API_KEY });
     
-    // Create new instance
-    const ai = new GoogleGenAI({ apiKey: apiKeyToUse });
-    
-    // Logic: File is mandatory. Text is optional auxiliary input.
     if (audioFile) {
       const base64Audio = await fileToBase64(audioFile);
-      const lyrics = lyricsInput.value.trim();
-      const note = trackNoteInput.value.trim();
+      const lyrics = lyricsInput ? lyricsInput.value.trim() : "";
+      const note = trackNoteInput ? trackNoteInput.value.trim() : "";
       
       let promptText = "Проведи технический анализ трека и напиши комплексную рецензию.";
+      if (note) promptText += `\n\nКОНТЕКСТ: "${note}"`;
+      if (lyrics) promptText += `\n\nТЕКСТ ПЕСНИ: ${lyrics}`;
 
-      if (note) {
-        promptText += `\n\nДОПОЛНИТЕЛЬНЫЙ КОНТЕКСТ И ПОЖЕЛАНИЯ ОТ АВТОРА:\n"${note}"\n(Учти это при анализе смысла и общей оценке, но технический анализ делай объективно).`;
-      }
-
-      if (lyrics) {
-          promptText += `\n\nВот текст песни для анализа (используй его для оценки текста, вместо того чтобы пытаться расшифровать слова из аудио):\n${lyrics}`;
-      } else {
-          promptText += `\n\nТекст песни не предоставлен. Постарайся распознать слова из аудио для анализа текста.`;
-      }
-
-      contents = {
+      const contents = {
         parts: [
           { text: promptText },
-          {
-            inlineData: {
-              mimeType: audioFile.type,
-              data: base64Audio,
-            },
-          },
-        ],
+          { inlineData: { mimeType: audioFile.type, data: base64Audio } }
+        ]
       };
+      
+      const tone = toneSelector ? toneSelector.value : 'neutral';
+      const model = modelSelector ? modelSelector.value : 'gemini-2.5-flash';
+      
+      const response = await ai.models.generateContent({
+          model: model,
+          contents: contents,
+          config: {
+              systemInstruction: getFullSystemInstruction(tone),
+              responseMimeType: 'application/json',
+              responseSchema: responseSchema,
+              temperature: 0.4
+          }
+      });
+      
+      let jsonString = '';
+      if (typeof response.text === 'function') jsonString = response.text();
+      else if (typeof response.text === 'string') jsonString = response.text;
+      
+      if (jsonString) {
+          const data = JSON.parse(jsonString);
+          await renderCritique(data);
+      } else {
+          throw new Error("Empty response");
+      }
+
     } else {
-       alert("Пожалуйста, выберите аудиофайл.");
-       loader.hidden = true;
-       submitButton.disabled = false;
-       return;
-    }
-
-    const selectedModel = modelSelector.value;
-    const selectedTone = toneSelector.value as 'neutral' | 'praise' | 'roast';
-    const temperature = 0.4; // Slightly higher for more creative humor in praise/roast
-
-    const systemInstruction = getSystemInstruction(selectedTone);
-
-    const response = await ai.models.generateContent({
-      model: selectedModel,
-      contents: contents,
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: 'application/json',
-        responseSchema: responseSchema,
-        temperature: temperature,
-      },
-    });
-    
-    try {
-        // Handle response.text correctly depending on SDK version (function vs property)
-        let jsonString = '';
-        if (typeof response.text === 'function') {
-            jsonString = response.text();
-        } else if (typeof response.text === 'string') {
-             // @ts-ignore
-            jsonString = response.text;
-        } else if ((response as any).candidates && (response as any).candidates[0]) {
-             // Fallback for raw response structure
-             const candidate = (response as any).candidates[0];
-             if (candidate.content && candidate.content.parts && candidate.content.parts[0]) {
-                 jsonString = candidate.content.parts[0].text;
-             }
-        }
-
-        if (!jsonString) {
-            throw new Error("Empty response from AI");
-        }
-
-        const critiqueData = JSON.parse(jsonString.trim());
-        await renderCritique(critiqueData);
-    } catch (parseError) {
-        console.error("Ошибка парсинга JSON ответа:", parseError);
-        console.error("Сырой ответ ИИ:", response);
-        resultText.textContent = 'Произошла ошибка при обработке ответа ИИ. Ответ может не соответствовать формату JSON. Проверьте консоль.';
+       alert("Файл не выбран.");
     }
 
   } catch (error: any) {
     console.error(error);
-    if (error.message?.includes("Requested entity was not found") || error.message?.includes("API_KEY")) {
-        resultText.innerHTML = `<div class="error-msg" style="color: #f44336; padding: 10px; border: 1px solid #f44336; border-radius: 4px;">Ошибка ключа API. Возможно, текущий ключ не имеет доступа к модели. Пожалуйста, <a href="#" id="retry-key" style="color: inherit; text-decoration: underline;">выберите другой ключ</a>.</div>`;
-        document.getElementById('retry-key')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            if ((window as any).aistudio) {
-                (window as any).aistudio.openSelectKey();
-            }
-        });
-    } else {
-        resultText.textContent = `Ошибка: ${error.message || 'Не удалось получить ответ от AI'}`;
+    if (resultText) resultText.innerHTML = `<div style="color:red; padding:20px;">Ошибка: ${error.message}</div>`;
+    
+    // Check for key error
+    if (error.message?.includes("API_KEY") || error.message?.includes("403")) {
+         if ((window as any).aistudio) {
+             (window as any).aistudio.openSelectKey();
+         }
     }
   } finally {
-    loader.hidden = true;
+    if (loader) loader.hidden = true;
     updateSubmitButtonState();
   }
 }
 
 // --- Initialization ---
 function main() {
-    // Show both panels by default now
-    if(tabsContainer) tabsContainer.style.display = 'none';
-    panelUpload.hidden = false;
-    panelLyrics.hidden = false;
-    // Update labels to make clear lyrics are optional
-    const lyricsLabel = document.createElement('label');
-    lyricsLabel.textContent = "Текст песни (опционально, но рекомендуется)";
-    lyricsLabel.style.fontWeight = "bold";
-    lyricsLabel.style.marginBottom = "5px";
-    lyricsLabel.style.display = "block";
-    panelLyrics.insertBefore(lyricsLabel, lyricsInput);
+    console.log("App Initializing...");
     
-    fileInput.addEventListener('change', handleFileChange);
-    lyricsInput.addEventListener('input', updateSubmitButtonState);
-    trackNoteInput.addEventListener('input', updateSubmitButtonState);
-    submitButton.addEventListener('click', handleSubmit);
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileChange);
+        console.log("File input listener added");
+    } else {
+        console.error("CRITICAL: File input not found!");
+    }
+
+    if (lyricsInput) lyricsInput.addEventListener('input', updateSubmitButtonState);
+    if (trackNoteInput) trackNoteInput.addEventListener('input', updateSubmitButtonState);
+    if (submitButton) submitButton.addEventListener('click', handleSubmit);
     
-    updateSubmitButtonState();
     checkKeyStatus();
+    updateSubmitButtonState();
 }
 
-main();
+// Run main when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', main);
+} else {
+    main();
+}
