@@ -27,10 +27,6 @@ const selectKeyBtn = document.getElementById('select-key-btn') as HTMLButtonElem
 const keyStatus = document.getElementById('key-status') as HTMLSpanElement;
 const connectionHint = document.getElementById('connection-hint') as HTMLDivElement;
 
-const useManualKeyCheckbox = document.getElementById('use-manual-key') as HTMLInputElement;
-const manualKeyContainer = document.getElementById('manual-key-container') as HTMLDivElement;
-const manualApiKeyInput = document.getElementById('manual-api-key') as HTMLInputElement;
-
 // Player Elements
 const audioPlayerContainer = document.getElementById('audio-player-container') as HTMLDivElement;
 const audioElement = document.getElementById('audio-element') as HTMLAudioElement;
@@ -47,30 +43,9 @@ let audioFile: File | null = null;
 let currentCritiqueData: any = null;
 let isPlaying = false;
 let animationFrameId: number;
-// const API_KEY = process.env.API_KEY; // Reverted to dynamic key handling
 
 // --- API Key Management ---
 async function checkKeyStatus() {
-  const isManualMode = useManualKeyCheckbox.checked;
-  const manualKey = manualApiKeyInput.value.trim();
-
-  // 0. Manual Key Mode
-  if (isManualMode) {
-      if (manualKey.length > 10) { // Basic validation
-          keyStatus.textContent = '● Подключено (Ручной ввод)';
-          keyStatus.className = 'key-status key-ok';
-          if (connectionHint) connectionHint.hidden = true;
-          submitButton.textContent = 'Получить анализ';
-          updateSubmitButtonState();
-      } else {
-          keyStatus.textContent = '○ Введите ключ...';
-          keyStatus.className = 'key-status key-missing';
-          submitButton.textContent = 'Укажите корректный ключ';
-          submitButton.disabled = true;
-      }
-      return;
-  }
-
   const isAIStudio = !!(window as any).aistudio;
 
   // 1. Check if we are in AI Studio environment
@@ -89,9 +64,9 @@ async function checkKeyStatus() {
       }
   } 
   
-  // 2. Check if API Key is already provided via Environment (Deployment)
+  // 2. Check if API Key is already provided via Environment (Deployment or injected)
   if (process.env.API_KEY && process.env.API_KEY.length > 0) {
-      keyStatus.textContent = '● Подключено (Server)';
+      keyStatus.textContent = '● Подключено (Server/Env)';
       keyStatus.className = 'key-status key-ok';
       if (connectionHint) connectionHint.hidden = true;
       submitButton.textContent = 'Получить анализ';
@@ -117,132 +92,11 @@ async function checkKeyStatus() {
   }
 }
 
-// Manual Key Handlers
-useManualKeyCheckbox.addEventListener('change', () => {
-    manualKeyContainer.style.display = useManualKeyCheckbox.checked ? 'block' : 'none';
-    if (!useManualKeyCheckbox.checked) {
-        manualApiKeyInput.value = ''; // Optional: clear when unchecked
-    }
-    checkKeyStatus();
-});
-
-manualApiKeyInput.addEventListener('input', checkKeyStatus);
 /*
 async function fetchModels() {
-    try {
-        loadModelsBtn.textContent = "Загрузка...";
-        loadModelsBtn.disabled = true;
-
-        // Create a temporary client to list models
-        const apiKey = process.env.API_KEY;
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-        
-        console.log("AI Instance:", ai);
-        
-        let models = [];
-
-        // Strategy 1: Try SDK models.list()
-        // Note: In @google/genai v0.7.0, it might be ai.models.list() or accessed differently.
-        // We check for function existence.
-        if (ai.models && typeof ai.models.list === 'function') {
-             console.log("Using SDK ai.models.list()");
-             const response = await ai.models.list();
-             models = (response as any).models || response;
-        } 
-        // Strategy 2: Try REST API via fetch
-        else if (apiKey) {
-             console.log("SDK list() not found. Trying REST API...");
-             // Try a simple GET request. 400 usually means bad parameter or API key issue in query param.
-             // Sometimes passing key in header is safer/better supported.
-             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models`, {
-                 headers: {
-                     'x-goog-api-key': apiKey
-                 }
-             });
-             
-             if (!response.ok) {
-                 const errorText = await response.text();
-                 throw new Error(`REST API Error: ${response.status} ${response.statusText} - ${errorText}`);
-             }
-             const data = await response.json();
-             models = data.models || [];
-        } else {
-             throw new Error("SDK method missing and API Key not available for REST fallback.");
-        }
-
-        // Show loading state in the selector
-        const currentSelection = modelSelector.value;
-
-        const originalOptions = Array.from(modelSelector.options).map(opt => ({ value: opt.value, text: opt.text }));
-        
-        // Add a temporary loading option if it doesn't exist
-        if (!modelSelector.querySelector('option[value="loading"]')) {
-             const loadingOpt = document.createElement('option');
-             loadingOpt.value = "loading";
-             loadingOpt.text = "Загрузка моделей...";
-             loadingOpt.disabled = true;
-             modelSelector.add(loadingOpt, 0);
-        }
-
-        // const response = await ai.models.list(); // Removed redundant call
-        
-        // Clear existing options
-        modelSelector.innerHTML = '';
-
-        // Filter for models that support generation and sort them
-        // Note: The SDK returns an object with a 'models' property or an array depending on version.
-        // We handle the likely response structure.
-        // const models = (response as any).models || response; // Already handled above
-        
-        if (Array.isArray(models)) {
-            const genModels = models
-                .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
-                .sort((a: any, b: any) => b.displayName.localeCompare(a.displayName)); // Sort by name
-
-            genModels.forEach((model: any) => {
-                const option = document.createElement('option');
-                // Remove 'models/' prefix if present for cleaner value, usually required by API without prefix or with it depending on usage.
-                // The SDK usually handles 'models/' prefix fine, but let's keep the full name if it comes with it.
-                // However, in select values we usually used just 'gemini-pro'. Let's check format.
-                // API usually returns 'models/gemini-pro'.
-                const value = model.name.startsWith('models/') ? model.name.replace('models/', '') : model.name;
-                
-                option.value = value;
-                option.text = model.displayName || value;
-                
-                // Keep useful models at the top or mark experimental
-                if (value.includes('gemini-1.5-pro') || value.includes('gemini-1.5-flash')) {
-                    option.style.fontWeight = 'bold';
-                }
-                
-                modelSelector.appendChild(option);
-            });
-
-            // Restore selection if it still exists, otherwise default to a reasonable new one
-            if (Array.from(modelSelector.options).some(opt => opt.value === currentSelection)) {
-                modelSelector.value = currentSelection;
-            } else {
-                 // Try to select a "latest" or "pro" model by default if the previous one is gone
-                 const bestDefault = Array.from(modelSelector.options).find(opt => opt.value.includes('gemini-1.5-pro-latest') || opt.value.includes('gemini-1.5-flash'));
-                 if (bestDefault) {
-                     modelSelector.value = bestDefault.value;
-                 }
-            }
-        }
-    } catch (error: any) {
-        console.error("Failed to fetch models:", error);
-        alert(`Не удалось загрузить список моделей:\n${error.message}\n\nОстаются доступны модели по умолчанию.`);
-        
-        // If fetch fails, keep the hardcoded options
-        const loadingOpt = modelSelector.querySelector('option[value="loading"]');
-        if (loadingOpt) loadingOpt.remove();
-    } finally {
-        loadModelsBtn.textContent = "🔄 Загрузить список моделей (тест)";
-        loadModelsBtn.disabled = false;
-    }
+    // ... (fetchModels logic remains same but commented out)
 }
-
-loadModelsBtn.addEventListener('click', fetchModels);
+// loadModelsBtn.addEventListener('click', fetchModels);
 */
 
 selectKeyBtn.addEventListener('click', async () => {
@@ -341,7 +195,6 @@ progressContainer.addEventListener('click', (e) => {
 });
 
 // --- Gemini AI Setup ---
-// const ai = new GoogleGenAI({ apiKey: API_KEY }); // Moved to handleSubmit
 
 const SUNO_TAGS_REFERENCE = `
 **Suno AI Tag Dictionary**
@@ -894,26 +747,20 @@ function handleFileChange(event: Event) {
 }
 
 async function handleSubmit() {
-  const isManualMode = useManualKeyCheckbox.checked;
-  const manualKey = manualApiKeyInput.value.trim();
+  // Logic: Use Env Key if available (includes server-injected or AI Studio selected key)
+  // We do NOT force openSelectKey here anymore to avoid the modal popup if a server key is present.
+  const apiKeyToUse = process.env.API_KEY;
 
-  // Validate Key presence
-  if (isManualMode) {
-      if (!manualKey) {
-          alert("Введите API Key вручную.");
+  if (!apiKeyToUse) {
+      // If no key at all, AND we are in AI Studio, prompt now.
+      if ((window as any).aistudio) {
+          await (window as any).aistudio.openSelectKey();
+          checkKeyStatus();
+          return;
+      } else {
+          alert("API Key не найден. Убедитесь, что он настроен в переменных окружения.");
           return;
       }
-  } else if ((window as any).aistudio) {
-      const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-      if (!hasKey) {
-        await (window as any).aistudio.openSelectKey();
-        checkKeyStatus();
-        return;
-      }
-  } else if (!process.env.API_KEY) {
-      // If NOT in AI Studio and NO Env key -> Error
-      alert("API Key не найден. Убедитесь, что он настроен в переменных окружения.");
-      return;
   }
 
   submitButton.disabled = true;
@@ -925,16 +772,7 @@ async function handleSubmit() {
   try {
     let contents;
     
-    // Determine which key to use
-    let apiKeyToUse = process.env.API_KEY; // Default: Server/Env Key
-    if (isManualMode) {
-        apiKeyToUse = manualKey;
-        console.log("Using Manual API Key");
-    }
-
-    // Create new instance to ensure we use the freshly selected key
-    // In Google AI Studio environment, process.env.API_KEY is updated dynamically or handled by the client
-    // In Deployment, process.env.API_KEY is injected by the server
+    // Create new instance
     const ai = new GoogleGenAI({ apiKey: apiKeyToUse });
     
     // Logic: File is mandatory. Text is optional auxiliary input.
@@ -1021,10 +859,12 @@ async function handleSubmit() {
   } catch (error: any) {
     console.error(error);
     if (error.message?.includes("Requested entity was not found") || error.message?.includes("API_KEY")) {
-        resultText.innerHTML = `<div class="error-msg" style="color: #f44336; padding: 10px; border: 1px solid #f44336; border-radius: 4px;">Ошибка ключа API. Пожалуйста, <a href="#" id="retry-key" style="color: inherit; text-decoration: underline;">выберите ключ еще раз</a>.</div>`;
+        resultText.innerHTML = `<div class="error-msg" style="color: #f44336; padding: 10px; border: 1px solid #f44336; border-radius: 4px;">Ошибка ключа API. Возможно, текущий ключ не имеет доступа к модели. Пожалуйста, <a href="#" id="retry-key" style="color: inherit; text-decoration: underline;">выберите другой ключ</a>.</div>`;
         document.getElementById('retry-key')?.addEventListener('click', (e) => {
             e.preventDefault();
-            (window as any).aistudio.openSelectKey();
+            if ((window as any).aistudio) {
+                (window as any).aistudio.openSelectKey();
+            }
         });
     } else {
         resultText.textContent = `Ошибка: ${error.message || 'Не удалось получить ответ от AI'}`;
@@ -1051,6 +891,7 @@ function main() {
     
     fileInput.addEventListener('change', handleFileChange);
     lyricsInput.addEventListener('input', updateSubmitButtonState);
+    trackNoteInput.addEventListener('input', updateSubmitButtonState);
     submitButton.addEventListener('click', handleSubmit);
     
     updateSubmitButtonState();
