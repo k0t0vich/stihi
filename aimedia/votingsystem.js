@@ -12,7 +12,7 @@ const isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop
 class VotingSystem {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
 
-        //$('.voting-alert').remove();
+        $('.voting-alert').remove();
 
         if (!user) {
             console.error("User ID is not defined");
@@ -71,7 +71,7 @@ class VotingSystem {
         }).get();
 
         // В New System голоса определяются порядком сортировки, старые данные не нужны
-        if (isOld) {
+        if (isOld && !isDebug) {
             this.tracks.forEach(track => {
                 if (track.isVoted && track.place !== null) {
                     this.votes[track.uid] = track.place;
@@ -84,11 +84,11 @@ class VotingSystem {
     _checkPermissions() {
         const $container = $(this.containerSelector);
         $('.voting-alert').remove();
+        // Remove any existing vote buttons if we are resetting/reloading
+        if (!isOld) $container.find('.vote-button').remove();
 
         // If DEBUG, we bypass standard checks but clean up UI
         if (isDebug) {
-             // Remove any existing vote buttons if we are resetting/reloading
-             if (!isOld) $container.find('.vote-button').remove();
              return true;
         }
 
@@ -310,8 +310,11 @@ class VotingSystem {
     _checkAndRenderResultsButton() {
         const votedInDomCount = $(this.containerSelector).find('[data-isvoted="1"]').length;
         
-        if (Object.keys(this.votes).length === this.MAX_VOTES && votedInDomCount < this.MAX_VOTES) {
-             this.showResultsModal(); 
+        // В Debug режиме игнорируем votedInDomCount, т.к. мы сбрасываем состояние
+        if (Object.keys(this.votes).length === this.MAX_VOTES) {
+             if (isDebug || votedInDomCount < this.MAX_VOTES) {
+                 this.showResultsModal();
+             }
         }
     }
 

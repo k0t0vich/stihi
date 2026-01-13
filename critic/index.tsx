@@ -14,16 +14,22 @@ const panelLyrics = document.getElementById('panel-lyrics') as HTMLDivElement;
 const fileInput = document.getElementById('file-upload') as HTMLInputElement;
 const fileNameSpan = document.getElementById('file-name') as HTMLSpanElement;
 const lyricsInput = document.getElementById('lyrics-input') as HTMLTextAreaElement;
+const trackNoteInput = document.getElementById('track-note') as HTMLTextAreaElement;
 const submitButton = document.getElementById('submit-button') as HTMLButtonElement;
 const loader = document.getElementById('loader') as HTMLDivElement;
 const resultText = document.getElementById('result-text') as HTMLDivElement;
 const modelSelector = document.getElementById('model-selector') as HTMLSelectElement;
+// const loadModelsBtn = document.getElementById('load-models-btn') as HTMLButtonElement;
 const toneSelector = document.getElementById('tone-selector') as HTMLSelectElement;
 const scoreSummaryContainer = document.getElementById('score-summary-container') as HTMLElement;
 
 const selectKeyBtn = document.getElementById('select-key-btn') as HTMLButtonElement;
 const keyStatus = document.getElementById('key-status') as HTMLSpanElement;
 const connectionHint = document.getElementById('connection-hint') as HTMLDivElement;
+
+const useManualKeyCheckbox = document.getElementById('use-manual-key') as HTMLInputElement;
+const manualKeyContainer = document.getElementById('manual-key-container') as HTMLDivElement;
+const manualApiKeyInput = document.getElementById('manual-api-key') as HTMLInputElement;
 
 // Player Elements
 const audioPlayerContainer = document.getElementById('audio-player-container') as HTMLDivElement;
@@ -45,26 +51,214 @@ let animationFrameId: number;
 
 // --- API Key Management ---
 async function checkKeyStatus() {
-  const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-  if (hasKey) {
-    keyStatus.textContent = '● Подключено';
-    keyStatus.className = 'key-status key-ok';
-    if (connectionHint) connectionHint.hidden = true;
-    submitButton.textContent = 'Получить анализ';
-    updateSubmitButtonState();
-  } else {
-    keyStatus.textContent = '○ Не подключено';
-    keyStatus.className = 'key-status key-missing';
-    if (connectionHint) connectionHint.hidden = false;
-    submitButton.textContent = 'Сначала подключите ключ';
-    submitButton.disabled = true;
+  const isManualMode = useManualKeyCheckbox.checked;
+  const manualKey = manualApiKeyInput.value.trim();
+
+  // 0. Manual Key Mode
+  if (isManualMode) {
+      if (manualKey.length > 10) { // Basic validation
+          keyStatus.textContent = '● Подключено (Ручной ввод)';
+          keyStatus.className = 'key-status key-ok';
+          if (connectionHint) connectionHint.hidden = true;
+          submitButton.textContent = 'Получить анализ';
+          updateSubmitButtonState();
+      } else {
+          keyStatus.textContent = '○ Введите ключ...';
+          keyStatus.className = 'key-status key-missing';
+          submitButton.textContent = 'Укажите корректный ключ';
+          submitButton.disabled = true;
+      }
+      return;
+  }
+
+  const isAIStudio = !!(window as any).aistudio;
+
+  // 1. Check if we are in AI Studio environment
+  if (isAIStudio) {
+      // Always show the select key button in AI Studio
+      selectKeyBtn.hidden = false;
+
+      const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+      if (hasKey) {
+        keyStatus.textContent = '● Выбран ключ (AI Studio)';
+        keyStatus.className = 'key-status key-ok';
+        if (connectionHint) connectionHint.hidden = true;
+        submitButton.textContent = 'Получить анализ';
+        updateSubmitButtonState();
+        return;
+      }
+  } 
+  
+  // 2. Check if API Key is already provided via Environment (Deployment)
+  if (process.env.API_KEY && process.env.API_KEY.length > 0) {
+      keyStatus.textContent = '● Подключено (Server)';
+      keyStatus.className = 'key-status key-ok';
+      if (connectionHint) connectionHint.hidden = true;
+      submitButton.textContent = 'Получить анализ';
+      
+      // Hide button ONLY if NOT in AI Studio
+      if (!isAIStudio) {
+        selectKeyBtn.hidden = true;
+      }
+      
+      updateSubmitButtonState();
+      return;
+  }
+
+  // 3. Not connected
+  keyStatus.textContent = '○ Не подключено';
+  keyStatus.className = 'key-status key-missing';
+  if (connectionHint) connectionHint.hidden = false;
+  submitButton.textContent = 'Сначала подключите ключ';
+  submitButton.disabled = true;
+  
+  if (!isAIStudio) {
+    selectKeyBtn.hidden = true;
   }
 }
 
+// Manual Key Handlers
+useManualKeyCheckbox.addEventListener('change', () => {
+    manualKeyContainer.style.display = useManualKeyCheckbox.checked ? 'block' : 'none';
+    if (!useManualKeyCheckbox.checked) {
+        manualApiKeyInput.value = ''; // Optional: clear when unchecked
+    }
+    checkKeyStatus();
+});
+
+manualApiKeyInput.addEventListener('input', checkKeyStatus);
+/*
+async function fetchModels() {
+    try {
+        loadModelsBtn.textContent = "Загрузка...";
+        loadModelsBtn.disabled = true;
+
+        // Create a temporary client to list models
+        const apiKey = process.env.API_KEY;
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        
+        console.log("AI Instance:", ai);
+        
+        let models = [];
+
+        // Strategy 1: Try SDK models.list()
+        // Note: In @google/genai v0.7.0, it might be ai.models.list() or accessed differently.
+        // We check for function existence.
+        if (ai.models && typeof ai.models.list === 'function') {
+             console.log("Using SDK ai.models.list()");
+             const response = await ai.models.list();
+             models = (response as any).models || response;
+        } 
+        // Strategy 2: Try REST API via fetch
+        else if (apiKey) {
+             console.log("SDK list() not found. Trying REST API...");
+             // Try a simple GET request. 400 usually means bad parameter or API key issue in query param.
+             // Sometimes passing key in header is safer/better supported.
+             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models`, {
+                 headers: {
+                     'x-goog-api-key': apiKey
+                 }
+             });
+             
+             if (!response.ok) {
+                 const errorText = await response.text();
+                 throw new Error(`REST API Error: ${response.status} ${response.statusText} - ${errorText}`);
+             }
+             const data = await response.json();
+             models = data.models || [];
+        } else {
+             throw new Error("SDK method missing and API Key not available for REST fallback.");
+        }
+
+        // Show loading state in the selector
+        const currentSelection = modelSelector.value;
+
+        const originalOptions = Array.from(modelSelector.options).map(opt => ({ value: opt.value, text: opt.text }));
+        
+        // Add a temporary loading option if it doesn't exist
+        if (!modelSelector.querySelector('option[value="loading"]')) {
+             const loadingOpt = document.createElement('option');
+             loadingOpt.value = "loading";
+             loadingOpt.text = "Загрузка моделей...";
+             loadingOpt.disabled = true;
+             modelSelector.add(loadingOpt, 0);
+        }
+
+        // const response = await ai.models.list(); // Removed redundant call
+        
+        // Clear existing options
+        modelSelector.innerHTML = '';
+
+        // Filter for models that support generation and sort them
+        // Note: The SDK returns an object with a 'models' property or an array depending on version.
+        // We handle the likely response structure.
+        // const models = (response as any).models || response; // Already handled above
+        
+        if (Array.isArray(models)) {
+            const genModels = models
+                .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+                .sort((a: any, b: any) => b.displayName.localeCompare(a.displayName)); // Sort by name
+
+            genModels.forEach((model: any) => {
+                const option = document.createElement('option');
+                // Remove 'models/' prefix if present for cleaner value, usually required by API without prefix or with it depending on usage.
+                // The SDK usually handles 'models/' prefix fine, but let's keep the full name if it comes with it.
+                // However, in select values we usually used just 'gemini-pro'. Let's check format.
+                // API usually returns 'models/gemini-pro'.
+                const value = model.name.startsWith('models/') ? model.name.replace('models/', '') : model.name;
+                
+                option.value = value;
+                option.text = model.displayName || value;
+                
+                // Keep useful models at the top or mark experimental
+                if (value.includes('gemini-1.5-pro') || value.includes('gemini-1.5-flash')) {
+                    option.style.fontWeight = 'bold';
+                }
+                
+                modelSelector.appendChild(option);
+            });
+
+            // Restore selection if it still exists, otherwise default to a reasonable new one
+            if (Array.from(modelSelector.options).some(opt => opt.value === currentSelection)) {
+                modelSelector.value = currentSelection;
+            } else {
+                 // Try to select a "latest" or "pro" model by default if the previous one is gone
+                 const bestDefault = Array.from(modelSelector.options).find(opt => opt.value.includes('gemini-1.5-pro-latest') || opt.value.includes('gemini-1.5-flash'));
+                 if (bestDefault) {
+                     modelSelector.value = bestDefault.value;
+                 }
+            }
+        }
+    } catch (error: any) {
+        console.error("Failed to fetch models:", error);
+        alert(`Не удалось загрузить список моделей:\n${error.message}\n\nОстаются доступны модели по умолчанию.`);
+        
+        // If fetch fails, keep the hardcoded options
+        const loadingOpt = modelSelector.querySelector('option[value="loading"]');
+        if (loadingOpt) loadingOpt.remove();
+    } finally {
+        loadModelsBtn.textContent = "🔄 Загрузить список моделей (тест)";
+        loadModelsBtn.disabled = false;
+    }
+}
+
+loadModelsBtn.addEventListener('click', fetchModels);
+*/
+
 selectKeyBtn.addEventListener('click', async () => {
-  await (window as any).aistudio.openSelectKey();
-  // Assume success immediately to improve UX
-  checkKeyStatus();
+  if ((window as any).aistudio) {
+      await (window as any).aistudio.openSelectKey();
+      
+      // Visual feedback and slight delay to ensure env is updated
+      keyStatus.textContent = '⟳ Применение ключа...';
+      keyStatus.className = 'key-status';
+      
+      setTimeout(() => {
+          checkKeyStatus();
+      }, 500);
+  } else {
+      alert("В этом режиме выбор ключа недоступен. Используется ключ сервера.");
+  }
 });
 
 // --- Audio Player Functions ---
@@ -578,7 +772,14 @@ async function renderCritique(critiqueData: any) {
     finalHtml += `<li><strong>Мелодические ходы:</strong> ${await marked.parseInline(report.harmonyAndMelody.melodicProgressions)}</li>`;
   }
   if (report.harmonyAndMelody.chords) {
-      finalHtml += `<li><strong>Аккорды:</strong> <span style="font-family: monospace; background: #eee; padding: 2px 4px; border-radius: 3px;">${report.harmonyAndMelody.chords}</span></li>`;
+      const formattedChords = report.harmonyAndMelody.chords.replace(/\|/g, '\n').trim();
+      finalHtml += `<li style="display: block;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px; margin-bottom: 5px;">
+            <strong>Аккорды:</strong>
+            <button class="copy-btn" data-type="chords" title="Скопировать аккорды" style="font-size: 0.8em; padding: 2px 6px;">Копировать</button>
+        </div>
+        <div class="chords-container" style="padding: 10px; background: var(--background-color); border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${formattedChords}</div>
+      </li>`;
   }
   finalHtml += `</ul>`;
 
@@ -652,6 +853,9 @@ function setupCopyButtons() {
                     case 'tags':
                         textToCopy = currentCritiqueData.technicalReport?.tags || '';
                         break;
+                    case 'chords':
+                        textToCopy = currentCritiqueData.technicalReport?.harmonyAndMelody?.chords || '';
+                        break;
                     case 'review':
                         textToCopy = currentCritiqueData.poeticAnalysis || '';
                         break;
@@ -690,11 +894,26 @@ function handleFileChange(event: Event) {
 }
 
 async function handleSubmit() {
-  const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-  if (!hasKey) {
-    await (window as any).aistudio.openSelectKey();
-    checkKeyStatus();
-    return;
+  const isManualMode = useManualKeyCheckbox.checked;
+  const manualKey = manualApiKeyInput.value.trim();
+
+  // Validate Key presence
+  if (isManualMode) {
+      if (!manualKey) {
+          alert("Введите API Key вручную.");
+          return;
+      }
+  } else if ((window as any).aistudio) {
+      const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+      if (!hasKey) {
+        await (window as any).aistudio.openSelectKey();
+        checkKeyStatus();
+        return;
+      }
+  } else if (!process.env.API_KEY) {
+      // If NOT in AI Studio and NO Env key -> Error
+      alert("API Key не найден. Убедитесь, что он настроен в переменных окружения.");
+      return;
   }
 
   submitButton.disabled = true;
@@ -706,16 +925,30 @@ async function handleSubmit() {
   try {
     let contents;
     
+    // Determine which key to use
+    let apiKeyToUse = process.env.API_KEY; // Default: Server/Env Key
+    if (isManualMode) {
+        apiKeyToUse = manualKey;
+        console.log("Using Manual API Key");
+    }
+
     // Create new instance to ensure we use the freshly selected key
     // In Google AI Studio environment, process.env.API_KEY is updated dynamically or handled by the client
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // In Deployment, process.env.API_KEY is injected by the server
+    const ai = new GoogleGenAI({ apiKey: apiKeyToUse });
     
     // Logic: File is mandatory. Text is optional auxiliary input.
     if (audioFile) {
       const base64Audio = await fileToBase64(audioFile);
       const lyrics = lyricsInput.value.trim();
+      const note = trackNoteInput.value.trim();
       
       let promptText = "Проведи технический анализ трека и напиши комплексную рецензию.";
+
+      if (note) {
+        promptText += `\n\nДОПОЛНИТЕЛЬНЫЙ КОНТЕКСТ И ПОЖЕЛАНИЯ ОТ АВТОРА:\n"${note}"\n(Учти это при анализе смысла и общей оценке, но технический анализ делай объективно).`;
+      }
+
       if (lyrics) {
           promptText += `\n\nВот текст песни для анализа (используй его для оценки текста, вместо того чтобы пытаться расшифровать слова из аудио):\n${lyrics}`;
       } else {
@@ -758,12 +991,30 @@ async function handleSubmit() {
     });
     
     try {
-        const jsonString = response.text().trim();
-        const critiqueData = JSON.parse(jsonString);
+        // Handle response.text correctly depending on SDK version (function vs property)
+        let jsonString = '';
+        if (typeof response.text === 'function') {
+            jsonString = response.text();
+        } else if (typeof response.text === 'string') {
+             // @ts-ignore
+            jsonString = response.text;
+        } else if ((response as any).candidates && (response as any).candidates[0]) {
+             // Fallback for raw response structure
+             const candidate = (response as any).candidates[0];
+             if (candidate.content && candidate.content.parts && candidate.content.parts[0]) {
+                 jsonString = candidate.content.parts[0].text;
+             }
+        }
+
+        if (!jsonString) {
+            throw new Error("Empty response from AI");
+        }
+
+        const critiqueData = JSON.parse(jsonString.trim());
         await renderCritique(critiqueData);
     } catch (parseError) {
         console.error("Ошибка парсинга JSON ответа:", parseError);
-        console.error("Сырой ответ ИИ:", response.text());
+        console.error("Сырой ответ ИИ:", response);
         resultText.textContent = 'Произошла ошибка при обработке ответа ИИ. Ответ может не соответствовать формату JSON. Проверьте консоль.';
     }
 

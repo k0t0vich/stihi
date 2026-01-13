@@ -33,6 +33,18 @@
                   Для работы приложения необходимо подключить ваш API ключ Google AI Studio. 
                   Это безопасно — ключ используется только в вашем браузере.
               </div>
+              
+              <!-- Manual API Key Input Section -->
+              <div style="margin-top: 15px;">
+                  <label style="font-size: 0.9em; display: flex; align-items: center; cursor: pointer;">
+                      <input type="checkbox" id="use-manual-key" style="margin-right: 8px;">
+                      Использовать свой API ключ вручную (для Pro моделей)
+                  </label>
+                  <div id="manual-key-container" style="display: none; margin-top: 8px;">
+                      <input type="password" id="manual-api-key" placeholder="Вставьте ваш API ключ (начинается с AIza...)" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--background-color); color: var(--on-surface-color);">
+                  </div>
+              </div>
+
             </div>
           </div>
 
@@ -44,6 +56,7 @@
               <option value="gemini-2.5-flash">Gemini 2.5 Flash (Быстрая)</option>
               <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
             </select>
+            <!-- <button id="load-models-btn" style="margin-top: 5px; font-size: 0.8em; padding: 4px; background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; color: var(--on-surface-color);">🔄 Загрузить список моделей (тест)</button> -->
           </div>
 
           <div class="setting-item">
@@ -80,6 +93,9 @@
           </div>
         </div>
         <div id="panel-lyrics" class="input-container" hidden>
+          <label for="track-note" style="font-weight: bold; display: block; margin-bottom: 5px;">Примечание (контекст, пожелания):</label>
+          <textarea id="track-note" placeholder="Например: 'Вдохновлено книгой...', 'Живая запись', 'Добавь панк-угара'..." style="box-sizing: border-box; width: 100%; height: 80px; background-color: var(--background-color); color: var(--on-surface-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; font-size: 1rem; resize: vertical; margin-bottom: 15px;"></textarea>
+          
           <textarea id="lyrics-input" placeholder="Вставьте текст песни сюда..."></textarea>
         </div>
 
