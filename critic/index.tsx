@@ -429,15 +429,18 @@ function getSystemInstruction(tone: 'neutral' | 'praise' | 'roast') {
     
     *Important:* Do not use generic style names only. Be specific with subgenres (e.g., instead of "Electronic", use "Big Beat, UK Garage, 90s Jungle").
     
-    *Focus heavily on vocal description:* Gender, tone (raspy, clear, belting), delivery style, and emotional intent.
+    *CRITICAL: Focus heavily on vocal description and singing manner.* You MUST describe the voice texture and delivery style in detail.
+    *Use these descriptors as inspiration (mix and match):* "raw gritty contralto, raspy female vocals, hoarse androgynous tone, grunge punk snarl, unhinged emotional delivery, breathy cracked singing, low alto range, dynamic whisper-to-scream, 90s alt-rock female voice, imperfect dissonant vocals".
+    
     *Include:* Instrumentation details (playing style), tempo/BPM, key/mood, and mixing characteristics.
     
-    *Reference Guide:*
-    ${SUNO_TAGS_REFERENCE}
-    
-    *Example:*
-    "A melancholic folk ballad in a minor key, featuring a female vocalist with a clear, expressive voice. The instrumentation includes an acoustic guitar playing arpeggiated chords, a cello providing a rich, sustained counter-melody, and a subtle, almost imperceptible percussion track that emphasizes the downbeats. The tempo is slow, around 60-70 BPM. The production is clean, with the vocals prominent in the mix, and the instruments providing a warm, supportive bed. There is a slight reverb on the vocals, adding to the emotional depth. The chord progression is primarily i-VI-VII-III in a minor key, creating a sense of longing and sadness."
+    *RESTRICTION:* DO NOT use specific artist names or band names (e.g. "like Nirvana"). Use genre and style descriptors instead (e.g. "90s grunge style").
 
+    
+    *Examples:*
+    "A melancholic folk ballad in a minor key, featuring a female vocalist with a clear, expressive voice. The instrumentation includes an acoustic guitar playing arpeggiated chords, a cello providing a rich, sustained counter-melody, and a subtle, almost imperceptible percussion track that emphasizes the downbeats. The tempo is slow, around 60-70 BPM. The production is clean, with the vocals prominent in the mix, and the instruments providing a warm, supportive bed. There is a slight reverb on the vocals, adding to the emotional depth. The chord progression is primarily i-VI-VII-III in a minor key, creating a sense of longing and sadness."
+    "A melancholic and atmospheric Russian indie rock track blending elements of post-punk and synth-pop, The song features a mid-tempo 4/4 beat at approximately 110 BPM, driven by a punchy, compressed drum kit with a prominent snare, A thick, distorted electric bassline provides the harmonic foundation, while shimmering, chorus-drenched electric guitars play arpeggiated melodies, The male vocals are delivered in a deep, emotive baritone with a slight reverb, transitioning from intimate verses to a powerful, anthemic chorus, The chorus is characterized by soaring synth pads and high-energy guitar riffs, The production is polished, utilizing wide stereo imaging and subtle delay effects on the vocals to enhance the moody, nostalgic atmosphere, The song structure follows a traditional verse-chorus-verse-chorus-bridge-chorus format, maintaining a consistent minor key throughout"
+    "A high-energy punk rock track with a driving tempo of 180 BPM in the key of E minor, The song features a male vocalist with a raw, aggressive delivery, often shouting or yelling, The instrumentation includes distorted electric guitars playing power chords and fast riffs, a prominent bass guitar providing a strong rhythmic foundation, and a drum kit with a powerful, driving beat characterized by frequent snare hits and cymbal crashes, The song structure is verse-chorus, with a clear distinction between sections, Production elements include heavy distortion on guitars, a punchy drum mix, and a forward vocal presence, The melody is largely driven by the vocal line and guitar riffs, with a focus on rhythmic intensity rather than complex melodic contours, The overall feel is rebellious and energetic"
     **Дополнительно для JSON:**
     *   **Similar Tracks**: Укажи 3-4 конкретные группы и песни (Референсы). ВАЖНО: Если анализируемая песня на русском языке, ОБЯЗАТЕЛЬНО приведи примеры русскоязычных исполнителей (схожесть по тексту, вайбу, культурному коду), а также иностранных (схожесть по музыке, аранжировке, стилю).
 
