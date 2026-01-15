@@ -209,7 +209,7 @@ Use these at the very beginning of the prompt to define the overall sound.
 *   [mix]: Production qualities, acoustic space (e.g., [mix: Live Unplugged Session, Room Reverb]).
 
 **2. Structural Meta-Tags (Place at start of section):**
-[Intro], [Verse], [Pre-Chorus], [Chorus], [Bridge], [Outro], [Hook], [Break], [Interlude], [Solo], [Instrumental Break], [Drop], [Build], [Ending].
+[Intro], [Verse], [Pre-Chorus], [Chorus], [Bridge], [Outro], [Hook], [Break], [Interlude], [Solo], [Instrumental Break], [Drop],[Long Instrumental Drop] [Build], [Ending].
 
 **3. Vocal Tags (Voice & Delivery):**
 *   **Gender:** [Male Vocal], [Female Vocal].
@@ -239,7 +239,7 @@ const responseSchema = {
                 structureAndComposition: {
                     type: Type.OBJECT,
                     properties: {
-                        structureMap: { type: Type.STRING, description: "Полная карта трека для Suno. ОБЯЗАТЕЛЬНО должна начинаться с блока мета-данных ([style], [vocal]...), за которым следует таймлайн структуры ([Intro], [Verse]...). Используй тег [chords: ...] для указания аккордов в секциях." },
+                        structureMap: { type: Type.STRING, description: "Полная карта трека для Suno. ВАЖНОЕ ПРАВИЛО ДЛЯ РУССКОГО ТЕКСТА: 1. Во всех словах русского текста ты ОБЯЗАН расставлять знаки ударения, используя символы из списка: Á á Ó ó É é ý и́ ы́ э́ ю́ я́ И́ а́ е́ и́ о́ у́ ы́ э́ ю́ я́. Пример: Я по́мню чу́дное мгнове́нье. 2. БУКВА 'Ё': Обязательно используй букву 'ё' везде, где она должна быть (моё, всё, ещё)." },
                         standardCompliance: { type: Type.STRING, description: "Соответствие стандарту" },
                         introDuration: { type: Type.STRING, description: "Длительность интро" },
                         outroDuration: { type: Type.STRING, description: "Длительность аутро" },
@@ -251,9 +251,9 @@ const responseSchema = {
                     type: Type.OBJECT,
                     properties: {
                          styleDescription: { type: Type.STRING, description: "Подробное описание стиля на английском (до 1000 символов) для генерации в Suno." },
-                         classification: { type: Type.STRING, description: "Жанровая классификация (основной и вторичные)" },
-                         genreMarkers: { type: Type.STRING, description: "Жанровые маркеры" },
-                         modernityScore: { type: Type.STRING, description: "Оценка современности" },
+                         classification: { type: Type.STRING, description: "Жанровая классификация (основной и вторичные) на русском"  },
+                         genreMarkers: { type: Type.STRING, description: "Жанровые маркеры на русском" },
+                         modernityScore: { type: Type.STRING, description: "Оценка современности на русском" },
                          similarTracks: { type: Type.STRING, description: "Список из 3-4 групп и песен. Если песня на русском — обязательно включи русские аналоги (по тексту/вайбу) и иностранные (по музыке/стилю)." }
                     },
                     required: ["styleDescription", "classification", "genreMarkers", "modernityScore", "similarTracks"]
@@ -262,10 +262,10 @@ const responseSchema = {
                      type: Type.OBJECT,
                      properties: {
                          key: { type: Type.STRING, description: "Тональность" },
-                         harmonyComplexity: { type: Type.STRING, description: "Сложность гармонии" },
-                         vocalRange: { type: Type.STRING, description: "Вокальный диапазон" },
-                         melodicProgressions: { type: Type.STRING, description: "Основные мелодические ходы (описание)" },
-                         chords: { type: Type.STRING, description: "Аккордовые последовательности для основных частей (Intro, Verse, Chorus). Пример: Verse: Am-F-C-G" }
+                         harmonyComplexity: { type: Type.STRING, description: "Сложность гармонии - на русском" },
+                         vocalRange: { type: Type.STRING, description: "Вокальный диапазон - на русском" },
+                         melodicProgressions: { type: Type.STRING, description: "Основные мелодические ходы (описание) - на русском" },
+                         chords: { type: Type.STRING, description: "Аккордовые последовательности для основных частей (Intro, Verse, Chorus). Пример: [Verse 1, power chords] \rAm-F-C-G - с переносом на новую строку - каждый куплет припев и проигрыши указать, если распознаны аккорды" }
                      },
                      required: ["key", "harmonyComplexity", "vocalRange", "melodicProgressions", "chords"]
                 },
@@ -290,7 +290,7 @@ const responseSchema = {
                 summaryAnalysis: {
                     type: Type.OBJECT,
                      properties: {
-                         knownTrack: { type: Type.STRING, description: "Заполняй ТОЛЬКО если это 100% кавер или оригинал известного хита. Формат: 'Распознан хит: [Название - Исполнитель]'. Если это просто похожая песня или авторская работа - пиши СТРОГО 'Оригинальная композиция'." },
+                         knownTrack: { type: Type.STRING, description: "Заполняй ТОЛЬКО если это 100% кавер (совпадение текста и мелодии). Если трек просто похож стилистически - пиши 'Оригинальная композиция'." },
                          genreCompliance: { type: Type.STRING, description: "Соответствие жанру и уникальность" },
                          compositionSummary: { type: Type.STRING, description: "Резюме по композиции" },
                          textMelodySummary: { type: Type.STRING, description: "Резюме по тексту и мелодике" }
@@ -379,43 +379,52 @@ function getSystemInstruction(tone: 'neutral' | 'praise' | 'roast') {
         ${SUNO_TAGS_REFERENCE}
         
         **Формат вывода (строго соблюдай этот шаблон):**
-        Ты обязан включить ОБЕ части в поле \`structureMap\`: сначала мета-данные, затем таймлайн.
-        
-        **ЧАСТЬ 1: HEADER META-DATA (Вставь это в самом начале):**
+        Ты обязан включить  части в поле \`structureMap\`: сначала мета-данные, затем таймлайн.
         [style: Detailed style description with era and references]
         [vocal: Detailed vocal description with gender, tone, and delivery]
         [instrumentation: Detailed list of instruments]
         [mood: Mood descriptors]
         [tempo: BPM | groove: Groove description | energy: Energy level]
         [mix: Mixing and production details]
-        
-        **ЧАСТЬ 2: TIMELINE (Detailed Tags):**
         Используй формат: \`[Section Type | Style/Voice Tags | Chords: ... | Duration]\`
         ВАЖНО:
         1. Каждый тег секции пиши с новой строки.
         2. Текст песни (если есть) пиши СТРОГО с новой строки после тега. ВСТАВЛЯЙ ВЕСЬ РАСПОЗНАННЫЙ ТЕКСТ (не сокращай, не используй многоточия, пиши полный текст куплета/припева).
         3. Между окончанием текста одной секции и началом следующего тега делай пустую строку (отступ).
         4. Если можешь определить аккорды, добавляй их в тег секции (например, \`| Chords: Am - G - F\`). Если не уверен — пропусти.
+        5. ОБЯЗАТЕЛЬНО выделяй значимые инструментальные изменения (Drop, Solo, Instrumental Break, Beat Switch) в отдельные секции.
+        6. Внутри инструментальных секций (где нет текста) ОБЯЗАТЕЛЬНО используй тильды (~) на отдельных строках для заполнения пространства. Одна тильда (~) примерно соответствует одному такту (или 2-3 секундам).
+        7. Если в треке слышен бэк-вокал или эдлибы, добавляй их в текст песни в круглых скобках, например: "(o-o-o, моя оборона)".
+        8. КРИТИЧЕСКИ ВАЖНО ДЛЯ РУССКОГО ТЕКСТА:
+           - Ты ОБЯЗАН расставить ударения в словах (особенно многосложных), чтобы показать правильный ритмический рисунок.
+           - Используй символы: Á á Ó ó É é ý и́ ы́ э́ ю́ я́ И́ а́ е́ и́ о́ у́ ы́ э́ ю́ я́.
+           - Пример: "Я по́мню чу́дное мгнове́нье".
+           - Также используй букву 'ё' везде, где она нужна.
         
-        *Пример полного ответа:*
-        [style: 1990s Acoustic Rock / Alternative Rock]
+        *Пример полного ответа (Russian Text Mode):*
+        [style: 1990s Acoustic Rock / Alternative Rock - на русском]
         [vocal: Male voice like Kurt Cobain — strained, raw, emotional]
         [instrumentation: Acoustic-electric guitar, acoustic bass, stripped-down drum kit]
         [mood: Intimate, melancholic, somber]
         [tempo: 92 BPM | groove: Slow, deliberate | energy: Subdued]
         [mix: Simulates a live, intimate studio session]
+     
+        [Verse 1 | Deep male baritone, monotone delivery | Chords: Am - F - C - E | 0:15-0:45]
+        Я шёл по тёмной у́лице вперёд
+        Где мёрзлый лёд и тьма меня́ зовёт
+        (Меня́ зовёт...)
         
-        [Intro | Acoustic Guitar fingerpicking, lo-fi texture | Chords: Em - G - A - C | 0:00-0:15]
-        
-        [Verse 1 | Raspy male vocal, intimate delivery | Chords: Em - G - A - C | 0:15-0:45]
-        I walked down the lonely road
-        And saw the shadow of my soul
+        [Long Instrumental Drop | Distorted electric guitars, heavy drums, high energy | Chords: E - A - B - C# | 0:45-1:00]
+        ~
+        ~
+        ~
+        ~
         
         [Pre-Chorus | Building energy, rising synth | Chords: C - D - Em | 0:45-1:00]
         
         [Chorus | Anthemic, stacked harmonies, heavy drums | Chords: G - D - Am - C | 1:00-1:30]
-        We are the champions
-        My friends
+         Где мёрзлый лёд и тьма меня́ зовёт
+        (Меня́ зовёт...)
         
         [Outro | Fading feedback | 2:50-3:00]
         
@@ -451,9 +460,9 @@ function getSystemInstruction(tone: 'neutral' | 'praise' | 'roast') {
 
 4.  **Ритм и Грув**: BPM, ритмическая основа, синкопирование. (На русском)
 5.  **Текст и Вокал (Технически)**: Схема рифмовки, лексическое разнообразие, динамический диапазон. Удели внимание разнообразности припевов и куплетов, распиши схемы - хорей, анапест, смешанное.. (На русском)
-6.  **Сводный Технический Анализ**: Резюме по жанру, композиции и просодии. (На русском)
-    *   **Распознавание хита**: Заполняй поле knownTrack ТОЛЬКО если ты уверен, что это кавер или оригинал известного хита. Если песня просто *похожа* по стилю или напоминает что-то — пиши "Оригинальная композиция", а похожесть опиши в поле similarTracks. Не путай вдохновение с кавером!
-7.  **Теги**: 3-5 тегов на английском. Сначала ОБЩИЕ жанры, затем СПЕЦИФИЧЕСКИЕ поджанры (например: Electronic, Breakbeat, Big Beat).
+    6.  **Сводный Технический Анализ**: Резюме по жанру, композиции и просодии. (На русском)
+    *   **Распознавание хита**: Заполняй поле knownTrack ТОЛЬКО если это 100% кавер с полным совпадением текста и мелодии. Если трек просто похож по стилю, жанру или напоминает творчество известной группы — пиши "Оригинальная композиция". НЕ ПИШИ, что это хит, если просто "похож вайб".
+    7.  **Теги**: 3-5 тегов на английском. Сначала ОБЩИЕ жанры, затем СПЕЦИФИЧЕСКИЕ поджанры (например: Electronic, Breakbeat, Big Beat).
 
 **ЗАДАЧА 2: КОМПЛЕКСНАЯ РЕЦЕНЗИЯ (Поле \`poeticAnalysis\`)**
 *** ТЕКУЩИЙ РЕЖИМ: ${tone.toUpperCase()} (Следуй инструкциям ниже!) ***
@@ -507,6 +516,7 @@ ${scoreGuidelines}
     *   Анализ: Затянутость, логичность структуры, необычность. Есть ли странные склейки или обрывы (характерные для нейросетей)?
     *   Оценка (из 10):
     
+    
     **Формат вывода для (Markdown):**
     
     ОБЯЗАТЕЛЬНО СЛЕДУЙ ЭТОЙ СТРУКТУРЕ (включая заголовки и нумерацию):
@@ -524,6 +534,11 @@ ${scoreGuidelines}
         *   **Микс**: [Оценка]/10. [Краткий комментарий]
         *   **Композиция**: [Оценка]/10. [Краткий комментарий]
         *   *(Сумма баллов должна совпадать с итоговой оценкой)*
+        
+        **Итоговая оценка:**
+        *   **Текст:** A / 50 (сумма баллов из ЧАСТЬ 1) Пример: 5+5+5+5+5 = 25/50
+        *   **Музыка:** B / 50 сумма баллов из ЧАСТЬ 2) Пример: 5+5+5+5+5 = 25/50
+        *   **Общая оценка:** (A + B) / 100 (ВАЖНО: Это СУММА баллов A и B. НЕ дели на 2. Пример: 42 + 45 = 87/100)
 
     2.  **Анализ общего настроения музыки и текста песни.**
         (Опиши атмосферу и эмоциональный посыл).
@@ -540,11 +555,6 @@ ${scoreGuidelines}
 
     5.  **Вердикт и Совет**:
         (Подведи итог и дай рекомендацию - добавь рекомендации по улучшению текста и музыки).
-
-   ### Вердикт (в баллах)
-*   **Текст:** A / 50
-*   **Музыка:** B / 50 (или "N/A")
-*   **Общая оценка:** (A + B) / 100 (ВАЖНО: Это СУММА баллов A и B. НЕ дели на 2. Пример: 42 + 45 = 87/100)
 
 Твой ВЕСЬ вывод должен быть единственным валидным JSON объектом.
 `;

@@ -115,7 +115,7 @@
     color: var(--on-surface-color);
     opacity: 0.7;
     margin-top: 5px;
-}
+  }
   
   .tabs {
     display: flex;
@@ -385,7 +385,7 @@
     justify-content: space-between;
     align-items: center;
   }
-
+  
   #result-text h4 {
     font-size: 1.1em;
     font-weight: 600;
