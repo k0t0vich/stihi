@@ -386,7 +386,9 @@ function getSystemInstruction(tone: 'neutral' | 'praise' | 'roast') {
         [mood: Mood descriptors]
         [tempo: BPM | groove: Groove description | energy: Energy level]
         [mix: Mixing and production details]
-        Используй формат: \`[Section Type | Style/Voice Tags | Chords: ... | Duration]\`
+        
+        И затем сразу структуру:
+        [Intro | Style/Voice Tags | Chords: ... | Duration]
         ВАЖНО:
         1. Каждый тег секции пиши с новой строки.
         2. Текст песни (если есть) пиши СТРОГО с новой строки после тега. ВСТАВЛЯЙ ВЕСЬ РАСПОЗНАННЫЙ ТЕКСТ (не сокращай, не используй многоточия, пиши полный текст куплета/припева).
@@ -610,7 +612,7 @@ async function renderCritique(critiqueData: any) {
   finalHtml += `<h2>1. Структура и Композиция (Suno Blueprint) <button class="copy-btn" data-type="structure" title="Скопировать структуру">Копировать</button></h2>`;
   // Use a pre block or styled div for the blueprint to preserve formatting.
   // We do NOT use marked.parse here to strictly preserve the AI's newlines and spacing.
-  finalHtml += `<div class="blueprint-container" style="background: var(--background-color); color: var(--on-surface-color); border: 1px solid var(--border-color); padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap;">${report.structureAndComposition.structureMap}</div>`;
+  finalHtml += `<div class="blueprint-container tech-block">${report.structureAndComposition.structureMap}</div>`;
   finalHtml += `<ul>`;
   finalHtml += `<li><strong>Соответствие стандарту:</strong> ${await marked.parseInline(report.structureAndComposition.standardCompliance)}</li>`;
   finalHtml += `<li><strong>Длительность интро:</strong> ${report.structureAndComposition.introDuration}</li>`;
@@ -622,7 +624,7 @@ async function renderCritique(critiqueData: any) {
   finalHtml += `<h2>2. Жанр и Стиль (Suno Style Prompt) <button class="copy-btn" data-type="style" title="Скопировать стиль">Копировать</button></h2>`;
   finalHtml += `<ul>`;
   finalHtml += `<li><strong>Classification:</strong> ${await marked.parseInline(report.sunoStylePrompt.classification)}</li>`;
-  finalHtml += `<li><strong>Suno Prompt:</strong> <div style="background: var(--background-color); color: var(--on-surface-color); border: 1px solid var(--border-color); padding: 10px; border-radius: 4px; margin-top: 5px; font-style: italic;">${report.sunoStylePrompt.styleDescription}</div></li>`;
+  finalHtml += `<li><strong>Suno Prompt:</strong> <div class="tech-block">${report.sunoStylePrompt.styleDescription}</div></li>`;
   finalHtml += `<li><strong>Markers:</strong> ${await marked.parseInline(report.sunoStylePrompt.genreMarkers)}</li>`;
   finalHtml += `<li><strong>Modernity:</strong> ${await marked.parseInline(report.sunoStylePrompt.modernityScore)}</li>`;
   finalHtml += `<li><strong>Похоже на:</strong> ${await marked.parseInline(report.sunoStylePrompt.similarTracks)}</li>`;
@@ -644,7 +646,7 @@ async function renderCritique(critiqueData: any) {
             <strong>Аккорды:</strong>
             <button class="copy-btn" data-type="chords" title="Скопировать аккорды" style="font-size: 0.8em; padding: 2px 6px;">Копировать</button>
         </div>
-        <div class="chords-container" style="padding: 10px; background: var(--background-color); border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${formattedChords}</div>
+        <div class="chords-container tech-block">${formattedChords}</div>
       </li>`;
   }
   finalHtml += `</ul>`;
@@ -687,7 +689,7 @@ async function renderCritique(critiqueData: any) {
   // 7. Tags
   if (report.tags) {
       finalHtml += `<h3>Теги (для MP3) <button class="copy-btn" data-type="tags" title="Скопировать теги">Копировать</button></h3>`;
-      finalHtml += `<div class="tags-container" style="padding: 10px; background: #f0f0f0; border-radius: 4px; margin-top: 10px;"><code>${report.tags}</code></div>`;
+      finalHtml += `<div class="tags-container tech-block">${report.tags}</div>`;
   }
 
   // --- Poetic Analysis ---
@@ -888,19 +890,34 @@ async function handleSubmit() {
   }
 }
 
+// --- Modal Logic ---
+const authorLink = document.getElementById('author-link') as HTMLAnchorElement;
+const authorModal = document.getElementById('author-modal') as HTMLDivElement;
+const modalClose = document.getElementById('modal-close') as HTMLSpanElement;
+
+if (authorLink && authorModal && modalClose) {
+    authorLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        authorModal.style.display = 'block';
+    });
+
+    modalClose.addEventListener('click', () => {
+        authorModal.style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === authorModal) {
+            authorModal.style.display = 'none';
+        }
+    });
+}
+
 // --- Initialization ---
 function main() {
     // Show both panels by default now
     if(tabsContainer) tabsContainer.style.display = 'none';
     panelUpload.hidden = false;
     panelLyrics.hidden = false;
-    // Update labels to make clear lyrics are optional
-    const lyricsLabel = document.createElement('label');
-    lyricsLabel.textContent = "Текст песни (опционально, но рекомендуется)";
-    lyricsLabel.style.fontWeight = "bold";
-    lyricsLabel.style.marginBottom = "5px";
-    lyricsLabel.style.display = "block";
-    panelLyrics.insertBefore(lyricsLabel, lyricsInput);
     
     fileInput.addEventListener('change', handleFileChange);
     lyricsInput.addEventListener('input', updateSubmitButtonState);
