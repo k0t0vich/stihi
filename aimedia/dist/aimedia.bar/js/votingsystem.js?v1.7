@@ -1,5 +1,5 @@
 // DEBUG & CONFIG
-const isDebug = false;
+const isDebug = true;
 
 function detectIsMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
@@ -139,7 +139,7 @@ class VotingSystem {
         }));
 
         if (isDebug) {
-            const alertMessage = "TEST MODE: Голоса отправлены!\n\nPayload:\n" + 
+            const alertMessage = "TEST MODE: Голоса отправлены!\n\nPayload:\n" +
                                  JSON.stringify(payload, null, 2);
             alert(alertMessage);
             console.log("TEST MODE Payload:", payload);
@@ -189,19 +189,19 @@ class VotingSystem {
     _renderVoteButtons() {
         // Logic similar to _checkPermissions was here, but we moved the checks.
         // Here we just render the buttons for valid tracks.
-        
+
         const $container = $(this.containerSelector);
-        
+
         this.tracks.forEach(track => {
             // Skip user's own track
             if (parseInt(track.userId, 10) === this.user.id) {
                 $(track.element).find('.rating-container').html('<span class="vote-status">Вы не можете голосовать за самого себя!</span>');
-                $(track.element).find('.vote-button').remove(); 
+                $(track.element).find('.vote-button').remove();
                 return;
             }
-            
+
             let $voteButton = $(track.element).find('.vote-button');
-            
+
             if ($voteButton.length === 0) {
                 $voteButton = $('<button>').addClass('vote-button');
                 const $ratingContainer = $(track.element).find('.rating-container');
@@ -214,7 +214,7 @@ class VotingSystem {
                     }
                 }
             }
-            
+
             // Update button state
             if (this.votes[track.uid]) {
                 $voteButton.text(`${this.votes[track.uid]} место`).addClass('voted');
@@ -230,10 +230,10 @@ class VotingSystem {
         $('body').on('click', `${this.containerSelector} .vote-button`, function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const $card = $(this).closest('.track-card');
             const trackUid = $card.data('uid');
-            
+
             if (self.votes[trackUid]) {
                 self.openCancelModal($card, trackUid);
             } else {
@@ -246,19 +246,19 @@ class VotingSystem {
         const self = this;
         const $modal = this._createVoteModal(trackUid);
         $('body').append($modal);
-        
+
         $modal.find('[data-place]').on('click', function() {
             const place = parseInt($(this).data('place'), 10);
             if (!self.remainingPlaces.includes(place)) return;
-            
+
             self.votes[trackUid] = place;
             self.remainingPlaces = self.remainingPlaces.filter(p => p !== place);
-            
+
             self._updateTrackCard($card, trackUid);
             self._checkAndRenderResultsButton();
             $modal.remove();
         });
-        
+
         $modal.find('.modal-close').on('click', () => $modal.remove());
         $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
     }
@@ -267,18 +267,18 @@ class VotingSystem {
         const self = this;
         const $modal = this._createCancelModal(trackUid);
         $('body').append($modal);
-        
+
         $modal.find('.confirm-cancel').on('click', function() {
             const place = self.votes[trackUid];
             delete self.votes[trackUid];
             self.remainingPlaces.push(place);
             self.remainingPlaces.sort((a, b) => a - b);
-            
+
             self._updateTrackCard($card, trackUid);
             self._checkAndRenderResultsButton();
             $modal.remove();
         });
-        
+
         $modal.find('.modal-close').on('click', () => $modal.remove());
         $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
     }
@@ -286,7 +286,7 @@ class VotingSystem {
     _updateTrackCard($card, trackUid) {
         const $voteButton = $card.find('.vote-button');
         if ($voteButton.length === 0) return;
-        
+
         if (this.votes[trackUid]) {
             $voteButton.text(`${this.votes[trackUid]} место`).addClass('voted');
         } else {
@@ -296,7 +296,7 @@ class VotingSystem {
 
     _checkAndRenderResultsButton() {
         const votedInDomCount = $(this.containerSelector).find('[data-isvoted="1"]').length;
-        
+
         // В Debug режиме игнорируем votedInDomCount, т.к. мы сбрасываем состояние
         if (Object.keys(this.votes).length === this.MAX_VOTES) {
              if (isDebug || votedInDomCount < this.MAX_VOTES) {
@@ -310,12 +310,12 @@ class VotingSystem {
         const $modalContent = $('<div>').addClass('modal-content');
         const $heading = $('<h5>').addClass('modal-title').text('На какое место хотели бы поставить трек?');
         const $placeButtons = $('<div>').addClass('place-buttons');
-        
+
         this.remainingPlaces.forEach(place => {
             const $button = $('<button>').addClass('place-button').attr('data-place', place).text(place);
             $placeButtons.append($button);
         });
-        
+
         const $closeButton = $('<button>').addClass('modal-close cancel-button').text('Отменить');
         $modalContent.append($heading).append($placeButtons).append($closeButton);
         $modal.append($modalContent);
@@ -327,11 +327,11 @@ class VotingSystem {
         const $modalContent = $('<div>').addClass('modal-content');
         const $heading = $('<h5>').addClass('modal-title').text('Отменить голосование?');
         const $message = $('<p>').addClass('modal-message').text(`Вы действительно хотите отменить голос на ${this.votes[trackUid]} место?`);
-        
+
         const $buttonContainer = $('<div>').addClass('modal-actions');
         const $confirmButton = $('<button>').addClass('confirm-cancel danger-button').text('Да, отменить');
         const $closeButton = $('<button>').addClass('modal-close cancel-button').text('Нет');
-        
+
         $buttonContainer.append($confirmButton).append($closeButton);
         $modalContent.append($heading).append($message).append($buttonContainer);
         $modal.append($modalContent);
@@ -644,24 +644,20 @@ class VotingSystem {
 
     _bindBadgeClicks() {
         const self = this;
-
-        // Обработчик для всех значков (voted и non-voted)
-        $('body').off('click', `${this.containerSelector} .rank-badge`);
-        $('body').on('click', `${this.containerSelector} .rank-badge`, function(e) {
+        $('body').off('click', `${this.containerSelector} .rank-badge.non-voted`);
+        $('body').on('click', `${this.containerSelector} .rank-badge.non-voted`, function(e) {
             e.preventDefault();
             e.stopPropagation();
-            e.stopImmediatePropagation();
 
             const $badge = $(this);
             const $card = $badge.closest('.track-card');
             const trackUid = $card.data('uid');
             const track = self.tracks.find(t => t.uid === trackUid);
 
-            if (!track) return;
-
-            // Переключаем состояние voted
-            track.voted = !track.voted;
-            self._updateRankings();
+            if (track) {
+                track.voted = true;
+                self._updateRankings();
+            }
         });
     }
 
