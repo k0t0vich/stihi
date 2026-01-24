@@ -346,10 +346,70 @@ class VotingSystem {
         this._renderSubmitControl();
         this._initializeVotedFlags(); // Initialize voted flags
         this._updateRankings();
+        this._monkeyPatchPlayer(); // Патчим плеер ПОСЛЕ создания badge
         this._setPlayerPlayList();
-        this._bindBadgeClicks(); // Bind click handlers to badges
         this._setupPlayerListeners(); // Listen for play events
         this._initializeListenIndicators(); // Initialize listen progress indicators
+    }
+
+    _monkeyPatchPlayer() {
+        const self = this;
+
+        // Добавляем нативный перехватчик на каждую track-card с capture: true
+        $(this.containerSelector).find('.track-card').each(function() {
+            const card = this;
+
+            const clickInterceptor = function(e) {
+                // Проверяем клик по badge
+                const badge = e.target.closest('.rank-badge');
+
+                if (badge) {
+                    // Блокируем распространение к плееру
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+
+                    if (isDebug) {
+                        console.log('[Card Interceptor] Перехвачен клик по badge');
+                    }
+
+                    // Обрабатываем переключение voted
+                    const $badge = $(badge);
+                    const $card = $badge.closest('.track-card');
+                    const trackUid = $card.data('uid');
+                    const track = self.tracks.find(t => t.uid === trackUid);
+
+                    if (track) {
+                        const wasVoted = track.voted;
+                        track.voted = !track.voted;
+
+                        if (isDebug) {
+                            console.log(`[Card Interceptor] ${track.title}: ${wasVoted} → ${track.voted}`);
+                        }
+
+                        self._updateRankings();
+                    }
+
+                    return false;
+                }
+
+                // Блокируем клики по listen-indicator (только для UI, без логики)
+                const indicator = e.target.closest('.listen-indicator');
+                if (indicator) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            };
+
+            // Нативный addEventListener с capture: true - сработает РАНЬШЕ jQuery обработчиков
+            card.addEventListener('click', clickInterceptor, true);
+        });
+
+        if (isDebug) {
+            console.log('[MonkeyPatch] Установлены нативные перехватчики на', $(this.containerSelector).find('.track-card').length, 'карточек');
+        }
     }
 
     _initialRandomSort() {
@@ -421,6 +481,7 @@ class VotingSystem {
         });
     }
 
+
     _updateRankings() {
         const $cards = $(this.containerSelector).find('.track-card');
         let currentPlace = 1;
@@ -434,6 +495,7 @@ class VotingSystem {
             const track = self.tracks.find(t => t.uid === trackUid);
 
             let $badge = $card.find('.rank-badge');
+
             if ($badge.length === 0) {
                 $badge = $('<div>').addClass('rank-badge');
                 $card.append($badge);
@@ -441,7 +503,7 @@ class VotingSystem {
 
             if (trackUserId === self.user.id) {
                 $card.addClass('my-track');
-                $badge.removeClass('visible voted non-voted prize non-prize');
+                $badge.removeClass('visible voted non-voted prize non-prize').hide();
                 return;
             }
 
@@ -451,7 +513,7 @@ class VotingSystem {
             const isPrize = currentPlace <= self.MAX_VOTES;
 
             // Set badge number and classes
-            $badge.text(currentPlace).addClass('visible');
+            $badge.text(currentPlace).addClass('visible').show();
             $badge.removeClass('voted non-voted prize non-prize');
 
             if (track && track.voted) {
@@ -462,12 +524,18 @@ class VotingSystem {
                 } else {
                     $badge.addClass('non-prize');
                 }
+                if (isDebug) {
+                    console.log(`[_updateRankings] Track ${currentPlace}: ${track.title} - voted ${isPrize ? 'prize' : 'non-prize'}`);
+                }
             } else {
                 $badge.addClass('non-voted');
                 if (isPrize) {
                     $badge.addClass('prize');
                 } else {
                     $badge.addClass('non-prize');
+                }
+                if (isDebug && track) {
+                    console.log(`[_updateRankings] Track ${currentPlace}: ${track.title} - non-voted ${isPrize ? 'prize' : 'non-prize'}`);
                 }
             }
 
@@ -642,24 +710,6 @@ class VotingSystem {
         }
     }
 
-    _bindBadgeClicks() {
-        const self = this;
-        $('body').off('click', `${this.containerSelector} .rank-badge.non-voted`);
-        $('body').on('click', `${this.containerSelector} .rank-badge.non-voted`, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const $badge = $(this);
-            const $card = $badge.closest('.track-card');
-            const trackUid = $card.data('uid');
-            const track = self.tracks.find(t => t.uid === trackUid);
-
-            if (track) {
-                track.voted = true;
-                self._updateRankings();
-            }
-        });
-    }
 
     _injectMinimalStyles() {
         if (!$('#ranking-styles').length) {
@@ -680,7 +730,8 @@ class VotingSystem {
                     .rank-badge.voted.prize {
                         background: #ff0055;
                         opacity: 1;
-                        pointer-events: none;
+                        pointer-events: auto;
+                        cursor: pointer;
                         border-color: white;
                     }
 
@@ -688,7 +739,8 @@ class VotingSystem {
                     .rank-badge.voted.non-prize {
                         background: #666666;
                         opacity: 1;
-                        pointer-events: none;
+                        pointer-events: auto;
+                        cursor: pointer;
                         border-color: white;
                     }
 
@@ -756,7 +808,7 @@ class VotingSystem {
                     }
 
                     .submit-votes-panel {
-                        position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+                        position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
                         background: #1a1a1a; padding: 15px 30px; border-radius: 50px;
                         z-index: 9999; display: flex; gap: 15px; align-items: center; border: 1px solid #333;
                     }
@@ -783,7 +835,7 @@ class VotingSystem {
 
     _setPlayerPlayList() {
         if (this._updateTimeout) clearTimeout(this._updateTimeout);
-        
+
         this._updateTimeout = setTimeout(() => {
             const container = this.containerSelector;
             const $cards = $(container).find('.track-card');
@@ -796,12 +848,12 @@ class VotingSystem {
                     id: $el.data('uid'),
                     title: $el.data('title'),
                     artist: $el.data('artist'),
-                    file: $el.data('audio') || $el.data('url'), 
+                    file: $el.data('audio') || $el.data('url'),
                     cover: $el.data('cover'),
                     duration: $el.data('duration'),
                     genre: $el.data('genre'),
                 };
-                
+
                 newList.push({
                     data: trackData,
                     $el: $el
@@ -813,12 +865,12 @@ class VotingSystem {
                 if (!this.player.playlists[container]) {
                      this.player.playlists[container] = { list: [] };
                 }
-                
+
                 this.player.playlists[container].list = newList;
                 if (typeof this.player._resyncPlaylistIndexes === 'function') {
                     this.player._resyncPlaylistIndexes(container);
                 }
-                
+
                 if (this.player.currentPlaylist === container && this.player.currentTrack) {
                     const newIndex = newList.findIndex(item => item.data.uid === this.player.currentTrack.uid);
                     if (this.player.playlists[container]) {
@@ -842,21 +894,21 @@ class VotingSystem {
     // New System Modal (Desktop)
     _showResultsModalNew() {
         const sortedVotes = Object.entries(this.votes).sort((a, b) => a[1] - b[1]);
-        
+
         const $modal = $('<div>').addClass('modal-overlay modal-results');
         const $modalContent = $('<div>').addClass('modal-content');
         const $heading = $('<h5>').addClass('modal-title').text('Результаты голосования');
         const $votesContainer = $('<div>').addClass('sortable-container');
-        
+
         sortedVotes.forEach(([trackUid, place]) => {
             const track = this.tracks.find(t => t.uid === trackUid);
             if (!track) return;
-            
+
             const $item = $('<div>')
                 .addClass('sortable-item')
                 .attr('data-track-uid', trackUid)
                 .attr('data-place', place);
-            
+
             const $itemContent = $('<div>').addClass('sortable-item-content');
             const $placeCircle = $('<span>').addClass('place-circle').text(place);
             const $trackInfo = $('<span>').addClass('track-info-text')
@@ -866,24 +918,24 @@ class VotingSystem {
             $item.append($itemContent);
             $votesContainer.append($item);
         });
-        
+
         const $buttonContainer = $('<div>').addClass('modal-actions');
         const $confirmButton = $('<button>').addClass('confirm-button').text('Подтвердить и отправить');
         const $cancelButton = $('<button>').addClass('cancel-button').text('Вернуться');
-        
+
         $buttonContainer.append($confirmButton).append($cancelButton);
         $modalContent.append($heading).append($votesContainer).append($buttonContainer);
         $modal.append($modalContent);
         $('body').append($modal);
-        
+
         const self = this;
-        
+
         $confirmButton.on('click', function() {
             self.sendVote(sortedVotes);
             $modal.remove();
-            $('#submit-votes-panel').addClass('hidden'); 
+            $('#submit-votes-panel').addClass('hidden');
         });
-        
+
         $cancelButton.on('click', () => $modal.remove());
         $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
     }
@@ -891,28 +943,28 @@ class VotingSystem {
     // Old System Modal
     _showResultsModalOld() {
         const sortedVotes = Object.entries(this.votes).sort((a, b) => a[1] - b[1]);
-        
+
         const $modal = $('<div>').addClass('modal-overlay modal-results');
         const $modalContent = $('<div>').addClass('modal-content');
         const $heading = $('<h5>').addClass('modal-title').text('Результаты голосования');
         const $votesContainer = $('<div>').addClass('sortable-container');
-        
+
         sortedVotes.forEach(([trackUid, place]) => {
             const track = this.tracks.find(t => t.uid === trackUid);
             if (!track) return;
-            
+
             const $item = $('<div>')
                 .addClass('sortable-item')
                 .attr('draggable', true) // In old system this was draggable but on mobile drag might be tricky, staying faithful to old code
                 .attr('data-track-uid', trackUid)
                 .attr('data-place', place);
-            
+
             const $itemContent = $('<div>').addClass('sortable-item-content');
             const $placeCircle = $('<span>').addClass('place-circle').text(place);
             const $trackInfo = $('<span>').addClass('track-info-text')
                 .html(`<div class="text-pink marquee-container">
                     <span class="track-title text-black marquee-text">${track.artist} — ${track.title}</span></div>`);
-            
+
             // Marquee initialization if available
             const $titleContainer = $trackInfo;
             if (typeof $titleContainer.marquee === 'function') {
@@ -942,21 +994,21 @@ class VotingSystem {
         const $buttonContainer = $('<div>').addClass('modal-actions');
         const $confirmButton = $('<button>').addClass('confirm-button').text('Подтвердить');
         const $cancelButton = $('<button>').addClass('cancel-button').text('Отменить');
-        
+
         $buttonContainer.append($confirmButton).append($cancelButton);
         $modalContent.append($heading).append($votesContainer).append($buttonContainer);
         $modal.append($modalContent);
         $('body').append($modal);
-        
+
         const self = this;
-        
+
         $confirmButton.on('click', function() {
             const updatedVotes = self._collectSortedVotes($votesContainer);
             self._updateVotesFromSortedList(updatedVotes);
             $modal.remove();
             self.showConfirmModal(updatedVotes);
         });
-        
+
         $cancelButton.on('click', () => $modal.remove());
         $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
     }
@@ -988,12 +1040,12 @@ class VotingSystem {
         const $buttonContainer = $('<div>').addClass('modal-actions');
         const $confirmButton = $('<button>').addClass('confirm-button').text('Да');
         const $cancelButton = $('<button>').addClass('cancel-button').text('Нет');
-        
+
         $buttonContainer.append($confirmButton).append($cancelButton);
         $modalContent.append($heading).append($message).append($buttonContainer);
         $modal.append($modalContent);
         $('body').append($modal);
-        
+
         $confirmButton.on('click', function() {
             self.sendVote(sortedVotes);
             $modal.remove();

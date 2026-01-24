@@ -1,5 +1,5 @@
 // DEBUG & CONFIG
-const isDebug = false;
+const isDebug = true;
 
 function detectIsMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
@@ -346,10 +346,70 @@ class VotingSystem {
         this._renderSubmitControl();
         this._initializeVotedFlags(); // Initialize voted flags
         this._updateRankings();
+        this._monkeyPatchPlayer(); // Патчим плеер ПОСЛЕ создания badge
         this._setPlayerPlayList();
-        this._bindBadgeClicks(); // Bind click handlers to badges
         this._setupPlayerListeners(); // Listen for play events
         this._initializeListenIndicators(); // Initialize listen progress indicators
+    }
+
+    _monkeyPatchPlayer() {
+        const self = this;
+
+        // Добавляем нативный перехватчик на каждую track-card с capture: true
+        $(this.containerSelector).find('.track-card').each(function() {
+            const card = this;
+
+            const clickInterceptor = function(e) {
+                // Проверяем клик по badge
+                const badge = e.target.closest('.rank-badge');
+
+                if (badge) {
+                    // Блокируем распространение к плееру
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+
+                    if (isDebug) {
+                        console.log('[Card Interceptor] Перехвачен клик по badge');
+                    }
+
+                    // Обрабатываем переключение voted
+                    const $badge = $(badge);
+                    const $card = $badge.closest('.track-card');
+                    const trackUid = $card.data('uid');
+                    const track = self.tracks.find(t => t.uid === trackUid);
+
+                    if (track) {
+                        const wasVoted = track.voted;
+                        track.voted = !track.voted;
+
+                        if (isDebug) {
+                            console.log(`[Card Interceptor] ${track.title}: ${wasVoted} → ${track.voted}`);
+                        }
+
+                        self._updateRankings();
+                    }
+
+                    return false;
+                }
+
+                // Блокируем клики по listen-indicator (только для UI, без логики)
+                const indicator = e.target.closest('.listen-indicator');
+                if (indicator) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            };
+
+            // Нативный addEventListener с capture: true - сработает РАНЬШЕ jQuery обработчиков
+            card.addEventListener('click', clickInterceptor, true);
+        });
+
+        if (isDebug) {
+            console.log('[MonkeyPatch] Установлены нативные перехватчики на', $(this.containerSelector).find('.track-card').length, 'карточек');
+        }
     }
 
     _initialRandomSort() {
@@ -421,6 +481,7 @@ class VotingSystem {
         });
     }
 
+
     _updateRankings() {
         const $cards = $(this.containerSelector).find('.track-card');
         let currentPlace = 1;
@@ -434,6 +495,7 @@ class VotingSystem {
             const track = self.tracks.find(t => t.uid === trackUid);
 
             let $badge = $card.find('.rank-badge');
+
             if ($badge.length === 0) {
                 $badge = $('<div>').addClass('rank-badge');
                 $card.append($badge);
@@ -441,7 +503,7 @@ class VotingSystem {
 
             if (trackUserId === self.user.id) {
                 $card.addClass('my-track');
-                $badge.removeClass('visible voted non-voted prize non-prize');
+                $badge.removeClass('visible voted non-voted prize non-prize').hide();
                 return;
             }
 
@@ -451,7 +513,7 @@ class VotingSystem {
             const isPrize = currentPlace <= self.MAX_VOTES;
 
             // Set badge number and classes
-            $badge.text(currentPlace).addClass('visible');
+            $badge.text(currentPlace).addClass('visible').show();
             $badge.removeClass('voted non-voted prize non-prize');
 
             if (track && track.voted) {
@@ -462,12 +524,18 @@ class VotingSystem {
                 } else {
                     $badge.addClass('non-prize');
                 }
+                if (isDebug) {
+                    console.log(`[_updateRankings] Track ${currentPlace}: ${track.title} - voted ${isPrize ? 'prize' : 'non-prize'}`);
+                }
             } else {
                 $badge.addClass('non-voted');
                 if (isPrize) {
                     $badge.addClass('prize');
                 } else {
                     $badge.addClass('non-prize');
+                }
+                if (isDebug && track) {
+                    console.log(`[_updateRankings] Track ${currentPlace}: ${track.title} - non-voted ${isPrize ? 'prize' : 'non-prize'}`);
                 }
             }
 
@@ -642,28 +710,6 @@ class VotingSystem {
         }
     }
 
-    _bindBadgeClicks() {
-        const self = this;
-
-        // Обработчик для всех значков (voted и non-voted)
-        $('body').off('click', `${this.containerSelector} .rank-badge`);
-        $('body').on('click', `${this.containerSelector} .rank-badge`, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-
-            const $badge = $(this);
-            const $card = $badge.closest('.track-card');
-            const trackUid = $card.data('uid');
-            const track = self.tracks.find(t => t.uid === trackUid);
-
-            if (!track) return;
-
-            // Переключаем состояние voted
-            track.voted = !track.voted;
-            self._updateRankings();
-        });
-    }
 
     _injectMinimalStyles() {
         if (!$('#ranking-styles').length) {
@@ -684,7 +730,8 @@ class VotingSystem {
                     .rank-badge.voted.prize {
                         background: #ff0055;
                         opacity: 1;
-                        pointer-events: none;
+                        pointer-events: auto;
+                        cursor: pointer;
                         border-color: white;
                     }
 
@@ -692,7 +739,8 @@ class VotingSystem {
                     .rank-badge.voted.non-prize {
                         background: #666666;
                         opacity: 1;
-                        pointer-events: none;
+                        pointer-events: auto;
+                        cursor: pointer;
                         border-color: white;
                     }
 
@@ -760,7 +808,7 @@ class VotingSystem {
                     }
 
                     .submit-votes-panel {
-                        position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+                        position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
                         background: #1a1a1a; padding: 15px 30px; border-radius: 50px;
                         z-index: 9999; display: flex; gap: 15px; align-items: center; border: 1px solid #333;
                     }
