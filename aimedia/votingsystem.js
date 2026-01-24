@@ -505,16 +505,20 @@ class VotingSystem {
 
     _updateSubmitButtonState() {
         const votesCount = Object.keys(this.votes).length;
-        const totalVoted = this.tracks.filter(t => t.voted && parseInt(t.userId, 10) !== this.user.id).length;
         const $panel = $('#submit-votes-panel');
         const $btn = $panel.find('.submit-btn');
 
-        if (totalVoted > 0) {
-            $panel.removeClass('hidden');
-            $panel.find('.vote-count-info').text(`Проголосовано: ${totalVoted} из ${this.MAX_VOTES}`);
+        // Проверяем, что места от 1 до MAX_VOTES заняты
+        const places = Object.values(this.votes).sort((a, b) => a - b);
+        const hasAllPlaces = places.length === this.MAX_VOTES &&
+                            places.every((place, index) => place === index + 1);
 
-            // Кнопка активна только если проголосовано ровно MAX_VOTES
-            if (totalVoted === this.MAX_VOTES) {
+        if (votesCount > 0) {
+            $panel.removeClass('hidden');
+            $panel.find('.vote-count-info').text(`Выбрано: ${votesCount} из ${this.MAX_VOTES}`);
+
+            // Кнопка активна только если все места от 1 до MAX_VOTES расставлены
+            if (hasAllPlaces) {
                 $btn.prop('disabled', false);
             } else {
                 $btn.prop('disabled', true);
