@@ -357,8 +357,10 @@ class VotingSystem {
         this._initialRandomSort();
         this._setupDragAndDrop();
         this._renderSubmitControl();
+        this._initializeVotedFlags(); // Initialize voted flags
         this._updateRankings();
         this._setPlayerPlayList();
+        this._bindBadgeClicks(); // Bind click handlers to badges
     }
 
     _initialRandomSort() {
@@ -399,15 +401,33 @@ class VotingSystem {
         if (this.sortableInstance) return;
 
         $(this.containerSelector).find('.track-card').css('cursor', 'grab');
-        this._injectMinimalStyles(); 
+        this._injectMinimalStyles();
 
         this.sortableInstance = Sortable.create(container, {
             animation: 150,
             handle: '.track-card',
-            filter: '.my-track', 
+            filter: '.my-track',
+            onStart: function(evt) {
+                // Mark track as voted when dragging starts
+                const $card = $(evt.item);
+                const trackUid = $card.data('uid');
+                const track = self.tracks.find(t => t.uid === trackUid);
+                if (track) {
+                    track.voted = true;
+                }
+            },
             onEnd: function(evt) {
-                self._updateRankings(); 
-                self._setPlayerPlayList(); 
+                self._updateRankings();
+                self._setPlayerPlayList();
+            }
+        });
+    }
+
+    _initializeVotedFlags() {
+        // Initialize voted flag for all tracks
+        this.tracks.forEach(track => {
+            if (!track.hasOwnProperty('voted')) {
+                track.voted = false;
             }
         });
     }
@@ -415,14 +435,15 @@ class VotingSystem {
     _updateRankings() {
         const $cards = $(this.containerSelector).find('.track-card');
         let currentPlace = 1;
-        this.votes = {}; // Reset votes and rebuild based on order
+        this.votes = {}; // Reset votes and rebuild based on voted tracks only
         const self = this;
 
         $cards.each(function() {
             const $card = $(this);
             const trackUid = $card.data('uid');
             const trackUserId = parseInt($card.data('userid'), 10);
-            
+            const track = self.tracks.find(t => t.uid === trackUid);
+
             let $badge = $card.find('.rank-badge');
             if ($badge.length === 0) {
                 $badge = $('<div>').addClass('rank-badge');
@@ -431,19 +452,37 @@ class VotingSystem {
 
             if (trackUserId === self.user.id) {
                 $card.addClass('my-track');
-                $badge.removeClass('visible');
+                $badge.removeClass('visible voted non-voted prize non-prize');
                 return;
             }
-            
+
             $card.find('.vote-button').remove(); // Ensure buttons are gone in Desktop mode
 
-            if (currentPlace <= self.MAX_VOTES) {
-                self.votes[trackUid] = currentPlace;
-                $badge.text(currentPlace).addClass('visible');
-                currentPlace++;
+            // Determine if this place is a prize place
+            const isPrize = currentPlace <= self.MAX_VOTES;
+
+            // Set badge number and classes
+            $badge.text(currentPlace).addClass('visible');
+            $badge.removeClass('voted non-voted prize non-prize');
+
+            if (track && track.voted) {
+                $badge.addClass('voted');
+                if (isPrize) {
+                    $badge.addClass('prize');
+                    self.votes[trackUid] = currentPlace;
+                } else {
+                    $badge.addClass('non-prize');
+                }
             } else {
-                $badge.removeClass('visible');
+                $badge.addClass('non-voted');
+                if (isPrize) {
+                    $badge.addClass('prize');
+                } else {
+                    $badge.addClass('non-prize');
+                }
             }
+
+            currentPlace++;
         });
 
         this._updateSubmitButtonState();
@@ -453,20 +492,51 @@ class VotingSystem {
         $('#submit-votes-panel').remove();
         const $panel = $('<div>').attr('id', 'submit-votes-panel').addClass('submit-votes-panel hidden');
         const $info = $('<span>').addClass('vote-count-info').text(`Расставьте топ-${this.MAX_VOTES}`);
-        const $btn = $('<button>').addClass('submit-btn').text('Подтвердить голоса');
+        const $btn = $('<button>').addClass('submit-btn').attr('disabled', true).text('Подтвердить голоса');
         $panel.append($info).append($btn);
         $('body').append($panel);
-        
+
         $btn.on('click', () => this.showResultsModal());
     }
 
     _updateSubmitButtonState() {
         const votesCount = Object.keys(this.votes).length;
+        const totalVoted = this.tracks.filter(t => t.voted && parseInt(t.userId, 10) !== this.user.id).length;
         const $panel = $('#submit-votes-panel');
-        if (votesCount > 0) {
+        const $btn = $panel.find('.submit-btn');
+
+        if (totalVoted > 0) {
             $panel.removeClass('hidden');
-            $panel.find('.vote-count-info').text(`Выбрано: ${votesCount} из ${this.MAX_VOTES}`);
+            $panel.find('.vote-count-info').text(`Проголосовано: ${totalVoted} из ${this.MAX_VOTES}`);
+
+            // Кнопка активна только если проголосовано ровно MAX_VOTES
+            if (totalVoted === this.MAX_VOTES) {
+                $btn.prop('disabled', false);
+            } else {
+                $btn.prop('disabled', true);
+            }
+        } else {
+            $panel.addClass('hidden');
         }
+    }
+
+    _bindBadgeClicks() {
+        const self = this;
+        $('body').off('click', `${this.containerSelector} .rank-badge.non-voted`);
+        $('body').on('click', `${this.containerSelector} .rank-badge.non-voted`, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const $badge = $(this);
+            const $card = $badge.closest('.track-card');
+            const trackUid = $card.data('uid');
+            const track = self.tracks.find(t => t.uid === trackUid);
+
+            if (track) {
+                track.voted = true;
+                self._updateRankings();
+            }
+        });
     }
 
     _injectMinimalStyles() {
@@ -475,23 +545,76 @@ class VotingSystem {
                 <style id="ranking-styles">
                     .rank-badge {
                         position: absolute; top: -10px; left: -10px; width: 40px; height: 40px;
-                        background: #ff0055; color: white; border-radius: 50%;
+                        color: white; border-radius: 50%;
                         display: flex; align-items: center; justify-content: center;
                         font-weight: bold; font-size: 18px; z-index: 10;
                         box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid white;
-                        pointer-events: none;
-                        display: none; 
+                        display: none;
+                        transition: all 0.3s ease;
                     }
                     .rank-badge.visible { display: flex; }
+
+                    /* Voted + Prize = Красный яркий */
+                    .rank-badge.voted.prize {
+                        background: #ff0055;
+                        opacity: 1;
+                        pointer-events: none;
+                        border-color: white;
+                    }
+
+                    /* Voted + Non-Prize = Серый яркий */
+                    .rank-badge.voted.non-prize {
+                        background: #666666;
+                        opacity: 1;
+                        pointer-events: none;
+                        border-color: white;
+                    }
+
+                    /* Non-Voted + Prize = Красный полупрозрачный */
+                    .rank-badge.non-voted.prize {
+                        background: #ff0055;
+                        opacity: 0.4;
+                        pointer-events: auto;
+                        cursor: pointer;
+                        border-color: rgba(255, 255, 255, 0.5);
+                    }
+
+                    /* Non-Voted + Non-Prize = Серый полупрозрачный */
+                    .rank-badge.non-voted.non-prize {
+                        background: #666666;
+                        opacity: 0.4;
+                        pointer-events: auto;
+                        cursor: pointer;
+                        border-color: rgba(255, 255, 255, 0.5);
+                    }
+
+                    .rank-badge.non-voted:hover {
+                        opacity: 0.7;
+                        transform: scale(1.1);
+                    }
+
                     .track-card.my-track { opacity: 0.6; border: 1px dashed #666; }
-                    
+
                     .submit-votes-panel {
                         position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
                         background: #1a1a1a; padding: 15px 30px; border-radius: 50px;
                         z-index: 9999; display: flex; gap: 15px; align-items: center; border: 1px solid #333;
                     }
                     .submit-votes-panel.hidden { display: none; }
-                    .submit-btn { background: #ff0055; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
+                    .submit-btn {
+                        background: #ff0055; color: white; border: none;
+                        padding: 10px 20px; border-radius: 20px; cursor: pointer;
+                        transition: all 0.3s ease;
+                    }
+                    .submit-btn:disabled {
+                        background: #555555;
+                        cursor: not-allowed;
+                        opacity: 0.5;
+                    }
+                    .submit-btn:not(:disabled):hover {
+                        background: #ff3377;
+                        transform: scale(1.05);
+                    }
                     .vote-count-info { color: white; }
                 </style>
             `);
