@@ -67,7 +67,8 @@ class VotingSystem {
                 userId: $el.data('userid'),
                 isVoted: isVoted,
                 place: place,
-                listened: false // Track if played in player
+                listenProgress: 0, // Maximum progress listened (0-100%)
+                duration: $el.data('duration') || 0 // Track duration in seconds
             };
         }).get();
 
@@ -363,6 +364,7 @@ class VotingSystem {
         this._setPlayerPlayList();
         this._bindBadgeClicks(); // Bind click handlers to badges
         this._setupPlayerListeners(); // Listen for play events
+        this._initializeListenIndicators(); // Initialize listen progress indicators
     }
 
     _initialRandomSort() {
@@ -540,21 +542,32 @@ class VotingSystem {
         // Плеер использует this.player.audioTrack (HTML5 Audio элемент)
         // и this.player.currentTrack (объект с данными трека)
         if (this.player.audioTrack && this.player.audioTrack instanceof HTMLAudioElement) {
-            if (isDebug) console.log('[VotingSystem] Attaching to audioTrack play event');
+            if (isDebug) console.log('[VotingSystem] Attaching to audioTrack events');
 
-            // Слушаем событие play на audioTrack
-            this.player.audioTrack.addEventListener('play', function() {
-                if (isDebug) console.log('[VotingSystem] Play event fired, currentTrack:', self.player.currentTrack);
-
+            // Слушаем событие timeupdate для отслеживания прогресса
+            this.player.audioTrack.addEventListener('timeupdate', function() {
                 if (!self.player.currentTrack || !self.player.currentTrack.uid) return;
 
                 const currentUid = self.player.currentTrack.uid;
                 const track = self.tracks.find(t => t.uid === currentUid);
 
-                if (track && !track.listened) {
-                    if (isDebug) console.log('[VotingSystem] Marking track as listened:', track.title);
-                    track.listened = true;
-                    self._markAsListened(track);
+                if (!track) return;
+
+                const currentTime = self.player.audioTrack.currentTime;
+                const duration = self.player.audioTrack.duration;
+
+                if (duration && !isNaN(duration) && duration > 0) {
+                    const progressPercent = Math.min(100, Math.floor((currentTime / duration) * 100));
+
+                    // Обновляем только если прогресс увеличился
+                    if (progressPercent > track.listenProgress) {
+                        track.listenProgress = progressPercent;
+                        self._updateListenIndicator(track);
+
+                        if (isDebug && progressPercent % 10 === 0) {
+                            console.log(`[VotingSystem] Progress ${track.title}: ${progressPercent}%`);
+                        }
+                    }
                 }
             });
 
@@ -564,13 +577,79 @@ class VotingSystem {
         }
     }
 
-    _markAsListened(track) {
+    _updateListenIndicator(track) {
         const $card = $(track.element);
-        let $listenMark = $card.find('.listen-mark');
+        let $indicator = $card.find('.listen-indicator');
 
-        if ($listenMark.length === 0) {
-            $listenMark = $('<div>').addClass('listen-mark').html('&#10003;'); // Checkmark
-            $card.append($listenMark);
+        // Создаем индикатор если его нет
+        if ($indicator.length === 0) {
+            $indicator = $('<div>').addClass('listen-indicator');
+            $indicator.html('<div class="listen-percent">0%</div>');
+            $card.append($indicator);
+        }
+
+        // Обновляем прогресс
+        const progress = track.listenProgress;
+
+        // Определяем цвет в зависимости от прогресса
+        let colorClass = 'low';
+
+        if (progress >= 60) {
+            colorClass = 'high'; // Ярко-зеленый (60-100%)
+        } else if (progress >= 30) {
+            colorClass = 'medium'; // Желтый (30-60%)
+        }
+
+        // Показываем индикатор
+        $indicator.addClass('visible');
+
+        // Обновляем процент с цветом
+        const $percent = $indicator.find('.listen-percent');
+        $percent.removeClass('low medium high').addClass(colorClass);
+        $percent.text(progress + '%');
+
+        // Сохраняем прогресс
+        this._saveListenProgress();
+    }
+
+    _initializeListenIndicators() {
+        // Initialize listen indicators for all tracks on page load
+        // Проверяем localStorage для восстановления прогресса
+        const savedProgress = this._loadListenProgress();
+
+        this.tracks.forEach(track => {
+            // Восстанавливаем сохраненный прогресс
+            if (savedProgress[track.uid]) {
+                track.listenProgress = savedProgress[track.uid];
+            }
+
+            if (track.listenProgress > 0) {
+                this._updateListenIndicator(track);
+            }
+        });
+    }
+
+    _loadListenProgress() {
+        try {
+            const saved = localStorage.getItem('votingSystem_listenProgress');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            console.error('[VotingSystem] Error loading listen progress:', e);
+            return {};
+        }
+    }
+
+    _saveListenProgress() {
+        try {
+            const progress = {};
+            this.tracks.forEach(track => {
+                if (track.listenProgress > 0) {
+                    progress[track.uid] = track.listenProgress;
+                }
+            });
+            localStorage.setItem('votingSystem_listenProgress', JSON.stringify(progress));
+        } catch (e) {
+            console.error('[VotingSystem] Error saving listen progress:', e);
         }
     }
 
@@ -649,31 +728,42 @@ class VotingSystem {
 
                     .track-card.my-track { opacity: 0.6; border: 1px dashed #666; }
 
-                    /* Listen Mark - Green Checkmark */
-                    .listen-mark {
+                    /* Listen Indicator - Text Only */
+                    .listen-indicator {
                         position: absolute;
-                        top: -8px;
-                        right: -8px;
-                        width: 24px;
-                        height: 24px;
-                        background: #00ff88;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 16px;
-                        color: #000;
-                        font-weight: bold;
+                        top: 6px;
+                        right: 6px;
                         z-index: 11;
-                        box-shadow: 0 2px 4px rgba(0, 255, 136, 0.5);
-                        border: 2px solid #fff;
-                        animation: listenPop 0.3s ease-out;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                        pointer-events: none;
                     }
 
-                    @keyframes listenPop {
-                        0% { transform: scale(0); }
-                        50% { transform: scale(1.2); }
-                        100% { transform: scale(1); }
+                    .listen-indicator.visible {
+                        opacity: 1;
+                    }
+
+                    .listen-indicator .listen-percent {
+                        font-size: 11px;
+                        font-weight: bold;
+                        line-height: 1;
+                        padding: 3px 6px;
+                        border-radius: 3px;
+                        background: rgba(0, 0, 0, 0.7);
+                        transition: color 0.3s ease;
+                    }
+
+                    /* Цветовые классы для процентов */
+                    .listen-indicator .listen-percent.low {
+                        color: #999;
+                    }
+
+                    .listen-indicator .listen-percent.medium {
+                        color: #ffcc00;
+                    }
+
+                    .listen-indicator .listen-percent.high {
+                        color: #00ff88;
                     }
 
                     .submit-votes-panel {
