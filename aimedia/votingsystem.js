@@ -66,7 +66,8 @@ class VotingSystem {
                 artist: $el.data('artist'),
                 userId: $el.data('userid'),
                 isVoted: isVoted,
-                place: place
+                place: place,
+                listened: false // Track if played in player
             };
         }).get();
 
@@ -361,6 +362,7 @@ class VotingSystem {
         this._updateRankings();
         this._setPlayerPlayList();
         this._bindBadgeClicks(); // Bind click handlers to badges
+        this._setupPlayerListeners(); // Listen for play events
     }
 
     _initialRandomSort() {
@@ -520,6 +522,58 @@ class VotingSystem {
         }
     }
 
+    _setupPlayerListeners() {
+        if (!this.player) {
+            if (isDebug) console.log('[VotingSystem] Player not found');
+            return;
+        }
+
+        const self = this;
+
+        if (isDebug) {
+            console.log('[VotingSystem] Setting up player listeners');
+            console.log('[VotingSystem] Player object:', this.player);
+            console.log('[VotingSystem] Player has audioTrack?', !!this.player.audioTrack);
+            console.log('[VotingSystem] Player has currentTrack?', !!this.player.currentTrack);
+        }
+
+        // Плеер использует this.player.audioTrack (HTML5 Audio элемент)
+        // и this.player.currentTrack (объект с данными трека)
+        if (this.player.audioTrack && this.player.audioTrack instanceof HTMLAudioElement) {
+            if (isDebug) console.log('[VotingSystem] Attaching to audioTrack play event');
+
+            // Слушаем событие play на audioTrack
+            this.player.audioTrack.addEventListener('play', function() {
+                if (isDebug) console.log('[VotingSystem] Play event fired, currentTrack:', self.player.currentTrack);
+
+                if (!self.player.currentTrack || !self.player.currentTrack.uid) return;
+
+                const currentUid = self.player.currentTrack.uid;
+                const track = self.tracks.find(t => t.uid === currentUid);
+
+                if (track && !track.listened) {
+                    if (isDebug) console.log('[VotingSystem] Marking track as listened:', track.title);
+                    track.listened = true;
+                    self._markAsListened(track);
+                }
+            });
+
+            if (isDebug) console.log('[VotingSystem] Player listener attached successfully');
+        } else {
+            console.warn('[VotingSystem] audioTrack not found or not an HTMLAudioElement');
+        }
+    }
+
+    _markAsListened(track) {
+        const $card = $(track.element);
+        let $listenMark = $card.find('.listen-mark');
+
+        if ($listenMark.length === 0) {
+            $listenMark = $('<div>').addClass('listen-mark').html('&#10003;'); // Checkmark
+            $card.append($listenMark);
+        }
+    }
+
     _bindBadgeClicks() {
         const self = this;
         $('body').off('click', `${this.containerSelector} .rank-badge.non-voted`);
@@ -594,6 +648,33 @@ class VotingSystem {
                     }
 
                     .track-card.my-track { opacity: 0.6; border: 1px dashed #666; }
+
+                    /* Listen Mark - Green Checkmark */
+                    .listen-mark {
+                        position: absolute;
+                        top: -8px;
+                        right: -8px;
+                        width: 24px;
+                        height: 24px;
+                        background: #00ff88;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 16px;
+                        color: #000;
+                        font-weight: bold;
+                        z-index: 11;
+                        box-shadow: 0 2px 4px rgba(0, 255, 136, 0.5);
+                        border: 2px solid #fff;
+                        animation: listenPop 0.3s ease-out;
+                    }
+
+                    @keyframes listenPop {
+                        0% { transform: scale(0); }
+                        50% { transform: scale(1.2); }
+                        100% { transform: scale(1); }
+                    }
 
                     .submit-votes-panel {
                         position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
