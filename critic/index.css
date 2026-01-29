@@ -18,9 +18,9 @@
     --border-glass: rgba(255, 255, 255, 0.08);
     --border-highlight: rgba(255, 153, 0, 0.3); /* Orange highlight */
     
-    --radius-lg: 4px;
-    --radius-md: 3px;
-    --radius-sm: 2px;
+    --radius-lg: 12px; /* Increased from 4px */
+    --radius-md: 8px; /* Increased from 3px */
+    --radius-sm: 6px; /* Increased from 2px */
     
     --blur-amount: 0px;
     --header-height: 60px; 
@@ -40,10 +40,12 @@
     font-weight: 400;
     font-size: 14px; 
     background-color: var(--bg-color);
-    /* Bubbling background effect - Khaki/Olive tint */
+    /* Bubbling background effect - Khaki/Olive tint + Dotted Grid */
     background-image: 
+        radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), /* Dotted Grid */
         radial-gradient(circle at 15% 50%, rgba(85, 107, 47, 0.08), transparent 25%), /* Dark Olive Green */
         radial-gradient(circle at 85% 30%, rgba(189, 183, 107, 0.05), transparent 25%); /* Dark Khaki */
+    background-size: 20px 20px, 100% 100%, 100% 100%; /* Grid size */
     color: var(--text-main);
     margin: 0;
     padding: 0;
