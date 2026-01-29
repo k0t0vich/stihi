@@ -1,22 +1,32 @@
 // DEBUG & CONFIG
-const isDebug = true;
+const isDebug = false;
 
 function detectIsMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 }
 
-const isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop system
+// Для мобильных - всегда старая система, для десктопа - можно переключать
+let isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop system
 // const isOld = true; // Force Old system
 // const isOld = false; // Force New system
+
+// Ключ для сохранения выбора режима в localStorage
+const VOTING_MODE_KEY = 'votingSystem_mode';
 
 class VotingSystem {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
 
         $('.voting-alert').remove();
 
-        if (!user) {
+        if (!user && !isDebug) {
             console.error("User ID is not defined");
             return;
+        }
+
+        // В debug режиме создаём фейковый user если его нет
+        if (!user && isDebug) {
+            user = { id: 999999, uid: 'debug-user' };
+            console.log('[DEBUG] Используется фейковый user:', user);
         }
 
         this.player = player;
@@ -28,8 +38,35 @@ class VotingSystem {
         this.tracks = []; // Array of track objects
         this.eventUid = eventUid;
         this.tourUid = tourUid;
+        this.votingLocked = false; // Флаг блокировки после отправки голоса
+
+        // Для десктопа - загружаем сохранённый режим
+        if (!detectIsMobile()) {
+            this._loadSavedMode();
+        }
 
         this.init();
+    }
+
+    // Загрузка сохранённого режима из localStorage
+    _loadSavedMode() {
+        try {
+            const savedMode = localStorage.getItem(VOTING_MODE_KEY);
+            if (savedMode !== null) {
+                isOld = savedMode === 'old';
+            }
+        } catch (e) {
+            console.error('[VotingSystem] Error loading saved mode:', e);
+        }
+    }
+
+    // Сохранение режима в localStorage
+    _saveModePreference(useOldMode) {
+        try {
+            localStorage.setItem(VOTING_MODE_KEY, useOldMode ? 'old' : 'new');
+        } catch (e) {
+            console.error('[VotingSystem] Error saving mode preference:', e);
+        }
     }
 
     init() {
@@ -130,6 +167,13 @@ class VotingSystem {
 
     sendVote(sortedVotes) {
         const self = this;
+
+        // Проверка блокировки
+        if (this.votingLocked) {
+            this._showToast('Голосование уже отправлено', 'error');
+            return;
+        }
+
         const payload = sortedVotes.map(([trackUid, place]) => ({
             user: this.user.uid,
             event: this.eventUid,
@@ -139,11 +183,13 @@ class VotingSystem {
         }));
 
         if (isDebug) {
-            const alertMessage = "TEST MODE: Голоса отправлены!\n\nPayload:\n" + 
+            const alertMessage = "TEST MODE: Голоса отправлены!\n\nPayload:\n" +
                                  JSON.stringify(payload, null, 2);
             alert(alertMessage);
             console.log("TEST MODE Payload:", payload);
             this._showToast('TEST MODE: Голоса отправлены!', 'success');
+            // В debug режиме тоже блокируем
+            this._lockVotingAfterSubmit();
             return;
         }
 
@@ -158,12 +204,64 @@ class VotingSystem {
             },
             success: function(response) {
                 self._showToast('Ваши голоса успешно отправлены!', 'success');
+                // Блокируем повторную отправку после успешной отправки
+                self._lockVotingAfterSubmit();
             },
             error: function(xhr, status, error) {
                 self._showToast('Ошибка при отправке голосов', 'error');
                 console.error("Ошибка при отправке голоса:", error);
             }
         });
+    }
+
+    // Блокировка голосования после отправки
+    _lockVotingAfterSubmit() {
+        this.votingLocked = true;
+
+        // Очищаем все активности голосования
+        this.votes = {};
+        this.remainingPlaces = [];
+
+        // Очищаем флаги voted у треков
+        this.tracks.forEach(track => {
+            track.voted = false;
+        });
+
+        // Скрываем панель отправки
+        $('#submit-votes-panel').addClass('hidden');
+
+        // Убираем кнопки голосования
+        $(this.containerSelector).find('.vote-button').prop('disabled', true).text('Отправлено');
+
+        // Делаем badge неактивными
+        $(this.containerSelector).find('.rank-badge').css('pointer-events', 'none').css('opacity', '0.3');
+
+        // Отключаем drag-and-drop
+        if (this.sortableInstance) {
+            this.sortableInstance.option('disabled', true);
+        }
+
+        // Убираем переключатель режимов
+        $('#voting-mode-toggle').remove();
+
+        // Показываем оверлей с сообщением
+        this._showVotingLockedOverlay();
+    }
+
+    // Показ оверлея о заблокированном голосовании
+    _showVotingLockedOverlay() {
+        const $overlay = $('<div>').addClass('voting-locked-overlay');
+        const $message = $('<div>').addClass('voting-locked-message');
+        $message.html('<h3>✓ Голоса отправлены!</h3><p>Спасибо за участие в голосовании.</p>');
+        $overlay.append($message);
+        $('body').append($overlay);
+
+        // Автоматически скрываем через 3 секунды
+        setTimeout(() => {
+            $overlay.fadeOut(500, function() {
+                $(this).remove();
+            });
+        }, 3000);
     }
 
     _showToast(message, type = 'info') {
@@ -181,6 +279,10 @@ class VotingSystem {
     // --- MOBILE / OLD SYSTEM METHODS ---
 
     _initOld() {
+        // Добавляем переключатель режимов только для десктопа
+        if (!detectIsMobile()) {
+            this._renderModeToggle();
+        }
         this._renderVoteButtons();
         this._bindVoteButtonClicks();
         this._checkAndRenderResultsButton();
@@ -341,6 +443,7 @@ class VotingSystem {
     // --- DESKTOP / NEW SYSTEM METHODS ---
 
     _init() {
+        this._renderModeToggle(); // Добавляем переключатель режимов
         this._initialRandomSort();
         this._setupDragAndDrop();
         this._renderSubmitControl();
@@ -352,6 +455,251 @@ class VotingSystem {
         this._initializeListenIndicators(); // Initialize listen progress indicators
     }
 
+    // Рендеринг переключателя режимов для десктопа
+    _renderModeToggle() {
+        $('#voting-mode-toggle').remove();
+
+        const $toggle = $('<div>').attr('id', 'voting-mode-toggle').addClass('voting-mode-toggle');
+        const $label = $('<span>').addClass('mode-label').text('Режим голосования:');
+
+        const $switchContainer = $('<div>').addClass('mode-switch-container');
+        const $newLabel = $('<span>').addClass('mode-option').text('Новый');
+        const $switch = $('<label>').addClass('mode-switch');
+        const $checkbox = $('<input>').attr('type', 'checkbox').prop('checked', isOld);
+        const $slider = $('<span>').addClass('slider');
+        $switch.append($checkbox).append($slider);
+        const $oldLabel = $('<span>').addClass('mode-option').text('Старый');
+
+        $switchContainer.append($newLabel).append($switch).append($oldLabel);
+        $toggle.append($label).append($switchContainer);
+
+        $(this.containerSelector).before($toggle);
+
+        const self = this;
+        $checkbox.on('change', function() {
+            const useOldMode = $(this).prop('checked');
+            self._switchMode(useOldMode);
+        });
+
+        this._injectModeToggleStyles();
+    }
+
+    // Переключение режима голосования
+    _switchMode(useOldMode) {
+        if (this.votingLocked) {
+            this._showToast('Голосование уже отправлено', 'error');
+            return;
+        }
+
+        // Подтверждение переключения
+        const confirmed = confirm('При переключении режима все данные голосования будут сброшены. Продолжить?');
+        if (!confirmed) {
+            // Возвращаем переключатель в исходное положение
+            $('#voting-mode-toggle input[type="checkbox"]').prop('checked', isOld);
+            return;
+        }
+
+        // Сохраняем выбор
+        this._saveModePreference(useOldMode);
+
+        // Очищаем все данные голосования
+        this._clearAllVotingData();
+
+        // Обновляем глобальную переменную режима
+        isOld = useOldMode;
+
+        // Применяем новый режим без перезагрузки
+        this._applyModeSwitch(useOldMode);
+    }
+
+    // Применение переключения режима без перезагрузки страницы
+    _applyModeSwitch(useOldMode) {
+        const $container = $(this.containerSelector);
+
+        if (useOldMode) {
+            // Переключаемся на старый режим
+            // Скрываем элементы нового режима
+            $container.find('.rank-badge').hide();
+            $container.find('.listen-indicator').hide();
+            $('#submit-votes-panel').hide();
+
+            // Отключаем drag-and-drop
+            if (this.sortableInstance) {
+                this.sortableInstance.option('disabled', true);
+            }
+
+            // Убираем cursor: grab
+            $container.find('.track-card').css('cursor', 'default');
+
+            // Инициализируем старый режим
+            this._renderVoteButtons();
+            this._bindVoteButtonClicks();
+        } else {
+            // Переключаемся на новый режим
+            // Скрываем/удаляем элементы старого режима
+            $container.find('.vote-button').hide();
+
+            // Показываем элементы нового режима
+            $container.find('.rank-badge').show();
+            $container.find('.listen-indicator').show();
+
+            // Включаем drag-and-drop
+            if (this.sortableInstance) {
+                this.sortableInstance.option('disabled', false);
+            } else {
+                this._setupDragAndDrop();
+            }
+
+            // Добавляем cursor: grab
+            $container.find('.track-card').css('cursor', 'grab');
+
+            // Рендерим панель подтверждения
+            this._renderSubmitControl();
+            this._initializeVotedFlags();
+            this._updateRankings();
+
+            // Устанавливаем перехватчики кликов для badge (если ещё не установлены)
+            this._monkeyPatchPlayer();
+        }
+    }
+
+    // Полная очистка всех данных голосования
+    _clearAllVotingData() {
+        // Очищаем голоса
+        this.votes = {};
+        this.remainingPlaces = Array.from({ length: this.MAX_VOTES }, (_, i) => i + 1);
+
+        // Очищаем флаги voted у треков
+        this.tracks.forEach(track => {
+            track.voted = false;
+            track.listenProgress = 0;
+        });
+
+        // Очищаем localStorage
+        try {
+            localStorage.removeItem('votingSystem_listenProgress');
+        } catch (e) {
+            console.error('[VotingSystem] Error clearing localStorage:', e);
+        }
+
+        // Сбрасываем UI элементы (но не удаляем, только сбрасываем состояние)
+        $(this.containerSelector).find('.rank-badge').removeClass('voted prize non-prize').addClass('non-voted');
+        $(this.containerSelector).find('.listen-indicator .listen-percent').text('0%').removeClass('low medium high').addClass('low');
+        $(this.containerSelector).find('.vote-button').removeClass('voted').text('Голосовать');
+        $('#submit-votes-panel').addClass('hidden');
+    }
+
+    // Стили для переключателя режимов
+    _injectModeToggleStyles() {
+        if ($('#mode-toggle-styles').length) return;
+
+        $('head').append(`
+            <style id="mode-toggle-styles">
+                .voting-mode-toggle {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    padding: 10px 15px;
+                    background: #1a1a1a;
+                    border-radius: 8px;
+                    margin-bottom: 15px;
+                    border: 1px solid #333;
+                }
+
+                .mode-label {
+                    color: #888;
+                    font-size: 14px;
+                }
+
+                .mode-switch-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .mode-option {
+                    color: #fff;
+                    font-size: 14px;
+                }
+
+                .mode-switch {
+                    position: relative;
+                    display: inline-block;
+                    width: 50px;
+                    height: 26px;
+                }
+
+                .mode-switch input {
+                    opacity: 0;
+                    width: 0;
+                    height: 0;
+                }
+
+                .mode-switch .slider {
+                    position: absolute;
+                    cursor: pointer;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: #ff0055;
+                    transition: 0.3s;
+                    border-radius: 26px;
+                }
+
+                .mode-switch .slider:before {
+                    position: absolute;
+                    content: "";
+                    height: 20px;
+                    width: 20px;
+                    left: 3px;
+                    bottom: 3px;
+                    background-color: white;
+                    transition: 0.3s;
+                    border-radius: 50%;
+                }
+
+                .mode-switch input:checked + .slider {
+                    background-color: #666;
+                }
+
+                .mode-switch input:checked + .slider:before {
+                    transform: translateX(24px);
+                }
+
+                .voting-locked-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.7);
+                    z-index: 9998;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .voting-locked-message {
+                    background: #1a1a1a;
+                    padding: 30px 50px;
+                    border-radius: 15px;
+                    text-align: center;
+                    border: 2px solid #00ff88;
+                }
+
+                .voting-locked-message h3 {
+                    color: #00ff88;
+                    margin-bottom: 10px;
+                }
+
+                .voting-locked-message p {
+                    color: #888;
+                }
+            </style>
+        `);
+    }
+
     _monkeyPatchPlayer() {
         const self = this;
 
@@ -359,7 +707,17 @@ class VotingSystem {
         $(this.containerSelector).find('.track-card').each(function() {
             const card = this;
 
+            // Защита от повторной установки обработчиков
+            if (card._votingClickInterceptorAttached) {
+                return;
+            }
+
             const clickInterceptor = function(e) {
+                // Игнорируем если в старом режиме
+                if (isOld) {
+                    return;
+                }
+
                 // Проверяем клик по badge
                 const badge = e.target.closest('.rank-badge');
 
@@ -405,6 +763,7 @@ class VotingSystem {
 
             // Нативный addEventListener с capture: true - сработает РАНЬШЕ jQuery обработчиков
             card.addEventListener('click', clickInterceptor, true);
+            card._votingClickInterceptorAttached = true;
         });
 
         if (isDebug) {
