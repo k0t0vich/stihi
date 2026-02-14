@@ -976,6 +976,28 @@ class VotingSystem {
         console.log('[_renderVoteButtonsNew] Рендеринг завершен');
     }
 
+    // Только обновление цвета кнопок без пересоздания
+    _updateVoteButtonsColor() {
+        this.tracks.forEach(track => {
+            // Пропускаем свой трек
+            if (parseInt(track.userId, 10) === this.user.id) {
+                return;
+            }
+
+            // Ищем существующую кнопку .vote-button
+            const $voteButton = $(track.element).find('.vote-button');
+
+            if ($voteButton.length === 0) return;
+
+            // Меняем цвет кнопки в зависимости от состояния voted
+            if (track.voted) {
+                $voteButton.addClass('voted'); // Зеленый цвет
+            } else {
+                $voteButton.removeClass('voted'); // Обычный цвет
+            }
+        });
+    }
+
     _bindVoteButtonClicksNew() {
         console.log('[_bindVoteButtonClicksNew] Привязка обработчиков для нового режима');
         const self = this;
@@ -1062,8 +1084,7 @@ class VotingSystem {
             // Если кликнули на текущее место И трек отмечен - снимаем отметку
             if (track.voted && currentPlace === targetPlace) {
                 track.voted = false;
-                self._updateRankings();
-                self._renderVoteButtonsNew(); // Обновляем цвет кнопки
+                self._updateRankings(); // Обновит и цвет кнопки автоматически
                 $modal.remove();
                 return;
             }
@@ -1074,10 +1095,9 @@ class VotingSystem {
             // Перемещаем трек на targetPlace
             self._moveTrackToPositionNew(trackUid, targetPlace);
 
-            // Обновляем рейтинги, плейлист и кнопки
+            // Обновляем рейтинги и плейлист (цвет кнопки обновится автоматически)
             self._updateRankings();
             self._setPlayerPlayList(); // Обновляем плейлист
-            self._renderVoteButtonsNew(); // Обновляем цвет кнопки
             $modal.remove();
         });
 
@@ -1214,6 +1234,11 @@ class VotingSystem {
         });
 
         this._updateSubmitButtonState();
+
+        // НОВЫЙ РЕЖИМ: Обновляем цвет кнопок в зависимости от voted
+        if (!isOld) {
+            this._updateVoteButtonsColor();
+        }
 
         // Сохраняем состояние при каждом изменении рейтинга
         this._saveVotingState();
