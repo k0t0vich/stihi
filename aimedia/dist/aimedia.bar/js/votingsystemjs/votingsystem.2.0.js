@@ -290,6 +290,10 @@ class VotingSystem {
         if (!detectIsMobile()) {
             this._renderModeToggle();
         }
+
+        // Загружаем и восстанавливаем состояние из localStorage
+        this._loadAndRestoreVotingStateOld();
+
         this._renderVoteButtons();
         this._bindVoteButtonClicks();
         this._checkAndRenderResultsButton();
@@ -471,12 +475,12 @@ class VotingSystem {
         const $label = $('<span>').addClass('mode-label').text('Режим голосования:');
 
         const $switchContainer = $('<div>').addClass('mode-switch-container');
-        const $newLabel = $('<span>').addClass('mode-option').text('Новый');
+        const $newLabel = $('<span>').addClass('mode-option').text('Таскать');
         const $switch = $('<label>').addClass('mode-switch');
         const $checkbox = $('<input>').attr('type', 'checkbox').prop('checked', isOld);
         const $slider = $('<span>').addClass('slider');
         $switch.append($checkbox).append($slider);
-        const $oldLabel = $('<span>').addClass('mode-option').text('Старый');
+        const $oldLabel = $('<span>').addClass('mode-option').text('Выбирать');
 
         $switchContainer.append($newLabel).append($switch).append($oldLabel);
         $toggle.append($label).append($switchContainer);
@@ -499,19 +503,20 @@ class VotingSystem {
             return;
         }
 
-        // Подтверждение переключения
-        const confirmed = confirm('При переключении режима все данные голосования будут сброшены. Продолжить?');
-        if (!confirmed) {
-            // Возвращаем переключатель в исходное положение
-            $('#voting-mode-toggle input[type="checkbox"]').prop('checked', isOld);
-            return;
-        }
-
         // Сохраняем выбор
         this._saveModePreference(useOldMode);
 
-        // Очищаем все данные голосования
-        this._clearAllVotingData();
+        // Сохраняем текущее состояние перед переключением
+        this._saveVotingState();
+
+        // Конвертируем данные между режимами
+        if (useOldMode) {
+            // Переключаемся с нового на старый режим
+            this._convertNewToOld();
+        } else {
+            // Переключаемся со старого на новый режим
+            this._convertOldToNew();
+        }
 
         // Обновляем глобальную переменную режима
         isOld = useOldMode;
@@ -542,6 +547,7 @@ class VotingSystem {
             // Инициализируем старый режим
             this._renderVoteButtons();
             this._bindVoteButtonClicks();
+            this._checkAndRenderResultsButton();
         } else {
             // Переключаемся на новый режим
             // Скрываем/удаляем элементы старого режима
@@ -1094,7 +1100,7 @@ class VotingSystem {
         }
     }
 
-    // Загрузка и восстановление состояния голосования
+    // Загрузка и восстановление состояния голосования (новый режим)
     _loadAndRestoreVotingState() {
         const savedState = this._loadVotingState();
 
@@ -1112,6 +1118,43 @@ class VotingSystem {
             this.tracks.forEach(track => {
                 track.listenProgress = savedState.listenProgress[track.uid] || 0;
             });
+        }
+    }
+
+    // Загрузка и восстановление состояния голосования (старый режим)
+    _loadAndRestoreVotingStateOld() {
+        const savedState = this._loadVotingState();
+
+        if (!savedState) return;
+
+        // Восстанавливаем прогресс прослушивания
+        if (savedState.listenProgress) {
+            this.tracks.forEach(track => {
+                track.listenProgress = savedState.listenProgress[track.uid] || 0;
+            });
+        }
+
+        // Восстанавливаем порядок карточек, если есть
+        if (savedState.cardOrder && savedState.cardOrder.length > 0) {
+            this._setCardOrder(savedState.cardOrder);
+        }
+
+        // Восстанавливаем голоса из votedFlags
+        // Конвертируем voted flags в формат старого режима (votes = { trackUid: place })
+        if (savedState.votedFlags) {
+            const votedUids = Object.keys(savedState.votedFlags).filter(uid => savedState.votedFlags[uid]);
+
+            // Если есть сохраненный порядок, используем его для определения мест
+            if (savedState.cardOrder && savedState.cardOrder.length > 0) {
+                let place = 1;
+                savedState.cardOrder.forEach(uid => {
+                    if (savedState.votedFlags[uid] && place <= this.MAX_VOTES) {
+                        this.votes[uid] = place;
+                        this.remainingPlaces = this.remainingPlaces.filter(p => p !== place);
+                        place++;
+                    }
+                });
+            }
         }
     }
 
@@ -1173,6 +1216,114 @@ class VotingSystem {
 
         // Применяем новый порядок в DOM
         $container.append(orderedCards);
+    }
+
+    // --- КОНВЕРТАЦИЯ МЕЖДУ РЕЖИМАМИ ГОЛОСОВАНИЯ ---
+
+    // Конвертация из старого режима в новый
+    _convertOldToNew() {
+        // В старом режиме votes = { trackUid: place }
+        // В новом режиме: порядок карточек + voted flags
+        // Место = позиция в списке
+
+        // ВАЖНО: Всегда обновляем флаги voted на основе текущего состояния votes
+        this.tracks.forEach(track => {
+            track.voted = this.votes[track.uid] ? true : false;
+        });
+
+        // Если есть голоса - расставляем voted треки на их места
+        if (Object.keys(this.votes).length > 0) {
+            // Получаем текущий порядок всех карточек
+            const currentOrder = this._getCurrentCardOrder();
+
+            // Создаем массив для нового порядка на основе текущего
+            const newOrder = [...currentOrder];
+
+            // Создаем map voted треков: { uid: place }
+            const votedTracksMap = { ...this.votes };
+
+            // Удаляем voted треки из их текущих позиций
+            const votedUids = Object.keys(votedTracksMap);
+            const nonVotedOrder = newOrder.filter(uid => !votedUids.includes(uid));
+
+            // Создаем финальный массив
+            const finalOrder = [];
+
+            // Проходим по всем позициям от 1 до длины списка
+            for (let position = 1; position <= currentOrder.length; position++) {
+                // Ищем, есть ли voted трек для этой позиции
+                const votedUidForPosition = votedUids.find(uid => votedTracksMap[uid] === position);
+
+                if (votedUidForPosition) {
+                    // Если есть voted трек для этой позиции - вставляем его
+                    finalOrder.push(votedUidForPosition);
+                } else {
+                    // Иначе берем следующий non-voted трек
+                    if (nonVotedOrder.length > 0) {
+                        finalOrder.push(nonVotedOrder.shift());
+                    }
+                }
+            }
+
+            // Добавляем оставшиеся non-voted треки в конец (если они есть)
+            finalOrder.push(...nonVotedOrder);
+
+            // Устанавливаем новый порядок
+            this._setCardOrder(finalOrder);
+
+            if (isDebug) {
+                console.log('[ConvertOldToNew] Converted votes:', this.votes);
+                console.log('[ConvertOldToNew] Current order:', currentOrder);
+                console.log('[ConvertOldToNew] New order:', finalOrder);
+            }
+        } else {
+            // Нет голосов - порядок не меняем, только обновляем флаги voted (уже сделано выше)
+            if (isDebug) {
+                console.log('[ConvertOldToNew] No votes, keeping current order');
+            }
+        }
+
+        // Сохраняем состояние
+        this._saveVotingState();
+    }
+
+    // Конвертация из нового режима в старый
+    _convertNewToOld() {
+        // В новом режиме: порядок карточек + voted flags
+        // Место = позиция в списке, voted = участвует в голосовании
+        // В старом режиме: votes = { trackUid: place }
+
+        // Очищаем старые голоса
+        this.votes = {};
+        this.remainingPlaces = Array.from({ length: this.MAX_VOTES }, (_, i) => i + 1);
+
+        // Получаем порядок карточек
+        const currentOrder = this._getCurrentCardOrder();
+
+        // Назначаем места voted трекам на основе их ПОЗИЦИИ в списке (не порядкового номера среди voted)
+        currentOrder.forEach((uid, index) => {
+            const track = this.tracks.find(t => t.uid === uid);
+            const place = index + 1; // Место = позиция в списке (1-based)
+
+            // Пропускаем свои треки
+            if (track && parseInt(track.userId || $(track.element).data('userid'), 10) === this.user.id) {
+                return;
+            }
+
+            // Если трек voted и место в пределах MAX_VOTES
+            if (track && track.voted && place <= this.MAX_VOTES) {
+                this.votes[uid] = place;
+                this.remainingPlaces = this.remainingPlaces.filter(p => p !== place);
+            }
+        });
+
+        // Сохраняем состояние
+        this._saveVotingState();
+
+        if (isDebug) {
+            console.log('[ConvertNewToOld] Converted votes:', this.votes);
+            console.log('[ConvertNewToOld] Remaining places:', this.remainingPlaces);
+        }
     }
 
 
