@@ -459,7 +459,7 @@ class VotingSystem {
         this._loadAndRestoreVotingState(); // Загружаем и восстанавливаем состояние из localStorage
         this._initialSort(); // Устанавливаем порядок карточек
         this._setupDragAndDrop();
-        this._renderSubmitControl();
+        // this._renderSubmitControl(); // УБРАНО - панель больше не нужна
         this._initializeVotedFlags(); // Initialize voted flags
         this._renderVoteButtonsNew(); // НОВЫЙ РЕЖИМ: настраиваем кнопки
         this._bindVoteButtonClicksNew(); // НОВЫЙ РЕЖИМ: привязываем обработчики кликов
@@ -573,8 +573,8 @@ class VotingSystem {
             // Добавляем cursor: grab
             $container.find('.track-card').css('cursor', 'grab');
 
-            // Рендерим панель подтверждения
-            this._renderSubmitControl();
+            // Панель подтверждения больше не нужна
+            // this._renderSubmitControl();
             this._initializeVotedFlags();
 
             // Настраиваем кнопки для нового режима
@@ -1117,6 +1117,12 @@ class VotingSystem {
             $modal.remove();
         });
 
+        // Обработчик кнопки "Отправить" (только если все места выбраны)
+        $modal.find('.confirm-button').on('click', function() {
+            $modal.remove();
+            self.showResultsModal();
+        });
+
         $modal.find('.modal-close').on('click', () => $modal.remove());
         $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
     }
@@ -1158,8 +1164,24 @@ class VotingSystem {
         const $outButton = $('<button>').addClass('place-button out-button').attr('data-place', 'out').text('OUT');
         $placeButtons.append($outButton);
 
+        // Проверяем, все ли места выбраны
+        const votesCount = Object.keys(this.votes).length;
+        const places = Object.values(this.votes).sort((a, b) => a - b);
+        const hasAllPlaces = places.length === this.MAX_VOTES &&
+                            places.every((place, index) => place === index + 1);
+
+        const $buttonContainer = $('<div>').addClass('modal-actions');
+
+        // Если все места выбраны - показываем кнопку "Отправить"
+        if (hasAllPlaces) {
+            const $submitButton = $('<button>').addClass('confirm-button').text('Отправить');
+            $buttonContainer.append($submitButton);
+        }
+
         const $closeButton = $('<button>').addClass('modal-close cancel-button').text('Отменить');
-        $modalContent.append($heading).append($placeButtons).append($closeButton);
+        $buttonContainer.append($closeButton);
+
+        $modalContent.append($heading).append($placeButtons).append($buttonContainer);
         $modal.append($modalContent);
         return $modal;
     }
@@ -1254,7 +1276,8 @@ class VotingSystem {
             currentPlace++;
         });
 
-        this._updateSubmitButtonState();
+        // Панель подтверждения больше не используется
+        // this._updateSubmitButtonState();
 
         // НОВЫЙ РЕЖИМ: Обновляем цвет кнопок в зависимости от voted
         if (!isOld) {
@@ -1269,7 +1292,7 @@ class VotingSystem {
         $('#submit-votes-panel').remove();
         const $panel = $('<div>').attr('id', 'submit-votes-panel').addClass('submit-votes-panel hidden');
         const $info = $('<span>').addClass('vote-count-info').text(`Расставьте топ-${this.MAX_VOTES}`);
-        const $btn = $('<button>').addClass('submit-btn').attr('disabled', true).text('Подтвердить голоса');
+        const $btn = $('<button>').addClass('submit-btn').attr('disabled', true).text('Подтвердить');
         $panel.append($info).append($btn);
         $('body').append($panel);
 
@@ -1288,7 +1311,7 @@ class VotingSystem {
 
         if (votesCount > 0) {
             $panel.removeClass('hidden');
-            $panel.find('.vote-count-info').text(`Выбрано: ${votesCount} из ${this.MAX_VOTES}`);
+            $panel.find('.vote-count-info').text(`${votesCount} / ${this.MAX_VOTES}`);
 
             // Кнопка активна только если все места от 1 до MAX_VOTES расставлены
             if (hasAllPlaces) {
@@ -1816,15 +1839,17 @@ class VotingSystem {
                     }
 
                     .submit-votes-panel {
-                        position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-                        background: #1a1a1a; padding: 15px 30px; border-radius: 50px;
-                        z-index: 9999; display: flex; gap: 15px; align-items: center; border: 1px solid #333;
+                        position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+                        background: #1a1a1a; padding: 8px 12px; border-radius: 8px;
+                        z-index: 9999; display: flex; gap: 10px; align-items: center; border: 1px solid #333;
                     }
                     .submit-votes-panel.hidden { display: none; }
                     .submit-btn {
                         background: #ff0055; color: white; border: none;
-                        padding: 10px 20px; border-radius: 20px; cursor: pointer;
+                        padding: 6px 14px; border-radius: 6px; cursor: pointer;
                         transition: all 0.3s ease;
+                        font-size: 14px;
+                        font-weight: 500;
                     }
                     .submit-btn:disabled {
                         background: #555555;
@@ -1835,7 +1860,11 @@ class VotingSystem {
                         background: #ff3377;
                         transform: scale(1.05);
                     }
-                    .vote-count-info { color: white; }
+                    .vote-count-info {
+                        color: white;
+                        font-size: 14px;
+                        font-weight: 500;
+                    }
                 </style>
             `);
         }
