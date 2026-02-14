@@ -6,9 +6,9 @@ function detectIsMobile() {
 }
 
 // Для мобильных - всегда старая система, для десктопа - можно переключать
-let isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop system
+//let isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop system
 // const isOld = true; // Force Old system
-// const isOld = false; // Force New system
+ const isOld = false; // Force New system
 
 // Ключ для сохранения выбора режима в localStorage
 const VOTING_MODE_KEY = 'votingSystem_mode';
@@ -800,7 +800,13 @@ class VotingSystem {
                     const trackUid = $card.data('uid');
                     const track = self.tracks.find(t => t.uid === trackUid);
 
-                    if (track) {
+                    // Проверяем, находится ли трек в пределах MAX_VOTES
+                    const currentOrder = self._getCurrentCardOrder();
+                    const currentPlace = currentOrder.indexOf(trackUid) + 1; // 1-based
+                    const isPrize = currentPlace <= self.MAX_VOTES;
+
+                    if (track && isPrize) {
+                        // Переключаем voted только для треков в пределах TOP
                         const wasVoted = track.voted;
                         track.voted = !track.voted;
 
@@ -809,6 +815,10 @@ class VotingSystem {
                         }
 
                         self._updateRankings();
+                    } else {
+                        if (isDebug) {
+                            console.log(`[Card Interceptor] Клик проигнорирован - трек за пределами TOP-${self.MAX_VOTES}`);
+                        }
                     }
 
                     return false;
@@ -978,6 +988,8 @@ class VotingSystem {
 
     // Только обновление цвета кнопок без пересоздания
     _updateVoteButtonsColor() {
+        const currentOrder = this._getCurrentCardOrder();
+
         this.tracks.forEach(track => {
             // Пропускаем свой трек
             if (parseInt(track.userId, 10) === this.user.id) {
@@ -989,8 +1001,12 @@ class VotingSystem {
 
             if ($voteButton.length === 0) return;
 
-            // Меняем цвет кнопки в зависимости от состояния voted
-            if (track.voted) {
+            // Проверяем, находится ли трек в пределах TOP
+            const currentPlace = currentOrder.indexOf(track.uid) + 1;
+            const isPrize = currentPlace <= this.MAX_VOTES;
+
+            // Меняем цвет кнопки только для треков в пределах TOP
+            if (track.voted && isPrize) {
                 $voteButton.addClass('voted'); // Зеленый цвет
             } else {
                 $voteButton.removeClass('voted'); // Обычный цвет
@@ -1203,20 +1219,25 @@ class VotingSystem {
             // Determine if this place is a prize place
             const isPrize = currentPlace <= self.MAX_VOTES;
 
+            // ВАЖНО: Если трек за пределами TOP - снимаем флаг voted
+            if (track && !isPrize && track.voted) {
+                track.voted = false;
+                if (isDebug) {
+                    console.log(`[_updateRankings] Трек ${track.title} вышел за пределы TOP-${self.MAX_VOTES}, voted снят`);
+                }
+            }
+
             // Set badge number and classes
             $badge.text(currentPlace).addClass('visible').show();
             $badge.removeClass('voted non-voted prize non-prize');
 
-            if (track && track.voted) {
+            if (track && track.voted && isPrize) {
+                // Voted только в пределах TOP
                 $badge.addClass('voted');
-                if (isPrize) {
-                    $badge.addClass('prize');
-                    self.votes[trackUid] = currentPlace;
-                } else {
-                    $badge.addClass('non-prize');
-                }
+                $badge.addClass('prize');
+                self.votes[trackUid] = currentPlace;
                 if (isDebug) {
-                    console.log(`[_updateRankings] Track ${currentPlace}: ${track.title} - voted ${isPrize ? 'prize' : 'non-prize'}`);
+                    console.log(`[_updateRankings] Track ${currentPlace}: ${track.title} - voted prize`);
                 }
             } else {
                 $badge.addClass('non-voted');
