@@ -16,7 +16,7 @@ const VOTING_MODE_KEY = 'votingSystem_mode';
 class VotingSystem {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
 
-        console.log("VotingSystem 2.1");
+        console.log("VotingSystem 2.1-1");
         $('.voting-alert').remove();
 
         if (!user && !isDebug) {
@@ -454,17 +454,21 @@ class VotingSystem {
     // --- DESKTOP / NEW SYSTEM METHODS ---
 
     _init() {
+        console.log('[_init] Инициализация нового режима');
         this._renderModeToggle(); // Добавляем переключатель режимов
         this._loadAndRestoreVotingState(); // Загружаем и восстанавливаем состояние из localStorage
         this._initialSort(); // Устанавливаем порядок карточек
         this._setupDragAndDrop();
         this._renderSubmitControl();
         this._initializeVotedFlags(); // Initialize voted flags
+        this._renderVoteButtonsNew(); // НОВЫЙ РЕЖИМ: настраиваем кнопки
+        this._bindVoteButtonClicksNew(); // НОВЫЙ РЕЖИМ: привязываем обработчики кликов
         this._updateRankings();
         this._monkeyPatchPlayer(); // Патчим плеер ПОСЛЕ создания badge
         this._setPlayerPlayList();
         this._setupPlayerListeners(); // Listen for play events
         this._initializeListenIndicators(); // Initialize listen progress indicators
+        console.log('[_init] Инициализация нового режима завершена');
     }
 
     // Рендеринг переключателя режимов для десктопа
@@ -527,10 +531,13 @@ class VotingSystem {
 
     // Применение переключения режима без перезагрузки страницы
     _applyModeSwitch(useOldMode) {
+        console.log(`[_applyModeSwitch] Переключение на ${useOldMode ? 'СТАРЫЙ' : 'НОВЫЙ'} режим`);
         const $container = $(this.containerSelector);
 
         if (useOldMode) {
             // Переключаемся на старый режим
+            console.log('[_applyModeSwitch] Настройка старого режима');
+
             // Скрываем элементы нового режима
             $container.find('.rank-badge').hide();
             $container.find('.listen-indicator').hide();
@@ -544,14 +551,13 @@ class VotingSystem {
             // Убираем cursor: grab
             $container.find('.track-card').css('cursor', 'default');
 
-            // Инициализируем старый режим
+            // Настраиваем кнопки для старого режима
             this._renderVoteButtons();
             this._bindVoteButtonClicks();
             this._checkAndRenderResultsButton();
         } else {
             // Переключаемся на новый режим
-            // Скрываем/удаляем элементы старого режима
-            $container.find('.vote-button').hide();
+            console.log('[_applyModeSwitch] Настройка нового режима');
 
             // Показываем элементы нового режима
             $container.find('.rank-badge').show();
@@ -570,11 +576,18 @@ class VotingSystem {
             // Рендерим панель подтверждения
             this._renderSubmitControl();
             this._initializeVotedFlags();
+
+            // Настраиваем кнопки для нового режима
+            this._renderVoteButtonsNew();
+            this._bindVoteButtonClicksNew();
+
             this._updateRankings();
 
             // Устанавливаем перехватчики кликов для badge (если ещё не установлены)
             this._monkeyPatchPlayer();
         }
+
+        console.log('[_applyModeSwitch] Переключение завершено');
     }
 
     // Полная очистка всех данных голосования
@@ -706,6 +719,46 @@ class VotingSystem {
                 .voting-locked-message p {
                     color: #888;
                 }
+
+                /* Стили для модалки выбора места (НОВЫЙ РЕЖИМ) */
+
+                /* Текущее место этого трека - зелёный фон */
+                .place-button.current {
+                    border: 3px solid #00ff88;
+                    background: #00ff88;
+                    color: #000;
+                    font-weight: bold;
+                }
+
+                /* Занятое другим треком место - зелёный фон */
+                .place-button.occupied {
+                    border: 2px solid #00aa55;
+                    background: #00aa55;
+                    color: #000;
+                    position: relative;
+                }
+
+                .place-button.occupied::after {
+                    content: '✓';
+                    position: absolute;
+                    top: 2px;
+                    right: 2px;
+                    font-size: 10px;
+                    color: #000;
+                }
+
+                /* Кнопка OUT */
+                .place-button.out-button {
+                    background: #ff0055;
+                    color: white;
+                    font-weight: bold;
+                    border: 2px solid #ff0055;
+                }
+
+                .place-button.out-button:hover {
+                    background: #ff3377;
+                    border-color: #ff3377;
+                }
             </style>
         `);
     }
@@ -782,15 +835,41 @@ class VotingSystem {
     }
 
     _initialSort() {
+        console.log('[_initialSort] Начало сортировки');
         // Берем карточки в том порядке, в котором они есть в DOM (отсортированы выше по лайкам и т.д.)
         // Если есть сохраненное состояние - применяем его
         const savedState = this._loadVotingState();
 
         if (savedState && savedState.cardOrder && savedState.cardOrder.length > 0) {
             // Восстанавливаем порядок из localStorage
+            console.log('[_initialSort] Восстанавливаем порядок из localStorage');
             this._setCardOrder(savedState.cardOrder);
+        } else {
+            // Если нет сохраненного состояния - помещаем свой трек в конец
+            console.log('[_initialSort] Нет сохраненного состояния, помещаем свой трек в конец');
+            this._moveOwnTrackToEnd();
         }
-        // Если нет сохраненного состояния - оставляем как есть в DOM
+    }
+
+    // Перемещает свой трек в конец списка
+    _moveOwnTrackToEnd() {
+        const currentOrder = this._getCurrentCardOrder();
+        const ownTrack = this.tracks.find(t => parseInt(t.userId, 10) === this.user.id);
+
+        if (!ownTrack) {
+            console.log('[_moveOwnTrackToEnd] Свой трек не найден');
+            return;
+        }
+
+        console.log('[_moveOwnTrackToEnd] Свой трек найден:', ownTrack.uid);
+
+        // Удаляем свой трек из текущей позиции
+        const newOrder = currentOrder.filter(uid => uid !== ownTrack.uid);
+        // Добавляем в конец
+        newOrder.push(ownTrack.uid);
+
+        console.log('[_moveOwnTrackToEnd] Новый порядок:', newOrder);
+        this._setCardOrder(newOrder);
     }
 
     _setupDragAndDrop() {
@@ -806,7 +885,7 @@ class VotingSystem {
         this.sortableInstance = Sortable.create(container, {
             animation: 150,
             handle: '.track-card',
-            filter: '.my-track',
+            filter: '.my-track', // Запрещаем перетаскивать свой трек
             onStart: function(evt) {
                 // Mark track as voted when dragging starts
                 const $card = $(evt.item);
@@ -815,6 +894,20 @@ class VotingSystem {
                 if (track) {
                     track.voted = true;
                 }
+            },
+            onMove: function(evt) {
+                // Запрещаем перетаскивать на последнюю позицию (где свой трек)
+                const relatedElement = evt.related;
+                const $related = $(relatedElement);
+                const relatedUserId = parseInt($related.data('userid'), 10);
+
+                // Если пытаемся переместить на место своего трека - запрещаем
+                if (relatedUserId === self.user.id) {
+                    console.log('[DnD] Запрещено перемещение на место своего трека');
+                    return false; // Отменяем перемещение
+                }
+
+                return true; // Разрешаем перемещение
             },
             onEnd: function(evt) {
                 self._updateRankings();
@@ -830,6 +923,232 @@ class VotingSystem {
                 track.voted = false;
             }
         });
+    }
+
+    // --- НОВЫЙ РЕЖИМ: МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА МЕСТА ---
+
+    _renderVoteButtonsNew() {
+        console.log('[_renderVoteButtonsNew] Начало рендеринга кнопок для нового режима');
+        const $container = $(this.containerSelector);
+
+        this.tracks.forEach(track => {
+            // Пропускаем свой трек
+            if (parseInt(track.userId, 10) === this.user.id) {
+                return;
+            }
+
+            // Ищем существующую кнопку .vote-button
+            let $voteButton = $(track.element).find('.vote-button');
+
+            console.log(`[_renderVoteButtonsNew] Track ${track.uid}: найдено кнопок .vote-button - ${$voteButton.length}, voted=${track.voted}`);
+
+            if ($voteButton.length === 0) {
+                // Если кнопки нет - создаем
+                $voteButton = $('<button>').addClass('vote-button');
+                const $ratingContainer = $(track.element).find('.rating-container');
+                if ($ratingContainer.length) {
+                    $ratingContainer.empty().append($voteButton);
+                } else {
+                    const $cardInfo = $(track.element).find('.card-info');
+                    if ($cardInfo.length) {
+                        $cardInfo.append($voteButton);
+                    }
+                }
+                console.log(`[_renderVoteButtonsNew] Создана новая кнопка для трека ${track.uid}`);
+            }
+
+            // В новом режиме всегда показываем "Выбрать место"
+            $voteButton.text('Выбрать место');
+            $voteButton.show(); // Убеждаемся что кнопка видима
+
+            // Меняем цвет кнопки в зависимости от состояния voted
+            if (track.voted) {
+                $voteButton.addClass('voted'); // Зеленый цвет
+                console.log(`[_renderVoteButtonsNew] Кнопка трека ${track.uid} отмечена как voted (зеленая)`);
+            } else {
+                $voteButton.removeClass('voted'); // Обычный цвет
+                console.log(`[_renderVoteButtonsNew] Кнопка трека ${track.uid} не отмечена (обычная)`);
+            }
+
+            console.log(`[_renderVoteButtonsNew] Кнопка для трека ${track.uid} настроена: "${$voteButton.text()}"`);
+        });
+
+        console.log('[_renderVoteButtonsNew] Рендеринг завершен');
+    }
+
+    _bindVoteButtonClicksNew() {
+        console.log('[_bindVoteButtonClicksNew] Привязка обработчиков для нового режима');
+        const self = this;
+
+        // Отвязываем старые обработчики
+        $('body').off('click', `${this.containerSelector} .vote-button`);
+
+        // Привязываем новый обработчик для нового режима
+        $('body').on('click', `${this.containerSelector} .vote-button`, function(e) {
+            // Проверяем, что мы в новом режиме
+            if (isOld) {
+                console.log('[_bindVoteButtonClicksNew] Клик проигнорирован - активен старый режим');
+                return; // Не обрабатываем в старом режиме
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const $card = $(this).closest('.track-card');
+            const trackUid = $card.data('uid');
+
+            console.log(`[_bindVoteButtonClicksNew] Клик по кнопке трека ${trackUid}`);
+
+            // Открываем модалку выбора места для нового режима
+            self._openVoteModalNew($card, trackUid);
+        });
+
+        console.log('[_bindVoteButtonClicksNew] Обработчики привязаны');
+    }
+
+    _openVoteModalNew($card, trackUid) {
+        const self = this;
+        const $modal = this._createVoteModalNew(trackUid);
+        $('body').append($modal);
+
+        $modal.find('[data-place]').on('click', function() {
+            const place = $(this).data('place');
+            const track = self.tracks.find(t => t.uid === trackUid);
+
+            if (!track) {
+                $modal.remove();
+                return;
+            }
+
+            // Получаем текущий порядок карточек
+            const currentOrder = self._getCurrentCardOrder();
+            const currentPlace = currentOrder.indexOf(trackUid) + 1; // 1-based
+
+            if (place === 'out') {
+                // Кнопка OUT - перемещаем трек на ПРЕДПОСЛЕДНЕЕ место (перед своим треком) с отметкой voted
+                track.voted = true;
+
+                // Находим свой трек
+                const ownTrack = self.tracks.find(t => parseInt(t.userId, 10) === self.user.id);
+
+                // Удаляем перемещаемый трек из текущей позиции
+                const newOrder = currentOrder.filter(uid => uid !== trackUid);
+
+                if (ownTrack) {
+                    // Находим позицию своего трека в новом порядке
+                    const ownTrackIndex = newOrder.indexOf(ownTrack.uid);
+                    if (ownTrackIndex !== -1) {
+                        // Вставляем перед своим треком (предпоследняя позиция)
+                        newOrder.splice(ownTrackIndex, 0, trackUid);
+                    } else {
+                        // Если свой трек не найден - добавляем в конец
+                        newOrder.push(trackUid);
+                    }
+                } else {
+                    // Если нет своего трека - добавляем в конец
+                    newOrder.push(trackUid);
+                }
+
+                console.log('[OUT] Новый порядок:', newOrder);
+                self._setCardOrder(newOrder);
+                self._updateRankings();
+                self._setPlayerPlayList(); // Обновляем плейлист
+                $modal.remove();
+                return;
+            }
+
+            const targetPlace = parseInt(place, 10);
+
+            // Если кликнули на текущее место И трек отмечен - снимаем отметку
+            if (track.voted && currentPlace === targetPlace) {
+                track.voted = false;
+                self._updateRankings();
+                self._renderVoteButtonsNew(); // Обновляем цвет кнопки
+                $modal.remove();
+                return;
+            }
+
+            // Иначе - отмечаем трек и перемещаем на нужное место
+            track.voted = true;
+
+            // Перемещаем трек на targetPlace
+            self._moveTrackToPositionNew(trackUid, targetPlace);
+
+            // Обновляем рейтинги, плейлист и кнопки
+            self._updateRankings();
+            self._setPlayerPlayList(); // Обновляем плейлист
+            self._renderVoteButtonsNew(); // Обновляем цвет кнопки
+            $modal.remove();
+        });
+
+        $modal.find('.modal-close').on('click', () => $modal.remove());
+        $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
+    }
+
+    _createVoteModalNew(trackUid) {
+        const $modal = $('<div>').addClass('modal-overlay');
+        const $modalContent = $('<div>').addClass('modal-content');
+        const $heading = $('<h5>').addClass('modal-title').text('Выберите место для трека');
+        const $placeButtons = $('<div>').addClass('place-buttons');
+
+        // Получаем текущий порядок карточек
+        const currentOrder = this._getCurrentCardOrder();
+        const currentPlace = currentOrder.indexOf(trackUid) + 1; // 1-based
+        const track = this.tracks.find(t => t.uid === trackUid);
+
+        // Показываем ВСЕ места от 1 до MAX_VOTES
+        for (let place = 1; place <= this.MAX_VOTES; place++) {
+            const $button = $('<button>').addClass('place-button').attr('data-place', place).text(place);
+
+            // Если это текущее место данного трека И трек отмечен - зелёный яркий
+            if (track && track.voted && currentPlace === place) {
+                $button.addClass('current');
+            }
+            // Если место занято другим voted треком - зелёный тёмный
+            else {
+                const trackAtPlace = this.tracks.find(t => {
+                    const idx = currentOrder.indexOf(t.uid);
+                    return idx + 1 === place && t.voted && t.uid !== trackUid;
+                });
+                if (trackAtPlace) {
+                    $button.addClass('occupied');
+                }
+            }
+
+            $placeButtons.append($button);
+        }
+
+        // Добавляем кнопку OUT
+        const $outButton = $('<button>').addClass('place-button out-button').attr('data-place', 'out').text('OUT');
+        $placeButtons.append($outButton);
+
+        const $closeButton = $('<button>').addClass('modal-close cancel-button').text('Отменить');
+        $modalContent.append($heading).append($placeButtons).append($closeButton);
+        $modal.append($modalContent);
+        return $modal;
+    }
+
+    _moveTrackToPositionNew(trackUid, targetPlace) {
+        const $container = $(this.containerSelector);
+        const $allCards = $container.find('.track-card');
+
+        // Получаем текущий порядок всех карточек
+        const currentOrder = [];
+        $allCards.each(function() {
+            currentOrder.push($(this).data('uid'));
+        });
+
+        // Удаляем перемещаемый трек из текущей позиции
+        const newOrder = currentOrder.filter(uid => uid !== trackUid);
+
+        // Вставляем трек на новую позицию (targetPlace - 1, т.к. массив с 0)
+        newOrder.splice(targetPlace - 1, 0, trackUid);
+
+        // Применяем новый порядок
+        this._setCardOrder(newOrder);
+
+        // Сохраняем состояние
+        this._saveVotingState();
     }
 
 
@@ -858,7 +1177,8 @@ class VotingSystem {
                 return;
             }
 
-            $card.find('.vote-button').remove(); // Ensure buttons are gone in Desktop mode
+            // НЕ удаляем кнопки - они переиспользуются в обоих режимах
+            // Скрываем/показываем их через _applyModeSwitch
 
             // Determine if this place is a prize place
             const isPrize = currentPlace <= self.MAX_VOTES;
@@ -1182,6 +1502,19 @@ class VotingSystem {
             }
         });
 
+        // ВАЖНО: Убеждаемся что свой трек в конце порядка
+        const ownTrack = this.tracks.find(t => parseInt(t.userId, 10) === this.user.id);
+        if (ownTrack) {
+            // Удаляем свой трек из текущей позиции
+            const ownTrackIndex = order.indexOf(ownTrack.uid);
+            if (ownTrackIndex !== -1 && ownTrackIndex !== order.length - 1) {
+                // Если свой трек не на последнем месте - перемещаем
+                order.splice(ownTrackIndex, 1);
+                order.push(ownTrack.uid);
+                console.log('[_getCurrentCardOrder] Свой трек перемещен в конец порядка');
+            }
+        }
+
         return order;
     }
 
@@ -1213,6 +1546,19 @@ class VotingSystem {
         Object.values(cardsByUid).forEach(card => {
             orderedCards.push(card);
         });
+
+        // ВАЖНО: Убеждаемся что свой трек в конце
+        const ownTrack = this.tracks.find(t => parseInt(t.userId, 10) === this.user.id);
+        if (ownTrack) {
+            // Удаляем свой трек из текущей позиции
+            const ownCardIndex = orderedCards.findIndex(card => $(card).data('uid') === ownTrack.uid);
+            if (ownCardIndex !== -1) {
+                const ownCard = orderedCards.splice(ownCardIndex, 1)[0];
+                // Помещаем в конец
+                orderedCards.push(ownCard);
+                console.log('[_setCardOrder] Свой трек перемещен в конец');
+            }
+        }
 
         // Применяем новый порядок в DOM
         $container.append(orderedCards);
