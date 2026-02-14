@@ -3242,7 +3242,7 @@ class Player {
                 }
 
                 // Создаём голосование с этими данными
-                new VotingSystem(this, playlistSelectorString, {
+                new Votingsystem20(this, playlistSelectorString, {
                     user,
                     eventUid,
                     tourUid,

@@ -13,7 +13,7 @@ let isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop s
 // Ключ для сохранения выбора режима в localStorage
 const VOTING_MODE_KEY = 'votingSystem_mode';
 
-class VotingSystem {
+class Votingsystem20 {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
 
         $('.voting-alert').remove();
