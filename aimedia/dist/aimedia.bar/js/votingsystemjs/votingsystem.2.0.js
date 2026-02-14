@@ -13,9 +13,10 @@ let isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop s
 // Ключ для сохранения выбора режима в localStorage
 const VOTING_MODE_KEY = 'votingSystem_mode';
 
-class Votingsystem20 {
+class VotingSystem {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
 
+        console.log("VotingSystem 2.1");
         $('.voting-alert').remove();
 
         if (!user && !isDebug) {
@@ -39,6 +40,9 @@ class Votingsystem20 {
         this.eventUid = eventUid;
         this.tourUid = tourUid;
         this.votingLocked = false; // Флаг блокировки после отправки голоса
+
+        // Ключ для хранения данных голосования по ID голосования
+        this.votingStateKey = `voting_${this.eventUid}_${this.tourUid}`;
 
         // Для десктопа - загружаем сохранённый режим
         if (!detectIsMobile()) {
@@ -226,6 +230,9 @@ class Votingsystem20 {
         this.tracks.forEach(track => {
             track.voted = false;
         });
+
+        // ВАЖНО: Очищаем состояние голосования из localStorage
+        this._clearVotingState();
 
         // Скрываем панель отправки
         $('#submit-votes-panel').addClass('hidden');
@@ -444,7 +451,8 @@ class Votingsystem20 {
 
     _init() {
         this._renderModeToggle(); // Добавляем переключатель режимов
-        this._initialRandomSort();
+        this._loadAndRestoreVotingState(); // Загружаем и восстанавливаем состояние из localStorage
+        this._initialSort(); // Устанавливаем порядок карточек
         this._setupDragAndDrop();
         this._renderSubmitControl();
         this._initializeVotedFlags(); // Initialize voted flags
@@ -575,12 +583,8 @@ class Votingsystem20 {
             track.listenProgress = 0;
         });
 
-        // Очищаем localStorage
-        try {
-            localStorage.removeItem('votingSystem_listenProgress');
-        } catch (e) {
-            console.error('[VotingSystem] Error clearing localStorage:', e);
-        }
+        // Очищаем состояние голосования из localStorage
+        this._clearVotingState();
 
         // Сбрасываем UI элементы (но не удаляем, только сбрасываем состояние)
         $(this.containerSelector).find('.rank-badge').removeClass('voted prize non-prize').addClass('non-voted');
@@ -771,34 +775,16 @@ class Votingsystem20 {
         }
     }
 
-    _initialRandomSort() {
-        if (this.sortedOnce) return;
-        this.sortedOnce = true;
+    _initialSort() {
+        // Берем карточки в том порядке, в котором они есть в DOM (отсортированы выше по лайкам и т.д.)
+        // Если есть сохраненное состояние - применяем его
+        const savedState = this._loadVotingState();
 
-        const $container = $(this.containerSelector);
-        const $cards = $container.find('.track-card').toArray();
-        const self = this;
-
-        let myTracks = [];
-        let otherTracks = [];
-
-        $cards.forEach(card => {
-            const userId = parseInt($(card).data('userid'), 10);
-            if (userId === self.user.id) {
-                myTracks.push(card);
-            } else {
-                otherTracks.push(card);
-            }
-        });
-
-        // Shuffle other tracks
-        for (let i = otherTracks.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [otherTracks[i], otherTracks[j]] = [otherTracks[j], otherTracks[i]];
+        if (savedState && savedState.cardOrder && savedState.cardOrder.length > 0) {
+            // Восстанавливаем порядок из localStorage
+            this._setCardOrder(savedState.cardOrder);
         }
-
-        const sortedCards = [...otherTracks, ...myTracks];
-        $container.append(sortedCards);
+        // Если нет сохраненного состояния - оставляем как есть в DOM
     }
 
     _setupDragAndDrop() {
@@ -902,6 +888,9 @@ class Votingsystem20 {
         });
 
         this._updateSubmitButtonState();
+
+        // Сохраняем состояние при каждом изменении рейтинга
+        this._saveVotingState();
     }
 
     _renderSubmitControl() {
@@ -1046,27 +1035,144 @@ class Votingsystem20 {
     }
 
     _loadListenProgress() {
-        try {
-            const saved = localStorage.getItem('votingSystem_listenProgress');
-            return saved ? JSON.parse(saved) : {};
-        } catch (e) {
-            console.error('[VotingSystem] Error loading listen progress:', e);
-            return {};
-        }
+        // Загружаем из общего состояния голосования
+        const savedState = this._loadVotingState();
+        return savedState && savedState.listenProgress ? savedState.listenProgress : {};
     }
 
     _saveListenProgress() {
+        // Сохраняем прогресс в общее состояние голосования
+        this._saveVotingState();
+    }
+
+    // --- НОВЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ОБЩИМ СОСТОЯНИЕМ ГОЛОСОВАНИЯ ---
+
+    // Загрузка состояния голосования из localStorage
+    _loadVotingState() {
         try {
-            const progress = {};
+            const saved = localStorage.getItem(this.votingStateKey);
+            return saved ? JSON.parse(saved) : null;
+        } catch (e) {
+            console.error('[VotingSystem] Error loading voting state:', e);
+            return null;
+        }
+    }
+
+    // Сохранение состояния голосования в localStorage
+    _saveVotingState() {
+        try {
+            // Собираем текущий порядок карточек
+            const cardOrder = this._getCurrentCardOrder();
+
+            // Собираем отметки voted
+            const votedFlags = {};
             this.tracks.forEach(track => {
-                if (track.listenProgress > 0) {
-                    progress[track.uid] = track.listenProgress;
+                if (track.voted) {
+                    votedFlags[track.uid] = true;
                 }
             });
-            localStorage.setItem('votingSystem_listenProgress', JSON.stringify(progress));
+
+            // Собираем прогресс прослушивания
+            const listenProgress = {};
+            this.tracks.forEach(track => {
+                if (track.listenProgress > 0) {
+                    listenProgress[track.uid] = track.listenProgress;
+                }
+            });
+
+            // Формируем объект состояния
+            const state = {
+                cardOrder: cardOrder,
+                votedFlags: votedFlags,
+                listenProgress: listenProgress,
+                timestamp: Date.now()
+            };
+
+            localStorage.setItem(this.votingStateKey, JSON.stringify(state));
         } catch (e) {
-            console.error('[VotingSystem] Error saving listen progress:', e);
+            console.error('[VotingSystem] Error saving voting state:', e);
         }
+    }
+
+    // Загрузка и восстановление состояния голосования
+    _loadAndRestoreVotingState() {
+        const savedState = this._loadVotingState();
+
+        if (!savedState) return;
+
+        // Восстанавливаем отметки voted
+        if (savedState.votedFlags) {
+            this.tracks.forEach(track => {
+                track.voted = savedState.votedFlags[track.uid] || false;
+            });
+        }
+
+        // Восстанавливаем прогресс прослушивания
+        if (savedState.listenProgress) {
+            this.tracks.forEach(track => {
+                track.listenProgress = savedState.listenProgress[track.uid] || 0;
+            });
+        }
+    }
+
+    // Очистка состояния голосования из localStorage
+    _clearVotingState() {
+        try {
+            localStorage.removeItem(this.votingStateKey);
+
+            // Также удаляем старый ключ прослушанности, если он есть
+            localStorage.removeItem('votingSystem_listenProgress');
+        } catch (e) {
+            console.error('[VotingSystem] Error clearing voting state:', e);
+        }
+    }
+
+    // Получение текущего порядка карточек
+    _getCurrentCardOrder() {
+        const $cards = $(this.containerSelector).find('.track-card');
+        const order = [];
+
+        $cards.each(function() {
+            const uid = $(this).data('uid');
+            if (uid) {
+                order.push(uid);
+            }
+        });
+
+        return order;
+    }
+
+    // Установка порядка карточек программно
+    _setCardOrder(uidArray) {
+        if (!uidArray || uidArray.length === 0) return;
+
+        const $container = $(this.containerSelector);
+        const cardsByUid = {};
+
+        // Индексируем карточки по uid
+        $container.find('.track-card').each(function() {
+            const uid = $(this).data('uid');
+            if (uid) {
+                cardsByUid[uid] = this;
+            }
+        });
+
+        // Перестраиваем порядок согласно массиву
+        const orderedCards = [];
+        uidArray.forEach(uid => {
+            if (cardsByUid[uid]) {
+                orderedCards.push(cardsByUid[uid]);
+                delete cardsByUid[uid]; // Удаляем из объекта, чтобы не добавить дважды
+            }
+        });
+
+        // Добавляем карточки, которых не было в сохраненном порядке (новые карточки)
+        Object.values(cardsByUid).forEach(card => {
+            orderedCards.push(card);
+        });
+
+        // Применяем новый порядок в DOM
+        $container.append(orderedCards);
     }
 
 
