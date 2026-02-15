@@ -2006,7 +2006,6 @@ class VotingSystem {
         // Инициализируем Sortable для перетаскивания
         if (typeof Sortable !== 'undefined') {
             Sortable.create($votesContainer[0], {
-                handle: '.drag-handle',
                 animation: 150,
                 onEnd: function () {
                     // Обновляем номера мест после перетаскивания
@@ -2087,7 +2086,6 @@ class VotingSystem {
         // Initialize Sortable for re-ordering in modal (Old system feature)
         if (typeof Sortable !== 'undefined') {
             Sortable.create($votesContainer[0], {
-                handle: '.drag-handle',
                 animation: 150,
                 onEnd: function () {
                     $votesContainer.find('.sortable-item').each(function(index) {
