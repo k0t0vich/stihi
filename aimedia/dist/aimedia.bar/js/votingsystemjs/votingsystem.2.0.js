@@ -752,6 +752,57 @@ class VotingSystem {
                 .sortable-item:active {
                     cursor: grabbing;
                 }
+
+                /* Компактные стили для финальной модалки сортировки */
+                .sortable-container {
+                    min-height: 300px;
+                    max-height: 500px;
+                    gap: 2px;
+                    margin-bottom: 4px;
+                }
+
+                .sortable-container:has(> .sortable-item:nth-child(11)) {
+                    overflow-y: auto;
+                }
+
+                .sortable-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 4px 4px;
+                    margin-bottom: 0;
+                    background: #f5f5f5;
+                    border-radius: 0;
+                }
+
+                .sortable-item-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    flex: 1;
+                }
+
+                /*.place-circle {*/
+                /*    display: inline-block;*/
+                /*    min-width: 20px;*/
+                /*    color: #000;*/
+                /*    font-weight: bold;*/
+                /*    font-size: 14px;*/
+                /*    background: none !important;*/
+                /*    border: none !important;*/
+                /*    border-radius: 0 !important;*/
+                /*}*/
+
+                .track-info-text {
+                    flex: 1;
+                    font-size: 14px;
+                    line-height: 1.2;
+                }
+
+                .drag-handle {
+                    padding: 2px 4px;
+                    font-size: 20px;
+                }
             </style>
         `);
     }
