@@ -5,13 +5,8 @@ function detectIsMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 }
 
-// Для мобильных - всегда старая система, для десктопа - можно переключать
-//let isOld = detectIsMobile(); // true = Old/Mobile system, false = New/Desktop system
-// const isOld = true; // Force Old system
- const isOld = false; // Force New system
-
-// Ключ для сохранения выбора режима в localStorage
-const VOTING_MODE_KEY = 'votingSystem_mode';
+// Всегда используем новый режим
+const isOld = false; // Всегда новый режим
 
 class VotingSystem {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
@@ -44,33 +39,7 @@ class VotingSystem {
         // Ключ для хранения данных голосования по ID голосования
         this.votingStateKey = `voting_${this.eventUid}_${this.tourUid}`;
 
-        // Для десктопа - загружаем сохранённый режим
-        if (!detectIsMobile()) {
-            this._loadSavedMode();
-        }
-
         this.init();
-    }
-
-    // Загрузка сохранённого режима из localStorage
-    _loadSavedMode() {
-        try {
-            const savedMode = localStorage.getItem(VOTING_MODE_KEY);
-            if (savedMode !== null) {
-                isOld = savedMode === 'old';
-            }
-        } catch (e) {
-            console.error('[VotingSystem] Error loading saved mode:', e);
-        }
-    }
-
-    // Сохранение режима в localStorage
-    _saveModePreference(useOldMode) {
-        try {
-            localStorage.setItem(VOTING_MODE_KEY, useOldMode ? 'old' : 'new');
-        } catch (e) {
-            console.error('[VotingSystem] Error saving mode preference:', e);
-        }
     }
 
     init() {
@@ -83,11 +52,8 @@ class VotingSystem {
             return;
         }
 
-        if (isOld) {
-            this._initOld();
-        } else {
-            this._init();
-        }
+        // Всегда используем новый режим
+        this._init();
     }
 
     // --- SHARED METHODS ---
@@ -455,14 +421,13 @@ class VotingSystem {
 
     _init() {
         console.log('[_init] Инициализация нового режима');
-        this._renderModeToggle(); // Добавляем переключатель режимов
+        this._injectModeToggleStyles(); // Инжектим стили (включая стили для модалок)
         this._loadAndRestoreVotingState(); // Загружаем и восстанавливаем состояние из localStorage
         this._initialSort(); // Устанавливаем порядок карточек
         this._setupDragAndDrop();
-        // this._renderSubmitControl(); // УБРАНО - панель больше не нужна
         this._initializeVotedFlags(); // Initialize voted flags
-        this._renderVoteButtonsNew(); // НОВЫЙ РЕЖИМ: настраиваем кнопки
-        this._bindVoteButtonClicksNew(); // НОВЫЙ РЕЖИМ: привязываем обработчики кликов
+        this._renderVoteButtonsNew(); // Настраиваем кнопки
+        this._bindVoteButtonClicksNew(); // Привязываем обработчики кликов
         this._updateRankings();
         this._monkeyPatchPlayer(); // Патчим плеер ПОСЛЕ создания badge
         this._setPlayerPlayList();
@@ -758,6 +723,34 @@ class VotingSystem {
                 .place-button.out-button:hover {
                     background: #ff3377;
                     border-color: #ff3377;
+                }
+
+                /* Drag handle для модального окна сортировки */
+                .drag-handle {
+                    cursor: grab;
+                    font-size: 24px;
+                    color: #888;
+                    padding: 5px 10px;
+                    user-select: none;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .drag-handle:active {
+                    cursor: grabbing;
+                }
+
+                .drag-handle:hover {
+                    color: #fff;
+                }
+
+                .sortable-item {
+                    cursor: grab;
+                }
+
+                .sortable-item:active {
+                    cursor: grabbing;
                 }
             </style>
         `);
@@ -1918,61 +1911,87 @@ class VotingSystem {
         }, 50);
     }
 
-    // --- RESULT MODALS DISPATCHER ---
+    // --- RESULT MODALS ---
 
     showResultsModal() {
-        if (isOld) {
-            this._showResultsModalOld();
-        } else {
-            this._showResultsModalNew();
-        }
+        // Всегда показываем новое модальное окно
+        this._showResultsModalNew();
     }
 
-    // New System Modal (Desktop)
+    // New System Modal (Desktop) - с drag-and-drop для финальной сортировки
     _showResultsModalNew() {
         const sortedVotes = Object.entries(this.votes).sort((a, b) => a[1] - b[1]);
-        
+
         const $modal = $('<div>').addClass('modal-overlay modal-results');
         const $modalContent = $('<div>').addClass('modal-content');
         const $heading = $('<h5>').addClass('modal-title').text('Результаты голосования');
         const $votesContainer = $('<div>').addClass('sortable-container');
-        
+
         sortedVotes.forEach(([trackUid, place]) => {
             const track = this.tracks.find(t => t.uid === trackUid);
             if (!track) return;
-            
+
             const $item = $('<div>')
                 .addClass('sortable-item')
+                .attr('draggable', true) // Включаем drag-and-drop
                 .attr('data-track-uid', trackUid)
                 .attr('data-place', place);
-            
+
             const $itemContent = $('<div>').addClass('sortable-item-content');
             const $placeCircle = $('<span>').addClass('place-circle').text(place);
             const $trackInfo = $('<span>').addClass('track-info-text')
                 .html(`<span class="track-title text-black">${track.artist} — ${track.title}</span>`);
 
             $itemContent.append($placeCircle).append($trackInfo);
-            $item.append($itemContent);
+
+            // Добавляем drag handle (три вертикальные точки)
+            const $dragHandle = $('<div>').addClass('drag-handle').html('⋮');
+            $item.append($itemContent).append($dragHandle);
             $votesContainer.append($item);
         });
-        
+
+        const self = this;
+
+        // Инициализируем Sortable для перетаскивания
+        if (typeof Sortable !== 'undefined') {
+            Sortable.create($votesContainer[0], {
+                handle: '.drag-handle',
+                animation: 150,
+                onEnd: function () {
+                    // Обновляем номера мест после перетаскивания
+                    $votesContainer.find('.sortable-item').each(function(index) {
+                        $(this).find('.place-circle').text(index + 1);
+                        $(this).attr('data-place', index + 1);
+                    });
+
+                    // Обновляем порядок треков в общем списке
+                    const newOrder = [];
+                    $votesContainer.find('.sortable-item').each(function() {
+                        newOrder.push($(this).data('track-uid'));
+                    });
+
+                    // Применяем новый порядок к основному списку
+                    self._reorderVotedTracks(newOrder);
+                }
+            });
+        }
+
         const $buttonContainer = $('<div>').addClass('modal-actions');
         const $confirmButton = $('<button>').addClass('confirm-button').text('Подтвердить и отправить');
         const $cancelButton = $('<button>').addClass('cancel-button').text('Вернуться');
-        
+
         $buttonContainer.append($confirmButton).append($cancelButton);
         $modalContent.append($heading).append($votesContainer).append($buttonContainer);
         $modal.append($modalContent);
         $('body').append($modal);
-        
-        const self = this;
-        
+
         $confirmButton.on('click', function() {
-            self.sendVote(sortedVotes);
+            // Собираем финальный порядок после возможного перетаскивания
+            const updatedVotes = self._collectSortedVotes($votesContainer);
+            self.sendVote(updatedVotes);
             $modal.remove();
-            $('#submit-votes-panel').addClass('hidden'); 
         });
-        
+
         $cancelButton.on('click', () => $modal.remove());
         $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
     }
@@ -2058,6 +2077,29 @@ class VotingSystem {
             updatedVotes.push([trackUid, place]);
         });
         return updatedVotes;
+    }
+
+    // Переупорядочить voted треки в основном списке согласно новому порядку
+    _reorderVotedTracks(newVotedOrder) {
+        console.log('[_reorderVotedTracks] Новый порядок voted треков:', newVotedOrder);
+
+        // Получаем текущий полный порядок
+        const currentOrder = this._getCurrentCardOrder();
+
+        // Создаем массив неотмеченных треков
+        const unvotedTracks = currentOrder.filter(uid => !newVotedOrder.includes(uid));
+
+        // Создаем финальный порядок: voted треки в новом порядке + неотмеченные треки
+        const finalOrder = [...newVotedOrder, ...unvotedTracks];
+
+        console.log('[_reorderVotedTracks] Финальный порядок:', finalOrder);
+
+        // Применяем новый порядок
+        this._setCardOrder(finalOrder);
+
+        // Обновляем рейтинги и сохраняем
+        this._updateRankings();
+        this._setPlayerPlayList();
     }
 
     _updateVotesFromSortedList(sortedVotes) {
