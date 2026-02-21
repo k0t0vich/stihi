@@ -1,5 +1,5 @@
 // DEBUG & CONFIG
-const isDebug = true;
+const isDebug = false;
 
 class VotingSystem {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
