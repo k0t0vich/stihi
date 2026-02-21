@@ -1,14 +1,10 @@
 // DEBUG & CONFIG
 const isDebug = true;
 
-function detectIsMobile() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-}
-
 class VotingSystem {
     constructor(player, containerSelector, { user = null, eventUid = null, tourUid = null, voitedCount = 10 } = {}) {
+        console.log("VotingSystem 2.2");
 
-        console.log("VotingSystem 2.1-1");
         $('.voting-alert').remove();
 
         if (!user && !isDebug) {
@@ -58,7 +54,6 @@ class VotingSystem {
     _collectTracks() {
         const $container = $(this.containerSelector);
         const $trackElements = $container.find('.track-card');
-        const self = this;
 
         this.tracks = $trackElements.map(function() {
             const $el = $(this);
@@ -236,165 +231,10 @@ class VotingSystem {
         }, 10);
     }
 
-    // --- MOBILE / OLD SYSTEM METHODS ---
-
-
-    _renderVoteButtons() {
-        // Logic similar to _checkPermissions was here, but we moved the checks.
-        // Here we just render the buttons for valid tracks.
-        
-        const $container = $(this.containerSelector);
-        
-        this.tracks.forEach(track => {
-            // Skip user's own track
-            if (parseInt(track.userId, 10) === this.user.id) {
-                $(track.element).find('.rating-container').html('<span class="vote-status">Вы не можете голосовать за самого себя!</span>');
-                $(track.element).find('.vote-button').remove(); 
-                return;
-            }
-            
-            let $voteButton = $(track.element).find('.vote-button');
-            
-            if ($voteButton.length === 0) {
-                $voteButton = $('<button>').addClass('vote-button');
-                const $ratingContainer = $(track.element).find('.rating-container');
-                if ($ratingContainer.length) {
-                    $ratingContainer.empty().append($voteButton);
-                } else {
-                    const $cardInfo = $(track.element).find('.card-info');
-                    if ($cardInfo.length) {
-                        $cardInfo.append($voteButton);
-                    }
-                }
-            }
-            
-            // Update button state
-            if (this.votes[track.uid]) {
-                $voteButton.text(`${this.votes[track.uid]} место`).addClass('voted');
-            } else {
-                $voteButton.text('Голосовать').removeClass('voted');
-            }
-        });
-    }
-
-    _bindVoteButtonClicks() {
-        const self = this;
-        $('body').off('click', `${this.containerSelector} .vote-button`);
-        $('body').on('click', `${this.containerSelector} .vote-button`, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const $card = $(this).closest('.track-card');
-            const trackUid = $card.data('uid');
-
-            if (self.votes[trackUid]) {
-                self.openCancelModal($card, trackUid);
-            } else {
-                self.openVoteModal($card, trackUid);
-            }
-        });
-    }
-
-    openVoteModal($card, trackUid) {
-        const self = this;
-        const $modal = this._createVoteModal(trackUid);
-        $('body').append($modal);
-        
-        $modal.find('[data-place]').on('click', function() {
-            const place = parseInt($(this).data('place'), 10);
-            if (!self.remainingPlaces.includes(place)) return;
-            
-            self.votes[trackUid] = place;
-            self.remainingPlaces = self.remainingPlaces.filter(p => p !== place);
-            
-            self._updateTrackCard($card, trackUid);
-            self._checkAndRenderResultsButton();
-            $modal.remove();
-        });
-        
-        $modal.find('.modal-close').on('click', () => $modal.remove());
-        $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
-    }
-
-    openCancelModal($card, trackUid) {
-        const self = this;
-        const $modal = this._createCancelModal(trackUid);
-        $('body').append($modal);
-        
-        $modal.find('.confirm-cancel').on('click', function() {
-            const place = self.votes[trackUid];
-            delete self.votes[trackUid];
-            self.remainingPlaces.push(place);
-            self.remainingPlaces.sort((a, b) => a - b);
-            
-            self._updateTrackCard($card, trackUid);
-            self._checkAndRenderResultsButton();
-            $modal.remove();
-        });
-        
-        $modal.find('.modal-close').on('click', () => $modal.remove());
-        $modal.on('click', function(e) { if (e.target === this) $modal.remove(); });
-    }
-
-    _updateTrackCard($card, trackUid) {
-        const $voteButton = $card.find('.vote-button');
-        if ($voteButton.length === 0) return;
-        
-        if (this.votes[trackUid]) {
-            $voteButton.text(`${this.votes[trackUid]} место`).addClass('voted');
-        } else {
-            $voteButton.text('Голосовать').removeClass('voted');
-        }
-    }
-
-    _checkAndRenderResultsButton() {
-        const votedInDomCount = $(this.containerSelector).find('[data-isvoted="1"]').length;
-        
-        // В Debug режиме игнорируем votedInDomCount, т.к. мы сбрасываем состояние
-        if (Object.keys(this.votes).length === this.MAX_VOTES) {
-             if (isDebug || votedInDomCount < this.MAX_VOTES) {
-                 this.showResultsModal();
-             }
-        }
-    }
-
-    _createVoteModal(trackUid) {
-        const $modal = $('<div>').addClass('modal-overlay');
-        const $modalContent = $('<div>').addClass('modal-content');
-        const $heading = $('<h5>').addClass('modal-title').text('На какое место хотели бы поставить трек?');
-        const $placeButtons = $('<div>').addClass('place-buttons');
-        
-        this.remainingPlaces.forEach(place => {
-            const $button = $('<button>').addClass('place-button').attr('data-place', place).text(place);
-            $placeButtons.append($button);
-        });
-        
-        const $closeButton = $('<button>').addClass('modal-close cancel-button').text('Отменить');
-        $modalContent.append($heading).append($placeButtons).append($closeButton);
-        $modal.append($modalContent);
-        return $modal;
-    }
-
-    _createCancelModal(trackUid) {
-        const $modal = $('<div>').addClass('modal-overlay');
-        const $modalContent = $('<div>').addClass('modal-content');
-        const $heading = $('<h5>').addClass('modal-title').text('Отменить голосование?');
-        const $message = $('<p>').addClass('modal-message').text(`Вы действительно хотите отменить голос на ${this.votes[trackUid]} место?`);
-        
-        const $buttonContainer = $('<div>').addClass('modal-actions');
-        const $confirmButton = $('<button>').addClass('confirm-cancel danger-button').text('Да, отменить');
-        const $closeButton = $('<button>').addClass('modal-close cancel-button').text('Нет');
-        
-        $buttonContainer.append($confirmButton).append($closeButton);
-        $modalContent.append($heading).append($message).append($buttonContainer);
-        $modal.append($modalContent);
-        return $modal;
-    }
 
     // --- DESKTOP / NEW SYSTEM METHODS ---
 
     _init() {
-        console.log('[_init] Инициализация нового режима');
         this._injectModeToggleStyles(); // Инжектим стили (включая стили для модалок)
         this._loadAndRestoreVotingState(); // Загружаем и восстанавливаем состояние из localStorage
         this._initialSort(); // Устанавливаем порядок карточек
@@ -407,31 +247,30 @@ class VotingSystem {
         this._setPlayerPlayList();
         this._setupPlayerListeners(); // Listen for play events
         this._initializeListenIndicators(); // Initialize listen progress indicators
-        console.log('[_init] Инициализация нового режима завершена');
     }
 
 
     // Полная очистка всех данных голосования
-    _clearAllVotingData() {
-        // Очищаем голоса
-        this.votes = {};
-        this.remainingPlaces = Array.from({ length: this.MAX_VOTES }, (_, i) => i + 1);
-
-        // Очищаем флаги voted у треков
-        this.tracks.forEach(track => {
-            track.voted = false;
-            track.listenProgress = 0;
-        });
-
-        // Очищаем состояние голосования из localStorage
-        this._clearVotingState();
-
-        // Сбрасываем UI элементы (но не удаляем, только сбрасываем состояние)
-        $(this.containerSelector).find('.rank-badge').removeClass('voted prize non-prize').addClass('non-voted');
-        $(this.containerSelector).find('.listen-indicator .listen-percent').text('0%').removeClass('low medium high').addClass('low');
-        $(this.containerSelector).find('.vote-button').removeClass('voted').text('Голосовать');
-        $('#submit-votes-panel').addClass('hidden');
-    }
+    // _clearAllVotingData() {
+    //     // Очищаем голоса
+    //     this.votes = {};
+    //     this.remainingPlaces = Array.from({ length: this.MAX_VOTES }, (_, i) => i + 1);
+    //
+    //     // Очищаем флаги voted у треков
+    //     this.tracks.forEach(track => {
+    //         track.voted = false;
+    //         track.listenProgress = 0;
+    //     });
+    //
+    //     // Очищаем состояние голосования из localStorage
+    //     this._clearVotingState();
+    //
+    //     // Сбрасываем UI элементы (но не удаляем, только сбрасываем состояние)
+    //     $(this.containerSelector).find('.rank-badge').removeClass('voted prize non-prize').addClass('non-voted');
+    //     $(this.containerSelector).find('.listen-indicator .listen-percent').text('0%').removeClass('low medium high').addClass('low');
+    //     $(this.containerSelector).find('.vote-button').removeClass('voted').text('Голосовать');
+    //     $('#submit-votes-panel').addClass('hidden');
+    // }
 
     // Стили для переключателя режимов
     _injectModeToggleStyles() {
@@ -638,17 +477,6 @@ class VotingSystem {
                     flex: 1;
                 }
 
-                /*.place-circle {*/
-                /*    display: inline-block;*/
-                /*    min-width: 20px;*/
-                /*    color: #000;*/
-                /*    font-weight: bold;*/
-                /*    font-size: 14px;*/
-                /*    background: none !important;*/
-                /*    border: none !important;*/
-                /*    border-radius: 0 !important;*/
-                /*}*/
-
                 .track-info-text {
                     flex: 1;
                     font-size: 14px;
@@ -685,10 +513,6 @@ class VotingSystem {
                     e.stopPropagation();
                     e.stopImmediatePropagation();
 
-                    if (isDebug) {
-                        console.log('[Card Interceptor] Перехвачен клик по badge');
-                    }
-
                     // Обрабатываем переключение voted
                     const $badge = $(badge);
                     const $card = $badge.closest('.track-card');
@@ -705,15 +529,7 @@ class VotingSystem {
                         const wasVoted = track.voted;
                         track.voted = !track.voted;
 
-                        if (isDebug) {
-                            console.log(`[Card Interceptor] ${track.title}: ${wasVoted} → ${track.voted}`);
-                        }
-
                         self._updateRankings();
-                    } else {
-                        if (isDebug) {
-                            console.log(`[Card Interceptor] Клик проигнорирован - трек за пределами TOP-${self.MAX_VOTES}`);
-                        }
                     }
 
                     return false;
@@ -747,11 +563,9 @@ class VotingSystem {
 
         if (savedState && savedState.cardOrder && savedState.cardOrder.length > 0) {
             // Восстанавливаем порядок из localStorage
-            console.log('[_initialSort] Восстанавливаем порядок из localStorage');
             this._setCardOrder(savedState.cardOrder);
         } else {
             // Если нет сохраненного состояния - помещаем свой трек в конец
-            console.log('[_initialSort] Нет сохраненного состояния, помещаем свой трек в конец');
             this._moveOwnTrackToEnd();
         }
     }
@@ -762,18 +576,13 @@ class VotingSystem {
         const ownTrack = this.tracks.find(t => parseInt(t.userId, 10) === this.user.id);
 
         if (!ownTrack) {
-            console.log('[_moveOwnTrackToEnd] Свой трек не найден');
             return;
         }
-
-        console.log('[_moveOwnTrackToEnd] Свой трек найден:', ownTrack.uid);
 
         // Удаляем свой трек из текущей позиции
         const newOrder = currentOrder.filter(uid => uid !== ownTrack.uid);
         // Добавляем в конец
         newOrder.push(ownTrack.uid);
-
-        console.log('[_moveOwnTrackToEnd] Новый порядок:', newOrder);
         this._setCardOrder(newOrder);
     }
 
@@ -831,10 +640,11 @@ class VotingSystem {
     }
 
     // --- НОВЫЙ РЕЖИМ: МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА МЕСТА ---
-
     _renderVoteButtonsNew() {
-        console.log('[_renderVoteButtonsNew] Начало рендеринга кнопок для нового режима');
-        const $container = $(this.containerSelector);
+        // TODO: сделать геттер hasAllPlaces
+        const places = Object.values(this.votes).sort((a, b) => a - b);
+        const hasAllPlaces = Object.values(this.votes).length === this.MAX_VOTES &&
+            places.every((place, index) => place === index + 1);
 
         this.tracks.forEach(track => {
             // Пропускаем свой трек
@@ -844,8 +654,6 @@ class VotingSystem {
 
             // Ищем существующую кнопку .vote-button
             let $voteButton = $(track.element).find('.vote-button');
-
-            console.log(`[_renderVoteButtonsNew] Track ${track.uid}: найдено кнопок .vote-button - ${$voteButton.length}, voted=${track.voted}`);
 
             if ($voteButton.length === 0) {
                 // Если кнопки нет - создаем
@@ -859,31 +667,30 @@ class VotingSystem {
                         $cardInfo.append($voteButton);
                     }
                 }
-                console.log(`[_renderVoteButtonsNew] Создана новая кнопка для трека ${track.uid}`);
             }
+            const buttonText = hasAllPlaces? "Отправить" : 'Выбрать место';
 
-            // В новом режиме всегда показываем "Выбрать место"
-            $voteButton.text('Выбрать место');
+            $voteButton.text(buttonText);
             $voteButton.show(); // Убеждаемся что кнопка видима
 
             // Меняем цвет кнопки в зависимости от состояния voted
             if (track.voted) {
                 $voteButton.addClass('voted'); // Зеленый цвет
-                console.log(`[_renderVoteButtonsNew] Кнопка трека ${track.uid} отмечена как voted (зеленая)`);
             } else {
                 $voteButton.removeClass('voted'); // Обычный цвет
-                console.log(`[_renderVoteButtonsNew] Кнопка трека ${track.uid} не отмечена (обычная)`);
             }
-
-            console.log(`[_renderVoteButtonsNew] Кнопка для трека ${track.uid} настроена: "${$voteButton.text()}"`);
         });
-
-        console.log('[_renderVoteButtonsNew] Рендеринг завершен');
     }
 
     // Только обновление цвета кнопок без пересоздания
     _updateVoteButtonsColor() {
         const currentOrder = this._getCurrentCardOrder();
+
+
+        // TODO: сделать геттер hasAllPlaces
+        const places = Object.values(this.votes).sort((a, b) => a - b);
+        const hasAllPlaces = Object.values(this.votes).length === this.MAX_VOTES &&
+            places.every((place, index) => place === index + 1);
 
         this.tracks.forEach(track => {
             // Пропускаем свой трек
@@ -906,11 +713,13 @@ class VotingSystem {
             } else {
                 $voteButton.removeClass('voted'); // Обычный цвет
             }
+            const buttonText = hasAllPlaces? "Отправить" : 'Выбрать место';
+
+            $voteButton.text(buttonText);
         });
     }
 
     _bindVoteButtonClicksNew() {
-        console.log('[_bindVoteButtonClicksNew] Привязка обработчиков для нового режима');
         const self = this;
 
         // Отвязываем старые обработчики
@@ -924,13 +733,9 @@ class VotingSystem {
             const $card = $(this).closest('.track-card');
             const trackUid = $card.data('uid');
 
-            console.log(`[_bindVoteButtonClicksNew] Клик по кнопке трека ${trackUid}`);
-
             // Открываем модалку выбора места для нового режима
             self._openVoteModalNew($card, trackUid);
         });
-
-        console.log('[_bindVoteButtonClicksNew] Обработчики привязаны');
     }
 
     _openVoteModalNew($card, trackUid) {
@@ -976,7 +781,6 @@ class VotingSystem {
                     newOrder.push(trackUid);
                 }
 
-                console.log('[OUT] Новый порядок:', newOrder);
                 self._setCardOrder(newOrder);
                 self._updateRankings();
                 self._setPlayerPlayList(); // Обновляем плейлист
@@ -1054,10 +858,10 @@ class VotingSystem {
         $placeButtons.append($outButton);
 
         // Проверяем, все ли места выбраны
-        const votesCount = Object.keys(this.votes).length;
         const places = Object.values(this.votes).sort((a, b) => a - b);
         const hasAllPlaces = places.length === this.MAX_VOTES &&
                             places.every((place, index) => place === index + 1);
+
 
         const $buttonContainer = $('<div>').addClass('modal-actions');
 
@@ -1124,9 +928,6 @@ class VotingSystem {
                 return;
             }
 
-            // НЕ удаляем кнопки - они переиспользуются в обоих режимах
-            // Скрываем/показываем их через _applyModeSwitch
-
             // Determine if this place is a prize place
             const isPrize = currentPlace <= self.MAX_VOTES;
 
@@ -1147,9 +948,6 @@ class VotingSystem {
                 $badge.addClass('voted');
                 $badge.addClass('prize');
                 self.votes[trackUid] = currentPlace;
-                if (isDebug) {
-                    console.log(`[_updateRankings] Track ${currentPlace}: ${track.title} - voted prize`);
-                }
             } else {
                 $badge.addClass('non-voted');
                 if (isPrize) {
@@ -1157,16 +955,10 @@ class VotingSystem {
                 } else {
                     $badge.addClass('non-prize');
                 }
-                if (isDebug && track) {
-                    console.log(`[_updateRankings] Track ${currentPlace}: ${track.title} - non-voted ${isPrize ? 'prize' : 'non-prize'}`);
-                }
             }
 
             currentPlace++;
         });
-
-        // Панель подтверждения больше не используется
-        // this._updateSubmitButtonState();
 
         // Обновляем цвет кнопок в зависимости от voted
         this._updateVoteButtonsColor();
@@ -1176,25 +968,10 @@ class VotingSystem {
     }
 
     _setupPlayerListeners() {
-        if (!this.player) {
-            if (isDebug) console.log('[VotingSystem] Player not found');
-            return;
-        }
-
         const self = this;
-
-        if (isDebug) {
-            console.log('[VotingSystem] Setting up player listeners');
-            console.log('[VotingSystem] Player object:', this.player);
-            console.log('[VotingSystem] Player has audioTrack?', !!this.player.audioTrack);
-            console.log('[VotingSystem] Player has currentTrack?', !!this.player.currentTrack);
-        }
-
         // Плеер использует this.player.audioTrack (HTML5 Audio элемент)
         // и this.player.currentTrack (объект с данными трека)
         if (this.player.audioTrack && this.player.audioTrack instanceof HTMLAudioElement) {
-            if (isDebug) console.log('[VotingSystem] Attaching to audioTrack events');
-
             // Слушаем событие timeupdate для отслеживания прогресса
             this.player.audioTrack.addEventListener('timeupdate', function() {
                 if (!self.player.currentTrack || !self.player.currentTrack.uid) return;
@@ -1214,15 +991,9 @@ class VotingSystem {
                     if (progressPercent > track.listenProgress) {
                         track.listenProgress = progressPercent;
                         self._updateListenIndicator(track);
-
-                        if (isDebug && progressPercent % 10 === 0) {
-                            console.log(`[VotingSystem] Progress ${track.title}: ${progressPercent}%`);
-                        }
                     }
                 }
             });
-
-            if (isDebug) console.log('[VotingSystem] Player listener attached successfully');
         } else {
             console.warn('[VotingSystem] audioTrack not found or not an HTMLAudioElement');
         }
@@ -1264,7 +1035,6 @@ class VotingSystem {
     }
 
     _initializeListenIndicators() {
-        // Initialize listen indicators for all tracks on page load
         // Проверяем localStorage для восстановления прогресса
         const savedProgress = this._loadListenProgress();
 
@@ -1359,8 +1129,6 @@ class VotingSystem {
         }
     }
 
-    // Загрузка и восстановление состояния голосования (старый режим)
-
     // Очистка состояния голосования из localStorage
     _clearVotingState() {
         try {
@@ -1394,7 +1162,6 @@ class VotingSystem {
                 // Если свой трек не на последнем месте - перемещаем
                 order.splice(ownTrackIndex, 1);
                 order.push(ownTrack.uid);
-                console.log('[_getCurrentCardOrder] Свой трек перемещен в конец порядка');
             }
         }
 
@@ -1714,8 +1481,6 @@ class VotingSystem {
 
     // Переупорядочить voted треки в основном списке согласно новому порядку
     _reorderVotedTracks(newVotedOrder) {
-        console.log('[_reorderVotedTracks] Новый порядок voted треков:', newVotedOrder);
-
         // Получаем текущий полный порядок
         const currentOrder = this._getCurrentCardOrder();
 
@@ -1724,8 +1489,6 @@ class VotingSystem {
 
         // Создаем финальный порядок: voted треки в новом порядке + неотмеченные треки
         const finalOrder = [...newVotedOrder, ...unvotedTracks];
-
-        console.log('[_reorderVotedTracks] Финальный порядок:', finalOrder);
 
         // Применяем новый порядок
         this._setCardOrder(finalOrder);
