@@ -123,6 +123,7 @@
       font-size: 0.9rem;
   }
   .key-ok { color: var(--primary-color); } 
+  .key-guest { color: #4caf50; } /* Зеленый для гостевого доступа */
   .key-missing { color: #ff5555; }
 
 

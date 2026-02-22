@@ -3,7 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Critic</title>
+    <!-- Force browser to send Referer header with requests -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>AI Critic by Отряд Котовскага</title>
     <link rel="stylesheet" href="index.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script type="importmap">
@@ -40,8 +42,8 @@
                 <div class="setting-item">
                     <label for="model-selector">Модель</label>
                     <select id="model-selector">
-                      <option value="gemini-3-pro-preview" selected>Gemini 3.0 Pro</option>
-                      <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                      <option value="gemini-3-pro-preview" selected>Gemini 3.1 Pro</option>
+                      <option value="gemini-3-pro-preview" >Gemini 3.0 Pro</option>
                       <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                     </select>
                 </div>
@@ -119,6 +121,37 @@
                     🔗 Bandlink
                 </a>
             </div>
+        </div>
+    </div>
+
+    <!-- KEY MODAL -->
+    <div id="key-modal" class="modal">
+        <div class="modal-content">
+            <span id="key-modal-close" class="close">&times;</span>
+            <h2>Настройка API Ключа</h2>
+            
+            <button id="aistudio-connect-btn" class="key-btn" style="width: 100%; margin-bottom: 20px; display: none; background: rgba(66, 133, 244, 0.1); border-color: #4285f4; color: #4285f4;">
+                🔗 Подключить через AI Studio
+            </button>
+
+            <p>Для работы приложения требуется ключ Google Gemini API.</p>
+            <p style="font-size: 0.9em; color: #666;">Ключ сохраняется только в вашем браузере (LocalStorage).</p>
+            
+            <div class="input-group" style="margin: 20px 0;">
+                <input type="password" id="api-key-input" placeholder="Вставьте ключ (AIza...)" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                <button id="save-key-btn" class="key-btn" style="width: 100%; justify-content: center;">Сохранить ключ</button>
+            </div>
+
+            <div style="font-size: 0.8em; color: #888;">
+                <p>Где взять ключ?</p>
+                <ol style="padding-left: 20px;">
+                    <li>Перейдите в <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
+                    <li>Нажмите "Create API key"</li>
+                    <li>Скопируйте ключ и вставьте сюда</li>
+                </ol>
+            </div>
+            
+            <button id="remove-key-btn" style="background: transparent; color: #f44336; border: 1px solid #f44336; margin-top: 20px; width: 100%;">Удалить ключ из памяти</button>
         </div>
     </div>
 
