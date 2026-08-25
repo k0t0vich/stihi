@@ -1,8 +1,6 @@
 'use strict';
 
-const P = contestData.participants;
-const N = P.length;
-const byId = new Map(P.map(p => [p.id, p]));
+const ALL = contestData.participants;
 
 let filter = 'all';
 let query = '';
@@ -24,7 +22,7 @@ function rngFrom(seed) {
 
 // Порядок выбывания: сид 0 — как в данных, иначе перетасовка Фишера — Йетса.
 function dropOrder(seed) {
-    const base = contestData.dropOrder || P.filter(p => p.isJudge).map(p => p.id);
+    const base = contestData.dropOrder || ALL.map(p => p.id);
     if (!seed) return base;
     const a = base.slice(), rnd = rngFrom(seed);
     for (let i = a.length - 1; i > 0; i--) {
@@ -34,19 +32,21 @@ function dropOrder(seed) {
     return a;
 }
 
-// Снимаем первых `drop` из этого порядка, остальные голосуют.
-function activeJudges(drop, seed) {
-    const all = P.filter(p => p.isJudge).map(p => p.id);
-    const dropped = new Set(dropOrder(seed).slice(0, drop));
-    return new Set(all.filter(id => !dropped.has(id)));
-}
-
 function compute() {
+    // Число участников — отрезаем список снизу.
+    const P = ALL.slice(0, +el('partCount').value);
+    const N = P.length;
+    const byId = new Map(P.map(p => [p.id, p]));
+
     const drop = +el('dropJudges').value;
     const seed = +el('seed').value || 0;
     const useCorr = el('useCorrection').checked;
     const S = scale();
-    const active = activeJudges(drop, seed);
+
+    // Снимаем первых `drop` из порядка выбывания — но только тех, кто ещё в списке.
+    const order = dropOrder(seed).filter(id => byId.has(id));
+    const dropped = new Set(order.slice(0, Math.min(drop, Math.max(0, N - 2))));
+    const active = new Set(P.filter(p => p.isJudge && !dropped.has(p.id)).map(p => p.id));
     const J = active.size;
 
     const raw = new Map(P.map(p => [p.id, 0]));
@@ -93,17 +93,20 @@ function compute() {
         r.tie = sorted.some(o => o !== r && Math.abs(o.final - r.final) < 1e-9 && r.final > 0);
     });
 
-    return { rows: sorted, J, drop, useCorr, S };
+    return { rows: sorted, J, drop, useCorr, S, N, byId };
 }
 
 const fmt = (x, d = 2) => x.toFixed(d);
 
 function renderStats(st) {
+    const N = st.N;
     el('statParticipants').textContent = N;
     el('statJudges').textContent = st.J;
     el('statTurnout').textContent = Math.round(st.J / N * 100) + '%';
-    const penalty = st.useCorr && st.J > 1 ? (1 - (st.J - 1) / st.J) * 100 : 0;
-    el('statPenalty').textContent = penalty ? '−' + penalty.toFixed(1) + '%' : '—';
+    // при 100% явке неголосующих нет — штраф не к кому применять
+    const allVoted = st.J === st.rows.length;
+    const penalty = st.useCorr && st.J > 1 && !allVoted ? (1 - (st.J - 1) / st.J) * 100 : 0;
+    el('statPenalty').textContent = allVoted ? '0%' : (penalty ? '−' + penalty.toFixed(1) + '%' : '—');
 
     const kJ = st.J > 1 ? (N - 1) / (st.J - 1) : 0;
     const kN = st.J > 0 ? (N - 1) / st.J : 0;
@@ -162,7 +165,13 @@ function renderTable(rows) {
 let current = null;
 
 function render() {
+    // судей нельзя снять больше, чем есть участников минус двое
+    const maxDrop = Math.max(0, +el('partCount').value - 2);
+    el('dropJudges').max = maxDrop;
+    if (+el('dropJudges').value > maxDrop) el('dropJudges').value = maxDrop;
+
     current = compute();
+    el('partVal').textContent = current.N;
     el('dropVal').textContent = current.drop;
     renderStats(current);
     renderPodium(current.rows);
@@ -172,7 +181,7 @@ function render() {
 function showModal(id) {
     const r = current.rows.find(x => x.p.id === id);
     if (!r) return;
-    const S = current.S;
+    const S = current.S, byId = current.byId;
     const posName = ['1 место', '2 место', '3 место', '4 место'];
 
     const votes = r.from.length
@@ -210,6 +219,7 @@ function showModal(id) {
 ['scale1','scale2','scale3','scale4'].forEach(id => el(id).addEventListener('input', render));
 el('useCorrection').addEventListener('change', render);
 el('dropJudges').addEventListener('input', render);
+el('partCount').addEventListener('input', render);
 el('seed').addEventListener('input', render);
 el('reroll').addEventListener('click', () => {
     el('seed').value = Math.floor(Math.random() * 100000) + 1;
@@ -232,6 +242,6 @@ el('modalClose').addEventListener('click', () => el('modal').style.display = 'no
 el('modal').addEventListener('click', e => { if (e.target.id === 'modal') el('modal').style.display = 'none'; });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') el('modal').style.display = 'none'; });
 
-// оставляем минимум двух голосующих, иначе электорат вырождается
-el('dropJudges').max = Math.max(0, P.filter(p => p.isJudge).length - 2);
+el('partCount').max = ALL.length;
+el('partCount').value = ALL.length;
 render();

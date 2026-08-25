@@ -3,7 +3,7 @@
 const contestData = {
   participants: [
     { id: 1, name: "Сол Иодим", song: "На дороге иной — SoM", isJudge: true, top: [21, 14, 48, 11] },
-    { id: 2, name: "Отряд Котовскага", song: "Плюшевые поэты — Котовскага", isJudge: true, top: [11, 5, 7, 12] },
+    { id: 2, name: "Hito", song: "Песенка — hito", isJudge: true, top: [11, 5, 7, 12] },
     { id: 3, name: "Ивита Полонская", song: "Devil made me do it — sky ivi", isJudge: true, top: [2, 23, 15, 1] },
     { id: 4, name: "Ze Gamer", song: "На дорогах лесных — Ze Game", isJudge: true, top: [14, 10, 1, 8] },
     { id: 5, name: "Павел Желибо", song: "Палач — Желибо", isJudge: true, top: [8, 9, 14, 10] },
@@ -20,7 +20,7 @@ const contestData = {
     { id: 16, name: "Сережа Грякалов", song: "Это финал — SerGGGG", isJudge: true, top: [2, 1, 14, 30] },
     { id: 17, name: "Евгений Александрович", song: "Serpent's Gift — Soulles Machine", isJudge: true, top: [29, 2, 1, 8] },
     { id: 18, name: "Анна Чулкова", song: "Алиса, посоветуй! — Neferet", isJudge: true, top: [12, 3, 7, 4] },
-    { id: 19, name: "Hito Shniperson", song: "Сделай это со мной — hito", isJudge: true, top: [4, 1, 5, 12] },
+    { id: 19, name: "Шниперсон", song: "Сделай это со мной — Shniperson", isJudge: true, top: [4, 1, 5, 12] },
     { id: 20, name: "Алексей Леонтьев", song: "Чужое солнце — Turbin", isJudge: true, top: [9, 7, 1, 23] },
     { id: 21, name: "Максим Яшин", song: "Enough — FearTheChipper", isJudge: true, top: [18, 7, 13, 16] },
     { id: 22, name: "Ольга Гавришина", song: "Ураган — Ол`ka", isJudge: true, top: [2, 4, 7, 20] },
