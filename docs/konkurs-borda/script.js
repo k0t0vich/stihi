@@ -10,18 +10,43 @@ let query = '';
 const el = id => document.getElementById(id);
 const scale = () => [1,2,3,4].map(i => parseFloat(el('scale'+i).value) || 0);
 
-// Судьи, отключённые ползунком «снять N голосующих» — берём с конца списка,
-// чтобы при движении ползунка набор менялся предсказуемо.
-function activeJudges(drop) {
-    const all = P.filter(p => p.isJudge);
-    return new Set(all.slice(0, all.length - drop).map(p => p.id));
+// mulberry32 — быстрый детерминированный PRNG, чтобы один сид всегда давал
+// один и тот же порядок выбывания.
+function rngFrom(seed) {
+    let a = seed >>> 0;
+    return () => {
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+// Порядок выбывания: сид 0 — как в данных, иначе перетасовка Фишера — Йетса.
+function dropOrder(seed) {
+    const base = contestData.dropOrder || P.filter(p => p.isJudge).map(p => p.id);
+    if (!seed) return base;
+    const a = base.slice(), rnd = rngFrom(seed);
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// Снимаем первых `drop` из этого порядка, остальные голосуют.
+function activeJudges(drop, seed) {
+    const all = P.filter(p => p.isJudge).map(p => p.id);
+    const dropped = new Set(dropOrder(seed).slice(0, drop));
+    return new Set(all.filter(id => !dropped.has(id)));
 }
 
 function compute() {
     const drop = +el('dropJudges').value;
+    const seed = +el('seed').value || 0;
     const useCorr = el('useCorrection').checked;
     const S = scale();
-    const active = activeJudges(drop);
+    const active = activeJudges(drop, seed);
     const J = active.size;
 
     const raw = new Map(P.map(p => [p.id, 0]));
@@ -185,6 +210,11 @@ function showModal(id) {
 ['scale1','scale2','scale3','scale4'].forEach(id => el(id).addEventListener('input', render));
 el('useCorrection').addEventListener('change', render);
 el('dropJudges').addEventListener('input', render);
+el('seed').addEventListener('input', render);
+el('reroll').addEventListener('click', () => {
+    el('seed').value = Math.floor(Math.random() * 100000) + 1;
+    render();
+});
 el('searchBox').addEventListener('input', e => { query = e.target.value; renderTable(current.rows); });
 
 document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
@@ -202,5 +232,6 @@ el('modalClose').addEventListener('click', () => el('modal').style.display = 'no
 el('modal').addEventListener('click', e => { if (e.target.id === 'modal') el('modal').style.display = 'none'; });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') el('modal').style.display = 'none'; });
 
-el('dropJudges').max = P.filter(p => p.isJudge).length - 1;
+// оставляем минимум двух голосующих, иначе электорат вырождается
+el('dropJudges').max = Math.max(0, P.filter(p => p.isJudge).length - 2);
 render();
