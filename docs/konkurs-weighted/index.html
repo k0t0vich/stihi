@@ -188,6 +188,14 @@ body {
         <div class="explain" id="explain"></div>
 
         <div class="setting-row" style="margin-top:14px">
+            <label class="toggle" style="min-width:auto;display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="useCorrection" style="width:18px;height:18px;accent-color:#11998e;cursor:pointer">
+                <span>Поправка на «за себя не голосуешь»</span>
+            </label>
+        </div>
+        <div class="explain" id="corrExplain" style="display:none"></div>
+
+        <div class="setting-row" style="margin-top:14px">
             <label for="damp">Сила влияния веса</label>
             <input type="range" id="damp" min="0" max="100" value="85">
             <span class="setting-val" id="dampVal">0.85</span>

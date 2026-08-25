@@ -14,7 +14,9 @@ const el = id => document.getElementById(id);
 const fmt = (x, d = 2) => x.toFixed(d);
 
 // Один проход: раздать баллы с учётом весов судей.
-function tally(weights) {
+// corr — поправка на то, что за себя голосовать нельзя: участник лишён
+// электората весом w_i, поэтому нормируем на доступный ему вес.
+function tally(weights, corr) {
     const s = new Map(P.map(p => [p.id, 0]));
     for (const j of JUDGES) {
         const w = weights.get(j.id);
@@ -23,16 +25,23 @@ function tally(weights) {
             s.set(wid, s.get(wid) + SCALE[pos] * w);
         });
     }
+    if (!corr) return s;
+    const W = [...weights.values()].reduce((a, b) => a + b, 0);
+    for (const p of P) {
+        const own = weights.get(p.id) || 0;
+        const avail = W - own;
+        if (avail > 1e-12) s.set(p.id, s.get(p.id) * W / avail);
+    }
     return s;
 }
 
 // Итеративный расчёт. Возвращает баллы, веса и историю изменений.
-function solve(mode, damp, maxIters) {
+function solve(mode, damp, maxIters, corr) {
     let weights = new Map(JUDGES.map(j => [j.id, 1]));
     const history = [];
-    if (mode === 'plain') return { scores: tally(weights), weights, history, iters: 0 };
+    if (mode === 'plain') return { scores: tally(weights, corr), weights, history, iters: 0 };
 
-    let scores = tally(weights);
+    let scores = tally(weights, corr);
     for (let it = 0; it < maxIters; it++) {
         const max = Math.max(...scores.values()) || 1;
         const next = new Map();
@@ -63,7 +72,7 @@ function solve(mode, damp, maxIters) {
         }
         weights = next;
         history.push(delta);
-        scores = tally(weights);
+        scores = tally(weights, corr);
         if (delta < 1e-9) return { scores, weights, history, iters: it + 1 };
     }
     return { scores, weights, history, iters: maxIters };
@@ -72,9 +81,13 @@ function solve(mode, damp, maxIters) {
 function compute() {
     const damp = +el('damp').value / 100;
     const maxIters = +el('iters').value;
+    const corr = el('useCorrection').checked;
 
-    const plain = solve('plain', 0, 1);
-    const res = method === 'plain' ? plain : solve(method, damp, maxIters);
+    // база для сравнения — всегда простой счёт без поправки
+    const plain = solve('plain', 0, 1, false);
+    const res = (method === 'plain' && !corr) ? plain : solve(method, damp, maxIters, corr);
+
+    const W = [...res.weights.values()].reduce((a, b) => a + b, 0);
 
     // счётчик мест 1/2/3/4 — для tie-break
     const places = new Map(P.map(p => [p.id, [0, 0, 0, 0]]));
@@ -87,14 +100,18 @@ function compute() {
         });
     }
 
-    const rows = P.map(p => ({
-        p,
-        plain: plain.scores.get(p.id),
-        final: res.scores.get(p.id),
-        weight: res.weights.get(p.id) ?? 1,
-        places: places.get(p.id),
-        from: from.get(p.id)
-    }));
+    const rows = P.map(p => {
+        const own = res.weights.get(p.id) ?? 0;
+        return {
+            p,
+            plain: plain.scores.get(p.id),
+            final: res.scores.get(p.id),
+            weight: res.weights.get(p.id) ?? 1,
+            corrK: corr && W - own > 1e-12 ? W / (W - own) : 1,
+            places: places.get(p.id),
+            from: from.get(p.id)
+        };
+    });
 
     const cmp = key => (a, b) => {
         if (b[key] !== a[key]) return b[key] - a[key];
@@ -132,6 +149,23 @@ function render() {
     el('explain').innerHTML = EXPLAIN[method];
 
     current = compute();
+
+    const ce = el('corrExplain');
+    if (el('useCorrection').checked) {
+        const ks = current.rows.map(r => r.corrK);
+        ce.style.display = '';
+        ce.innerHTML = `<code>S × W / (W − w_i)</code>, где <b>W</b> — общий вес судей,
+            <b>w_i</b> — вес самого участника. За себя голосовать нельзя, значит участнику
+            недоступен электорат весом w_i — тем больший, чем он сам весомее.
+            Поправка это возвращает: сейчас от
+            <b>+${((Math.min(...ks) - 1) * 100).toFixed(2)}%</b> у самых лёгких голосов
+            до <b>+${((Math.max(...ks) - 1) * 100).toFixed(2)}%</b> у самых весомых.
+            ${method === 'plain'
+                ? 'При равных весах это ровно 1/50 для всех — как в соседнем калькуляторе.'
+                : 'В отличие от простого счёта, здесь коэффициент у каждого свой.'}`;
+    } else {
+        ce.style.display = 'none';
+    }
 
     el('statMethod').textContent = { plain: 'простой', rating: 'рейтинг', consensus: 'согласие' }[method];
     el('statIters').textContent = current.iters || '—';
@@ -233,6 +267,8 @@ function showModal(id) {
         <table class="calc-table">
             <tr><td>Простой счёт</td><td>${fmt(r.plain)} (${r.plainRank} место)</td></tr>
             <tr><td>Вес его голоса как судьи</td><td>${fmt(r.weight, 3)} из ${fmt(maxW, 3)}</td></tr>
+            ${r.corrK !== 1 ? `<tr><td>Поправка «за себя не голосуешь»</td>
+                <td>× ${fmt(r.corrK, 4)} (+${((r.corrK - 1) * 100).toFixed(2)}%)</td></tr>` : ''}
             <tr class="calc-total"><td><b>Итог методом «${
                 { plain: 'простой', rating: 'рейтинг', consensus: 'согласие' }[method]}»</b></td>
                 <td>${fmt(r.final, 3)}</td></tr>
@@ -257,6 +293,7 @@ el('methods').addEventListener('click', e => {
 });
 el('damp').addEventListener('input', render);
 el('iters').addEventListener('input', render);
+el('useCorrection').addEventListener('change', render);
 el('searchBox').addEventListener('input', e => { query = e.target.value; renderTable(current.rows); });
 el('resultsBody').addEventListener('click', e => {
     const tr = e.target.closest('tr[data-id]');
