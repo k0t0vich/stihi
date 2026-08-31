@@ -67,6 +67,32 @@ function renderStats(rows) {
 
 const MEDAL = ['🥇', '🥈', '🥉'];
 
+// Ссылка на трек. У VK-аудио публичного embed нет (audio_ext.php не существует),
+// поэтому там кнопка; для источников с embed — плеер.
+function playerHTML(url) {
+    if (!url) return '';
+    const u = String(url);
+    if (/\.(mp3|ogg|wav|m4a|opus)(\?|$)/i.test(u))
+        return `<audio class="pod-audio" controls preload="none" src="${esc(u)}"></audio>`;
+    if (/vk\.(?:com|ru)\/audio-?\d+_\d+/.test(u))
+        return `<a class="pod-link vk" href="${esc(u)}" target="_blank" rel="noopener">Слушать вконтакте</a>`;
+
+    let src = null, m;
+    if ((m = u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/)))
+        src = `https://www.youtube.com/embed/${m[1]}`;
+    else if (/soundcloud\.com/.test(u))
+        src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(u)}&visual=false`;
+    else if ((m = u.match(/vk\.(?:com|ru)\/video(-?\d+)_(\d+)/)))
+        src = `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}`;
+    else if (/suno\.(com|ai)/.test(u))
+        src = u.replace('/song/', '/embed/');
+
+    return src
+        ? `<iframe class="pod-frame" src="${esc(src)}" loading="lazy" allow="encrypted-media"
+                   referrerpolicy="no-referrer-when-downgrade"></iframe>`
+        : `<a class="pod-link" href="${esc(u)}" target="_blank" rel="noopener">🎵 слушать</a>`;
+}
+
 function renderPodium(rows) {
     el('podium').innerHTML = rows.slice(0, 3).map((r, i) => `
         <div class="pod g${i + 1}" data-id="${r.p.id}">
@@ -76,6 +102,7 @@ function renderPodium(rows) {
             <div class="pod-author">${esc(r.p.author)}</div>
             <div class="pod-track">${esc(r.p.track)}</div>
             ${r.p.project ? `<div class="pod-proj">${esc(r.p.project)}</div>` : ''}
+            ${r.p.audio ? `<div class="pod-player">${playerHTML(r.p.audio)}</div>` : ''}
         </div>`).join('');
 }
 
@@ -167,6 +194,7 @@ el('rows').addEventListener('click', e => {
     if (row) openModal(+row.dataset.id);
 });
 el('podium').addEventListener('click', e => {
+    if (e.target.closest('.pod-player')) return;   // клик по плееру — не открывать попап
     const pod = e.target.closest('.pod[data-id]');
     if (pod) openModal(+pod.dataset.id);
 });
