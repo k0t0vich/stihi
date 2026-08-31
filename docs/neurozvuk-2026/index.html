@@ -161,6 +161,12 @@ body {
 .modal-x:hover { color: var(--text); }
 .m-place { font-size: .85em; color: var(--muted); margin-bottom: 3px; }
 .modal h2 { font-size: 1.45em; margin-bottom: 3px; padding-right: 34px; }
+.m-vk {
+    color: inherit; text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,.28); transition: color .16s, border-color .16s;
+}
+.m-vk:hover { color: var(--gold); border-color: var(--gold); }
+.m-vk::after { content: ' ↗'; font-size: .62em; vertical-align: super; opacity: .6; }
 .m-track { color: var(--gold); font-size: 1.02em; font-style: italic; margin-bottom: 2px; }
 .m-proj { color: var(--muted); font-size: .87em; margin-bottom: 16px; }
 .m-note {
@@ -207,7 +213,7 @@ body {
         <div class="hero-text">
             <h1>НЕЙРОЗВУК 2026</h1>
             <p class="lede" id="lede">
-                Результаты конкурса. Каждый судья выбирал четыре трека и распределял
+                Результаты конкурса. Каждый голосовавший выбирал четыре трека и распределял
                 между ними <b>0.4 / 0.3 / 0.2 / 0.1</b> — метод Борда.
             </p>
             <p class="desc-slot">Здесь будет описание конкурса — место под текст и логотип.</p>
@@ -222,7 +228,7 @@ body {
         <input class="search" id="search" placeholder="Поиск по автору, проекту или треку…">
         <label class="toggle">
             <input type="checkbox" id="corr" checked>
-            <span>Коэффициент «за оценку судьям»</span>
+            <span>Коэффициент «за оценку голосовавшим»</span>
         </label>
         <span class="hint" id="corrHint"></span>
     </div>
@@ -230,16 +236,16 @@ body {
     <section class="list glass">
         <div class="row head">
             <div>Место</div><div>Участник</div>
-            <div class="r-num">Сырой</div><div class="r-num">Итог</div>
+            <div class="r-num">Общий</div><div class="r-num">Итог</div>
         </div>
         <div id="rows"></div>
     </section>
 
     <footer class="foot glass">
-        <b>Коэффициент «за оценку судьям».</b> Судья не может голосовать за себя, поэтому его
+        <b>Коэффициент «за оценку голосовавшим».</b> Голосовавший не может выбрать себя, поэтому его
         трек доступен меньшему числу избирателей, чем трек того, кто не голосовал.
         Итог домножается на <code>(N−1) / (J − j)</code>: <b>N</b> — всего участников,
-        <b>J</b> — судей, <b>j</b> = 1 у голосовавших. Так все приводятся к общей базе.
+        <b>J</b> — голосовавших, <b>j</b> = 1 у голосовавших. Так все приводятся к общей базе.
         <br><br>
         Клик по строке или по пьедесталу — кто голосовал за участника и как голосовал он сам.
     </footer>

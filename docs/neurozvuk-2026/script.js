@@ -53,20 +53,16 @@ function compute() {
 }
 
 function renderStats(rows) {
-    const scored = rows.filter(r => r.raw > 0).length;
-    const incomplete = JUDGES.filter(j => ballots.get(j.author).length !== 4).length;
     el('stats').innerHTML = [
         [N, 'участников'],
-        [J, 'судили'],
-        [N - J, 'не голосовали'],
-        [scored, 'получили баллы'],
-        [incomplete ? incomplete : '—', 'неполных бюллетеней']
+        [J, 'голосовали'],
+        [N - J, 'не голосовали']
     ].map(([n, l]) => `<div class="stat glass"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`).join('');
 
     const kj = (N - 1) / (J - 1), kn = (N - 1) / J;
     el('corrHint').textContent = el('corr').checked
-        ? `судившим ×${fmt(kj, 3)}, остальным ×${fmt(kn, 3)} (разница ${fmt((kn / kj - 1) * 100, 2)}%)`
-        : 'выключен — сырая сумма баллов';
+        ? `голосовавшим ×${fmt(kj, 3)}, остальным ×${fmt(kn, 3)} (разница ${fmt((kn / kj - 1) * 100, 2)}%)`
+        : 'выключен — общая сумма баллов';
 }
 
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -76,7 +72,7 @@ function renderPodium(rows) {
         <div class="pod g${i + 1}" data-id="${r.p.id}">
             <div class="pod-medal">${MEDAL[i]}</div>
             <div class="pod-score">${fmt(r.final)}</div>
-            <div class="pod-raw">сырой ${fmt(r.raw)}${r.k !== 1 ? ` × ${fmt(r.k, 3)}` : ''}</div>
+            <div class="pod-raw">общий ${fmt(r.raw)}${r.k !== 1 ? ` × ${fmt(r.k, 3)}` : ''}</div>
             <div class="pod-author">${esc(r.p.author)}</div>
             <div class="pod-track">${esc(r.p.track)}</div>
             ${r.p.project ? `<div class="pod-proj">${esc(r.p.project)}</div>` : ''}
@@ -98,7 +94,7 @@ function renderRows(rows) {
             <div class="r-place">${r.place}${shift}</div>
             <div>
                 <div class="r-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}">${
-                    r.p.isJudge ? 'судил' : 'не голосовал'}</span></div>
+                    r.p.isJudge ? 'голосовал' : 'не голосовал'}</span></div>
                 <div class="r-track">${esc(r.p.track)}${r.p.project ? ' · ' + esc(r.p.project) : ''}</div>
             </div>
             <div class="r-num r-raw">${fmt(r.raw)}</div>
@@ -145,19 +141,21 @@ function openModal(id) {
     el('modalBody').innerHTML = `
         <div class="m-place">${r.place} место из ${N}${
             r.place !== r.rawPlace ? ` · без коэффициента было ${r.rawPlace}` : ''}</div>
-        <h2>${esc(p.author)}</h2>
+        <h2>${p.vk
+            ? `<a class="m-vk" href="${esc(p.vk)}" target="_blank" rel="noopener">${esc(p.author)}</a>`
+            : esc(p.author)}</h2>
         <div class="m-track">${esc(p.track)}</div>
         ${p.project ? `<div class="m-proj">${esc(p.project)}</div>` : '<div class="m-proj"></div>'}
         ${p.trackNote ? `<div class="m-note">${esc(p.trackNote)}</div>` : ''}
         <div class="m-grid">
-            <div class="m-cell"><div class="v">${fmt(r.raw)}</div><div class="k">сырой балл</div></div>
+            <div class="m-cell"><div class="v">${fmt(r.raw)}</div><div class="k">общий балл</div></div>
             <div class="m-cell"><div class="v">×${fmt(r.k, 3)}</div><div class="k">коэффициент</div></div>
             <div class="m-cell"><div class="v">${fmt(r.final)}</div><div class="k">итог</div></div>
             <div class="m-cell"><div class="v">${r.voters.length}</div><div class="k">голосов за него</div></div>
         </div>
-        <div class="m-h">Кто голосовал за него</div>
+        <div class="m-h">Голоса</div>
         ${gotList}
-        <div class="m-h">Его бюллетень</div>
+        <div class="m-h">Бюллетень</div>
         ${own}`;
     el('overlay').style.display = 'flex';
 }
