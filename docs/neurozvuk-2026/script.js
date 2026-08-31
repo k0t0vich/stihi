@@ -160,9 +160,14 @@ function openModal(id) {
         const warn = b.length !== 4
             ? `<div class="m-note">Проголосовал не полностью: ${b.length} ${b.length === 1 ? 'оценка' : 'оценки'} вместо 4.</div>`
             : '';
-        return warn + `<ul class="vlist">${b.map(x =>
-            `<li><span>${esc(x.target.author)} — <i>${esc(x.target.track)}</i></span>
-                 <span class="pts">${fmt(x.pts, 1)}</span></li>`).join('')}</ul>`;
+        return warn + `<ul class="vlist">${b.map(x => {
+            const t = x.target;
+            const nm = t.vk
+                ? `<a href="${esc(t.vk)}" target="_blank" rel="noopener">${esc(t.author)}</a>`
+                : esc(t.author);
+            return `<li><span>${nm} — <i>${esc(t.track)}</i></span>
+                 <span class="pts">${fmt(x.pts, 1)}</span></li>`;
+        }).join('')}</ul>`;
     })() : '<p class="empty">Не голосовал — участвовал только как автор.</p>';
 
     el('modalBody').innerHTML = `
