@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEUROЗВУК 2026 — связи голосования</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg1: #070414;
+    --cyan: #1ea2ea;
+    --cyan-hi: #5fd2ff;
+    --accent: #165ed7;
+    --accent2: #bf1ad4;
+    --glass: rgba(255,255,255,0.06);
+    --glass-hi: rgba(30,162,234,0.14);
+    --stroke: rgba(120,190,255,0.20);
+    --text: #ffffff;
+    --muted: rgba(210,232,255,0.62);
+    --r: 6px;
+}
+
+body {
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    color: var(--text); min-height: 100vh; padding: 16px;
+    background:
+        radial-gradient(1200px 760px at 14% -10%, rgba(22,94,215,.50), transparent 62%),
+        radial-gradient(900px 620px at 86% 2%, rgba(191,26,212,.26), transparent 58%),
+        radial-gradient(900px 900px at 50% 108%, rgba(30,162,234,.30), transparent 62%),
+        linear-gradient(168deg, var(--bg1) 30%, #0b1c5e 100%);
+    background-attachment: fixed;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+.glass {
+    background: var(--glass); border: 1px solid var(--stroke); border-radius: var(--r);
+    backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%);
+    box-shadow: 0 8px 32px rgba(0,0,0,.28);
+}
+
+.hero { padding: 16px 22px; margin-bottom: 12px; }
+.hero h1 {
+    font-size: 1.5em; line-height: 1.15; margin-bottom: 6px; letter-spacing: -.5px;
+    background: linear-gradient(95deg, #fff 8%, var(--cyan-hi) 52%, var(--accent2) 96%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero h1 .h1-ru { font-weight: 900; letter-spacing: -1px; }
+.hero p { color: var(--text); line-height: 1.5; max-width: 78ch; font-size: .98em; }
+.hero .back { font-size: .84em; }
+.hero .back a { color: var(--cyan-hi); text-decoration: none; }
+.hero .back a:hover { text-decoration: underline; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin-bottom: 14px; }
+.stat { padding: 14px 12px; text-align: center; }
+.stat-n { font-size: 1.5em; font-weight: 700; color: var(--cyan-hi); }
+.stat-l { color: var(--muted); font-size: .78em; margin-top: 3px; line-height: 1.35; }
+
+.panel { padding: 13px 18px; margin-bottom: 14px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.panel label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: .9em; user-select: none; }
+.panel input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--cyan); cursor: pointer; }
+.panel .rng { gap: 10px; }
+.panel .rng input[type=range] { width: 110px; accent-color: var(--cyan); cursor: pointer; }
+.rng-val {
+    min-width: 34px; text-align: center; font-weight: 700; font-size: .88em;
+    color: var(--cyan-hi); background: rgba(30,162,234,.14); border-radius: var(--r); padding: 2px 7px;
+}
+.comp { color: var(--muted); font-size: .84em; }
+.search {
+    flex: 1; min-width: 180px; padding: 9px 13px; border-radius: var(--r);
+    border: 1px solid var(--stroke); background: rgba(0,0,0,.22); color: var(--text); font-size: 14px;
+}
+.search:focus { outline: none; border-color: rgba(30,162,234,.7); }
+.search::placeholder { color: rgba(210,232,255,.36); }
+
+/* ── граф ── */
+.graph-box { padding: 0; margin-bottom: 14px; overflow: hidden; position: relative; }
+#graph { display: block; width: 100%; height: 78vh; min-height: 560px; cursor: grab; }
+#graph.drag { cursor: grabbing; }
+.legend {
+    position: absolute; left: 14px; bottom: 12px; font-size: .76em; color: var(--muted);
+    background: rgba(7,4,20,.72); padding: 9px 12px; border-radius: var(--r);
+    border: 1px solid var(--stroke); line-height: 1.7; pointer-events: none;
+}
+.legend i { display: inline-block; width: 22px; height: 0; vertical-align: middle; margin-right: 7px; }
+.legend .e1 { border-top: 2px solid rgba(255,120,200,.95); }
+.legend .e2 { border-top: 1.5px solid rgba(120,190,255,.5); }
+.legend .e3 { border-top: 2.5px solid rgba(255,214,80,1); }
+.legend .e4 { border-top: 2.5px solid rgba(120,190,255,.95); }
+.legend .dot {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    vertical-align: middle; margin-right: 7px;
+}
+
+/* ── кластеры ── */
+.clusters { padding: 18px 20px; margin-bottom: 14px; }
+.clusters h2 { font-size: 1.05em; color: var(--cyan-hi); margin-bottom: 4px; }
+.clusters .sub { color: var(--muted); font-size: .85em; margin-bottom: 14px; line-height: 1.5; }
+.cl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr)); gap: 11px; }
+.cl {
+    padding: 12px 14px; border-radius: var(--r);
+    background: rgba(0,0,0,.22); border: 1px solid var(--stroke);
+}
+.cl-head { font-size: .76em; color: var(--muted); margin-bottom: 7px; text-transform: uppercase; letter-spacing: .05em; }
+.cl-name { font-size: .9em; padding: 2px 0; }
+.cl-name a { color: var(--text); text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,.25); }
+.cl-name a:hover { color: var(--cyan-hi); }
+
+/* ── таблица пар ── */
+.pairs { padding: 18px 20px; margin-bottom: 14px; }
+.pairs h2 { font-size: 1.05em; color: var(--cyan-hi); margin-bottom: 4px; }
+.pairs .sub { color: var(--muted); font-size: .85em; margin-bottom: 12px; line-height: 1.5; }
+.ptab { width: 100%; border-collapse: collapse; font-size: .89em; }
+.ptab th {
+    text-align: left; padding: 8px 10px; color: var(--muted); font-weight: 600;
+    font-size: .82em; text-transform: uppercase; letter-spacing: .05em;
+    border-bottom: 1px solid var(--stroke);
+}
+.ptab td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.ptab tr:last-child td { border-bottom: none; }
+.ptab .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ptab .sum { font-weight: 700; color: var(--cyan-hi); }
+.ptab a { color: var(--text); text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,.25); }
+.ptab a:hover { color: var(--cyan-hi); }
+
+.note { padding: 16px 20px; color: var(--muted); font-size: .85em; line-height: 1.65; }
+.note b { color: var(--text); }
+
+/* ── всплывающая карточка узла ── */
+.tip {
+    position: fixed; z-index: 50; pointer-events: none; max-width: 280px;
+    padding: 10px 13px; border-radius: var(--r); font-size: .85em; line-height: 1.5;
+    background: rgba(10,8,28,.96); border: 1px solid var(--stroke);
+    box-shadow: 0 10px 34px rgba(0,0,0,.5); display: none;
+}
+.tip .t-name { font-weight: 700; margin-bottom: 3px; }
+.tip .t-row { color: var(--muted); font-size: .93em; }
+.tip .t-row b { color: var(--cyan-hi); font-weight: 600; }
+
+@media (max-width: 720px) {
+    body { padding: 10px; }
+    .hero h1 { font-size: 1.3em; }
+    #graph { height: 66vh; min-height: 420px; }
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .legend { font-size: .68em; left: 8px; bottom: 8px; }
+    .ptab { font-size: .82em; }
+    .ptab th:nth-child(2), .ptab td:nth-child(2) { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+    <header class="hero glass">
+        <h1>NEURO<span class="h1-ru">ЗВУК</span> 2026 — связи голосования</h1>
+        <p class="back"><a href="../neurozvuk-2026/">← вернуться к таблице результатов</a></p>
+    </header>
+
+    <div class="panel glass">
+        <input class="search" id="search" placeholder="Найти участника…">
+        <label><input type="checkbox" id="onlyMutual"> только взаимные связи</label>
+        <label><input type="checkbox" id="hideNoVotes" checked> скрыть тех, за кого не голосовали</label>
+        <label class="rng">
+            <span>оценка не ниже</span>
+            <input type="range" id="minVote" min="1" max="4" step="1" value="1">
+            <span class="rng-val" id="minVoteVal">0.1</span>
+        </label>
+        <span class="comp" id="compInfo"></span>
+    </div>
+
+    <section class="graph-box glass">
+        <canvas id="graph"></canvas>
+        <div class="legend">
+            <div><i class="e3"></i>при наведении: голоса <b style="color:#ffd650">за</b> участника</div>
+            <div><i class="e4"></i>при наведении: голоса, которые <b style="color:#78bfff">он отдал</b></div>
+            <div><i class="e1"></i>взаимная оценка</div>
+            <div><i class="e2"></i>односторонняя</div>
+            <div><span class="dot" style="background:#5fd2ff"></span>голосовал</div>
+            <div><span class="dot" style="background:rgba(210,232,255,.4)"></span>не голосовал</div>
+        </div>
+    </section>
+
+    <section class="clusters glass">
+        <h2>Группы взаимного голосования</h2>
+        <p class="sub" id="clSub"></p>
+        <div class="cl-grid" id="clusters"></div>
+    </section>
+
+    <section class="pairs glass">
+        <h2>Взаимные пары</h2>
+        <p class="sub" id="pairSub"></p>
+        <table class="ptab">
+            <thead>
+                <tr><th>Участник</th><th>Участник</th><th class="num">Оценки</th><th class="num">Сумма</th></tr>
+            </thead>
+            <tbody id="pairs"></tbody>
+        </table>
+    </section>
+
+    <footer class="note glass">
+        <b>Как читать.</b> Взаимная пара — это когда двое поставили баллы друг другу.
+        Само по себе это ничего не доказывает: люди из одного круга чаще слушают друг друга
+        просто потому, что знакомы с творчеством. Отличить общий вкус от договорённости
+        по одним голосам нельзя.
+        <br><br>
+        <b>На что стоит смотреть.</b> Показателен не факт взаимности, а её концентрация:
+        замкнутые треугольники и плотные группы, где все голосуют за всех. Одиночные пары —
+        обычное дело в любом сообществе.
+    </footer>
+
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script src="data.js"></script>
+<script src="graph.js"></script>
+</body>
+</html>
