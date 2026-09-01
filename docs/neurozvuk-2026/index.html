@@ -100,6 +100,8 @@ body {
 .pod.g1 .pod-score { color: var(--gold); } .pod.g2 .pod-score { color: var(--silver); } .pod.g3 .pod-score { color: var(--bronze); }
 .pod-raw { font-size: .78em; color: var(--muted); margin-bottom: 10px; }
 .pod-author { font-weight: 700; font-size: 1.06em; margin-bottom: 3px; }
+/* в узкой карточке бейдж уводим на свою строку, иначе рвёт центровку */
+.pod-author .badge { display: block; margin: 6px auto 0; width: fit-content; }
 .pod-track { color: var(--muted); font-size: .89em; font-style: italic; }
 .pod-proj { color: var(--muted); font-size: .8em; margin-top: 4px; opacity: .75; }
 /* клики по плееру не должны открывать попап */
@@ -263,7 +265,7 @@ body {
         <input class="search" id="search" placeholder="Поиск по автору, проекту или треку…">
         <label class="toggle">
             <input type="checkbox" id="corr" checked>
-            <span>Коэффициент «за оценку голосовавшим»</span>
+            <span>Коэффициент «за оценку с голосом»</span>
         </label>
         <span class="hint" id="corrHint"></span>
     </div>
@@ -277,10 +279,14 @@ body {
     </section>
 
     <footer class="foot glass">
-        <b>Коэффициент «за оценку голосовавшим».</b> Голосовавший не может выбрать себя, поэтому его
-        трек доступен меньшему числу избирателей, чем трек того, кто не голосовал.
-        Итог домножается на <code>(N−1) / (J − j)</code>: <b>N</b> — всего участников,
-        <b>J</b> — голосовавших, <b>j</b> = 1 у голосовавших. Так все приводятся к общей базе.
+        <b>Коэффициент «за оценку с голосом».</b> Участник, отдавший голос, статистически
+        теряет в баллах — за себя голосовать нельзя, поэтому голосующих именно за его трек
+        на одного меньше. Для устранения этого вводится коэффициент.
+        <br><br>
+        За базу берётся участник без голоса: тут доступны все <b id="fJ">·</b> голосующих,
+        и сумма остаётся как есть. Участника с голосом выбирали <b id="fJ1">·</b> —
+        значит эта сумма домножается на <code id="fK">·</code>, то есть <b id="fP">·</b>.
+        В общем виде — <code>J / (J − 1)</code>, где <b>J</b> — число отданных голосов.
     </footer>
 
 </div>

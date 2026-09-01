@@ -11,7 +11,7 @@ const el = id => document.getElementById(id);
 const fmt = (x, d = 2) => x.toFixed(d);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 
-// Бюллетень судьи: за кого он голосовал, от большего балла к меньшему.
+// Бюллетень: за кого отдан голос, от большего балла к меньшему.
 const ballots = new Map();
 for (const j of JUDGES) ballots.set(j.author, []);
 for (const p of P) {
@@ -29,9 +29,9 @@ function compute() {
 
     const rows = P.map(p => {
         const raw = Object.values(p.votes).reduce((a, b) => a + b, 0);
-        // электорат: сколько судей могли за него голосовать (за себя нельзя)
-        const E = J - (p.isJudge ? 1 : 0);
-        const k = useCorr && E > 0 ? (N - 1) / E : 1;
+        // База — не голосовавшие: их выбирали все J человек.
+        // Голосовавших выбирали J-1 (за себя нельзя), поэтому им множитель J/(J-1).
+        const k = useCorr && p.isJudge && J > 1 ? J / (J - 1) : 1;
         // счётчик мест 1..4 — для tie-break
         const places = [0, 0, 0, 0];
         for (const v of Object.values(p.votes)) {
@@ -55,14 +55,20 @@ function compute() {
 function renderStats(rows) {
     el('stats').innerHTML = [
         [N, 'участников'],
-        [J, 'голосовали'],
-        [N - J, 'не голосовали']
+        [J, 'с голосом'],
+        [N - J, 'без голоса']
     ].map(([n, l]) => `<div class="stat glass"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`).join('');
 
-    const kj = (N - 1) / (J - 1), kn = (N - 1) / J;
+    const k = J / (J - 1);
     el('corrHint').textContent = el('corr').checked
-        ? `голосовавшим ×${fmt(kj, 3)}, остальным ×${fmt(kn, 3)} (разница ${fmt((kn / kj - 1) * 100, 2)}%)`
+        ? `с голосом ×${fmt(k, 4)} (+${fmt((k - 1) * 100, 2)}%), без голоса — как есть`
         : 'выключен — общая сумма баллов';
+
+    // числа в подвале берём из данных, чтобы текст не разошёлся с расчётом
+    el('fJ1').textContent = J - 1;
+    el('fJ').textContent = J;
+    el('fK').textContent = `${J} / ${J - 1} = ${fmt(k, 4)}`;
+    el('fP').textContent = `+${fmt((k - 1) * 100, 2)}%`;
 }
 
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -99,7 +105,8 @@ function renderPodium(rows) {
             <div class="pod-medal">${MEDAL[i]}</div>
             <div class="pod-score">${fmt(r.final)}</div>
             <div class="pod-raw">общий ${fmt(r.raw)}${r.k !== 1 ? ` × ${fmt(r.k, 3)}` : ''}</div>
-            <div class="pod-author">${esc(r.p.author)}</div>
+            <div class="pod-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}">${
+                r.p.isJudge ? 'с голосом' : 'без голоса'}</span></div>
             <div class="pod-track">${esc(r.p.track)}</div>
             ${r.p.project ? `<div class="pod-proj">${esc(r.p.project)}</div>` : ''}
             ${r.p.audio ? `<div class="pod-player">${playerHTML(r.p.audio)}</div>` : ''}
@@ -121,7 +128,7 @@ function renderRows(rows) {
             <div class="r-place">${r.place}${shift}</div>
             <div>
                 <div class="r-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}">${
-                    r.p.isJudge ? 'голосовал' : 'не голосовал'}</span></div>
+                    r.p.isJudge ? 'с голосом' : 'без голоса'}</span></div>
                 <div class="r-track">${esc(r.p.track)}${r.p.project ? ' · ' + esc(r.p.project) : ''}</div>
             </div>
             <div class="r-num r-raw">${fmt(r.raw)}</div>
@@ -152,13 +159,13 @@ function openModal(id) {
                 : esc(jname);
             return `<li><span>${nm}</span><span class="pts">${nameOf(v)} · ${fmt(v, 1)}</span></li>`;
         }).join('')}</ul>`
-        : '<p class="empty">За этот трек не проголосовал никто.</p>';
+        : '<p class="empty">За этот трек никто не отдал голос.</p>';
 
     const own = p.isJudge ? (() => {
         const b = ballots.get(p.author);
         if (!b.length) return '<p class="empty">Бюллетень пуст.</p>';
         const warn = b.length !== 4
-            ? `<div class="m-note">Проголосовал не полностью: ${b.length} ${b.length === 1 ? 'оценка' : 'оценки'} вместо 4.</div>`
+            ? `<div class="m-note">Бюллетень неполный: ${b.length} ${b.length === 1 ? 'оценка' : 'оценки'} вместо 4.</div>`
             : '';
         return warn + `<ul class="vlist">${b.map(x => {
             const t = x.target;
@@ -168,7 +175,7 @@ function openModal(id) {
             return `<li><span>${nm} — <i>${esc(t.track)}</i></span>
                  <span class="pts">${fmt(x.pts, 1)}</span></li>`;
         }).join('')}</ul>`;
-    })() : '<p class="empty">Не голосовал — участвовал только как автор.</p>';
+    })() : '<p class="empty">Без голоса — только участие как автора.</p>';
 
     el('modalBody').innerHTML = `
         <div class="m-place">${r.place} место из ${N}${
