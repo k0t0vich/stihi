@@ -109,7 +109,8 @@ function renderPodium(rows) {
                 r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}">⚖</span></div>
             <div class="pod-track">${esc(r.p.track)}</div>
             ${r.p.project ? `<div class="pod-proj">${esc(r.p.project)}</div>` : ''}
-            ${r.p.audio ? `<div class="pod-player">${playerHTML(r.p.audio)}</div>` : ''}
+            <!-- кнопки ВК временно скрыты; ссылки лежат в data.js, поле audio -->
+            ${'' /* r.p.audio ? `<div class="pod-player">${playerHTML(r.p.audio)}</div>` : '' */}
         </div>`).join('');
 }
 
