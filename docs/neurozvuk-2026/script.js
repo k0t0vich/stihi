@@ -106,7 +106,7 @@ function renderPodium(rows) {
             <div class="pod-score">${fmt(r.final)}</div>
             <div class="pod-raw">общий ${fmt(r.raw)}${r.k !== 1 ? ` × ${fmt(r.k, 3)}` : ''}</div>
             <div class="pod-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}" title="${
-                r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}">⚖</span></div>
+                r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}"><svg class="ico-scales" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15"/><path d="M8.5 19.5h7"/><path d="M4 9.2 20 6.6"/><path d="M4 9.2 1.6 14.4h4.8z"/><path d="M20 6.6 17.6 11.8h4.8z"/></g></svg></span></div>
             <div class="pod-track">${esc(r.p.track)}</div>
             ${r.p.project ? `<div class="pod-proj">${esc(r.p.project)}</div>` : ''}
             <!-- кнопки ВК временно скрыты; ссылки лежат в data.js, поле audio -->
@@ -129,7 +129,7 @@ function renderRows(rows) {
             <div class="r-place">${r.place}${shift}</div>
             <div>
                 <div class="r-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}" title="${
-                    r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}">⚖</span></div>
+                    r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}"><svg class="ico-scales" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15"/><path d="M8.5 19.5h7"/><path d="M4 9.2 20 6.6"/><path d="M4 9.2 1.6 14.4h4.8z"/><path d="M20 6.6 17.6 11.8h4.8z"/></g></svg></span></div>
                 <div class="r-track">${esc(r.p.track)}${r.p.project ? ' · ' + esc(r.p.project) : ''}</div>
             </div>
             <div class="r-num r-raw">${fmt(r.raw)}</div>
