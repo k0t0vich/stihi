@@ -72,6 +72,9 @@ body {
 .hero h1 .h1-ru { font-weight: 900; letter-spacing: -1px; }
 .hero .lede { color: var(--text); font-size: 1.02em; line-height: 1.5; max-width: 62ch; }
 .hero .hero-hint { margin-top: 14px; color: var(--muted); font-size: .8em; opacity: .45; }
+.hero .hero-link { margin-top: 10px; font-size: .88em; }
+.hero .hero-link a { color: var(--cyan-hi); text-decoration: none; }
+.hero .hero-link a:hover { text-decoration: underline; }
 
 /* ── статистика ── */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px,1fr)); gap: 12px; margin-bottom: 16px; }
@@ -264,6 +267,9 @@ body {
             </p>
             <p class="hero-hint">
                 Клик по участнику — открывает окно с данными голосования.
+            </p>
+            <p class="hero-link">
+                <a href="../neurozvuk-2026-graph/">Граф связей: кто за кого голосовал →</a>
             </p>
         </div>
     </header>
