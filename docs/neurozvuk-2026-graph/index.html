@@ -48,6 +48,18 @@ body {
 .hero h1 .h1-ru { font-weight: 900; letter-spacing: -1px; }
 .hero p { color: var(--text); line-height: 1.5; max-width: 78ch; font-size: .98em; }
 .hero .back { font-size: .84em; }
+.hero-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.play {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: var(--r); cursor: pointer;
+    font-size: .88em; font-family: inherit; color: var(--text);
+    background: rgba(30,162,234,.22); border: 1px solid rgba(30,162,234,.5);
+    transition: background .16s;
+}
+.play:hover { background: rgba(30,162,234,.36); }
+.play .ico { font-size: .9em; color: var(--cyan-hi); }
+.play.on { background: rgba(191,26,212,.24); border-color: rgba(191,26,212,.5); }
+.play.on .ico { color: #ff9df0; }
 .hero .back a { color: var(--cyan-hi); text-decoration: none; }
 .hero .back a:hover { text-decoration: underline; }
 
@@ -60,12 +72,17 @@ body {
 .panel label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: .9em; user-select: none; }
 .panel input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--cyan); cursor: pointer; }
 .panel .rng { gap: 10px; }
+.panel .rng > span:first-child { min-width: 128px; }
 .panel .rng input[type=range] { width: 110px; accent-color: var(--cyan); cursor: pointer; }
 .rng-val {
     min-width: 34px; text-align: center; font-weight: 700; font-size: .88em;
     color: var(--cyan-hi); background: rgba(30,162,234,.14); border-radius: var(--r); padding: 2px 7px;
 }
-.comp { color: var(--muted); font-size: .84em; }
+.comp {
+    color: var(--muted); font-size: .84em;
+    /* своя строка фиксированной ширины: иначе смена текста дёргает ползунки */
+    flex-basis: 100%; min-height: 1.2em;
+}
 .search {
     flex: 1; min-width: 180px; padding: 9px 13px; border-radius: var(--r);
     border: 1px solid var(--stroke); background: rgba(0,0,0,.22); color: var(--text); font-size: 14px;
@@ -171,17 +188,26 @@ body {
 
     <header class="hero glass">
         <h1>NEURO<span class="h1-ru">ЗВУК</span> 2026 — связи голосования</h1>
-        <p class="back"><a href="../neurozvuk-2026/">← вернуться к таблице результатов</a></p>
+        <div class="hero-row">
+            <p class="back"><a href="../neurozvuk-2026/">← вернуться к таблице результатов</a></p>
+            <button id="play" class="play" title="Показать участников от сильнейшего к слабым">
+                <span class="ico">▶</span><span class="lbl">Проиграть</span>
+            </button>
+        </div>
     </header>
 
     <div class="panel glass">
         <input class="search" id="search" placeholder="Найти участника…">
         <label><input type="checkbox" id="onlyMutual"> только взаимные связи</label>
-        <label><input type="checkbox" id="hideNoVotes" checked> скрыть тех, за кого не голосовали</label>
         <label class="rng">
             <span>оценка не ниже</span>
             <input type="range" id="minVote" min="1" max="4" step="1" value="1">
             <span class="rng-val" id="minVoteVal">0.1</span>
+        </label>
+        <label class="rng">
+            <span>балл участника от</span>
+            <input type="range" id="minScore" min="0" max="36" step="1" value="1">
+            <span class="rng-val" id="minScoreVal">0.1</span>
         </label>
         <span class="comp" id="compInfo"></span>
     </div>
