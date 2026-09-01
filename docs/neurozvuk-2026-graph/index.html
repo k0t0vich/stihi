@@ -23,7 +23,7 @@
 
 body {
     font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
-    color: var(--text); min-height: 100vh; padding: 16px;
+    color: var(--text); height: 100vh; overflow: hidden; padding: 16px;
     background:
         radial-gradient(1200px 760px at 14% -10%, rgba(22,94,215,.50), transparent 62%),
         radial-gradient(900px 620px at 86% 2%, rgba(191,26,212,.26), transparent 58%),
@@ -31,7 +31,7 @@ body {
         linear-gradient(168deg, var(--bg1) 30%, #0b1c5e 100%);
     background-attachment: fixed;
 }
-.wrap { width: 100%; margin: 0 auto; }
+.wrap { width: 100%; height: 100%; display: flex; flex-direction: column; }
 
 .glass {
     background: var(--glass); border: 1px solid var(--stroke); border-radius: var(--r);
@@ -91,8 +91,8 @@ body {
 .search::placeholder { color: rgba(210,232,255,.36); }
 
 /* ── граф ── */
-.graph-box { padding: 0; margin-bottom: 14px; overflow: hidden; position: relative; }
-#graph { display: block; width: 100%; height: 82vh; min-height: 560px; cursor: grab; }
+.graph-box { padding: 0; margin-bottom: 0; overflow: hidden; position: relative; flex: 1; min-height: 0; }
+#graph { display: block; width: 100%; height: 100%; cursor: grab; }
 #graph.drag { cursor: grabbing; }
 .legend {
     position: absolute; left: 14px; bottom: 12px; font-size: .76em; color: var(--muted);
@@ -108,40 +108,6 @@ body {
     display: inline-block; width: 10px; height: 10px; border-radius: 50%;
     vertical-align: middle; margin-right: 7px;
 }
-
-/* ── кластеры ── */
-.clusters { padding: 18px 20px; margin-bottom: 14px; }
-.clusters h2 { font-size: 1.05em; color: var(--cyan-hi); margin-bottom: 4px; }
-.clusters .sub { color: var(--muted); font-size: .85em; margin-bottom: 14px; line-height: 1.5; }
-.cl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr)); gap: 11px; }
-.cl {
-    padding: 12px 14px; border-radius: var(--r);
-    background: rgba(0,0,0,.22); border: 1px solid var(--stroke);
-}
-.cl-head { font-size: .76em; color: var(--muted); margin-bottom: 7px; text-transform: uppercase; letter-spacing: .05em; }
-.cl-name { font-size: .9em; padding: 2px 0; }
-.cl-name a { color: var(--text); text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,.25); }
-.cl-name a:hover { color: var(--cyan-hi); }
-
-/* ── таблица пар ── */
-.pairs { padding: 18px 20px; margin-bottom: 14px; }
-.pairs h2 { font-size: 1.05em; color: var(--cyan-hi); margin-bottom: 4px; }
-.pairs .sub { color: var(--muted); font-size: .85em; margin-bottom: 12px; line-height: 1.5; }
-.ptab { width: 100%; border-collapse: collapse; font-size: .89em; }
-.ptab th {
-    text-align: left; padding: 8px 10px; color: var(--muted); font-weight: 600;
-    font-size: .82em; text-transform: uppercase; letter-spacing: .05em;
-    border-bottom: 1px solid var(--stroke);
-}
-.ptab td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.06); }
-.ptab tr:last-child td { border-bottom: none; }
-.ptab .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ptab .sum { font-weight: 700; color: var(--cyan-hi); }
-.ptab a { color: var(--text); text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,.25); }
-.ptab a:hover { color: var(--cyan-hi); }
-
-.note { padding: 16px 20px; color: var(--muted); font-size: .85em; line-height: 1.65; }
-.note b { color: var(--text); }
 
 /* ── карточка узла: закреплена в углу графа, чтобы влезал полный расклад ── */
 .tip {
@@ -175,11 +141,8 @@ body {
 @media (max-width: 720px) {
     body { padding: 10px; }
     .hero h1 { font-size: 1.3em; }
-    #graph { height: 66vh; min-height: 420px; }
     .stats { grid-template-columns: repeat(2,1fr); }
     .legend { font-size: .68em; left: 8px; bottom: 8px; }
-    .ptab { font-size: .82em; }
-    .ptab th:nth-child(2), .ptab td:nth-child(2) { display: none; }
 }
 </style>
 </head>
@@ -224,34 +187,6 @@ body {
             <div><span class="dot" style="background:rgba(210,232,255,.4)"></span>не голосовал</div>
         </div>
     </section>
-
-    <section class="clusters glass">
-        <h2>Группы взаимного голосования</h2>
-        <p class="sub" id="clSub"></p>
-        <div class="cl-grid" id="clusters"></div>
-    </section>
-
-    <section class="pairs glass">
-        <h2>Взаимные пары</h2>
-        <p class="sub" id="pairSub"></p>
-        <table class="ptab">
-            <thead>
-                <tr><th>Участник</th><th>Участник</th><th class="num">Оценки</th><th class="num">Сумма</th></tr>
-            </thead>
-            <tbody id="pairs"></tbody>
-        </table>
-    </section>
-
-    <footer class="note glass">
-        <b>Как читать.</b> Взаимная пара — это когда двое поставили баллы друг другу.
-        Само по себе это ничего не доказывает: люди из одного круга чаще слушают друг друга
-        просто потому, что знакомы с творчеством. Отличить общий вкус от договорённости
-        по одним голосам нельзя.
-        <br><br>
-        <b>На что стоит смотреть.</b> Показателен не факт взаимности, а её концентрация:
-        замкнутые треугольники и плотные группы, где все голосуют за всех. Одиночные пары —
-        обычное дело в любом сообществе.
-    </footer>
 
 </div>
 
