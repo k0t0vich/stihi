@@ -3,23 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>НЕЙРОЗВУК 2026 — результаты</title>
+<title>NEUROЗВУК 2026 — результаты</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Палитра снята с афиши: фон #070414, доминанта синяя,
+   акценты — голубой #1ea2ea и фиолетово-розовый #bf1ad4. */
 :root {
-    --bg1: #1a1a2e;
-    --bg2: #16213e;
-    --accent: #7b2ff7;
-    --accent2: #f107a3;
-    --glass: rgba(255,255,255,0.07);
-    --glass-hi: rgba(255,255,255,0.12);
-    --stroke: rgba(255,255,255,0.14);
-    --text: #f0f0f5;
-    --muted: rgba(240,240,245,0.58);
-    --gold: #ffd76e;
-    --silver: #d8dde6;
-    --bronze: #e0a06a;
+    --bg1: #070414;
+    --bg2: #0a15a1;
+    --cyan: #1ea2ea;
+    --cyan-hi: #5fd2ff;
+    --accent: #165ed7;
+    --accent2: #bf1ad4;
+    --glass: rgba(255,255,255,0.06);
+    --glass-hi: rgba(30,162,234,0.14);
+    --stroke: rgba(120,190,255,0.20);
+    --text: #ffffff;
+    --muted: rgba(210,232,255,0.62);
+    --gold: var(--cyan-hi);
+    --silver: #a8c4ff;
+    --bronze: #e46ff0;
+    --r: 6px;              /* еле заметное скругление — везде одно */
 }
 
 body {
@@ -28,10 +33,10 @@ body {
     min-height: 100vh;
     padding: 16px;
     background:
-        radial-gradient(1100px 700px at 12% -8%, rgba(123,47,247,.42), transparent 60%),
-        radial-gradient(900px 600px at 88% 4%, rgba(241,7,163,.32), transparent 58%),
-        radial-gradient(800px 900px at 50% 110%, rgba(0,212,255,.20), transparent 60%),
-        linear-gradient(160deg, var(--bg1), var(--bg2));
+        radial-gradient(1200px 760px at 14% -10%, rgba(22,94,215,.50), transparent 62%),
+        radial-gradient(900px 620px at 86% 2%, rgba(191,26,212,.26), transparent 58%),
+        radial-gradient(900px 900px at 50% 108%, rgba(30,162,234,.30), transparent 62%),
+        linear-gradient(168deg, var(--bg1) 30%, #0b1c5e 100%);
     background-attachment: fixed;
 }
 
@@ -41,7 +46,7 @@ body {
 .glass {
     background: var(--glass);
     border: 1px solid var(--stroke);
-    border-radius: 20px;
+    border-radius: var(--r);
     backdrop-filter: blur(18px) saturate(150%);
     -webkit-backdrop-filter: blur(18px) saturate(150%);
     box-shadow: 0 8px 32px rgba(0,0,0,.28);
@@ -49,22 +54,24 @@ body {
 
 /* ── шапка с местом под логотип ── */
 .hero { padding: 26px; margin-bottom: 16px; display: flex; gap: 22px; align-items: center; }
+/* пропорции афиши 1074x1245 — слот вертикальный, чтобы текст не обрезался */
 .logo-slot {
-    width: 108px; height: 108px; flex-shrink: 0; border-radius: 18px;
-    background: linear-gradient(135deg, rgba(123,47,247,.34), rgba(241,7,163,.26));
-    border: 1px dashed var(--stroke);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2.6em; overflow: hidden;
+    width: 300px; flex-shrink: 0; border-radius: var(--r);
+    border: 1px solid var(--stroke); overflow: hidden;
+    box-shadow: 0 8px 26px rgba(0,0,0,.4);
+    line-height: 0;
 }
-.logo-slot img { width: 100%; height: 100%; object-fit: cover; }
+.logo-slot img { width: 100%; height: auto; display: block; }
 .hero-text { flex: 1; min-width: 0; }
 .hero h1 {
-    font-size: 2.3em; line-height: 1.1; letter-spacing: -.5px; margin-bottom: 8px;
-    background: linear-gradient(92deg, #fff 10%, var(--gold) 55%, var(--accent2) 95%);
+    font-size: 1.9em; line-height: 1.15; letter-spacing: -.5px; margin-bottom: 10px; text-wrap: balance;
+    background: linear-gradient(95deg, #fff 8%, var(--cyan-hi) 52%, var(--accent2) 96%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.hero .lede { color: var(--muted); font-size: 1.02em; line-height: 1.55; max-width: 62ch; }
-.hero .desc-slot { margin-top: 10px; color: var(--muted); font-size: .93em; font-style: italic; opacity: .75; }
+/* как на афише: NEURO обычным, ЗВУК жирнее и плотнее */
+.hero h1 .h1-ru { font-weight: 900; letter-spacing: -1px; }
+.hero .lede { color: var(--text); font-size: 1.02em; line-height: 1.5; max-width: 62ch; }
+.hero .hero-hint { margin-top: 14px; color: var(--muted); font-size: .8em; opacity: .45; }
 
 /* ── статистика ── */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px,1fr)); gap: 12px; margin-bottom: 16px; }
@@ -81,13 +88,13 @@ body {
 .pod {
     padding: 22px 16px; text-align: center; position: relative;
     cursor: pointer; transition: transform .22s, box-shadow .22s;
-    background: var(--glass); border: 1px solid var(--stroke); border-radius: 20px;
+    background: var(--glass); border: 1px solid var(--stroke); border-radius: var(--r);
     backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%);
 }
 .pod:hover { transform: translateY(-6px); box-shadow: 0 16px 44px rgba(0,0,0,.4); }
-.pod.g1 { border-color: rgba(255,215,110,.5); background: linear-gradient(170deg, rgba(255,215,110,.17), var(--glass)); }
-.pod.g2 { border-color: rgba(216,221,230,.4); background: linear-gradient(170deg, rgba(216,221,230,.13), var(--glass)); }
-.pod.g3 { border-color: rgba(224,160,106,.4); background: linear-gradient(170deg, rgba(224,160,106,.13), var(--glass)); }
+.pod.g1 { border-color: rgba(95,210,255,.55); background: linear-gradient(170deg, rgba(95,210,255,.18), var(--glass)); }
+.pod.g2 { border-color: rgba(160,190,255,.42); background: linear-gradient(170deg, rgba(160,190,255,.12), var(--glass)); }
+.pod.g3 { border-color: rgba(191,26,212,.45); background: linear-gradient(170deg, rgba(191,26,212,.14), var(--glass)); }
 .pod-medal { font-size: 2.5em; line-height: 1; margin-bottom: 6px; }
 .pod-score { font-size: 1.75em; font-weight: 700; margin: 4px 0; }
 .pod.g1 .pod-score { color: var(--gold); } .pod.g2 .pod-score { color: var(--silver); } .pod.g3 .pod-score { color: var(--bronze); }
@@ -99,11 +106,11 @@ body {
 .pod-player { margin-top: 12px; cursor: default; }
 .pod-audio { width: 100%; height: 34px; display: block; }
 .pod-frame {
-    width: 100%; height: 116px; border: 0; border-radius: 12px;
+    width: 100%; height: 116px; border: 0; border-radius: var(--r);
     background: rgba(0,0,0,.25); display: block;
 }
 .pod-link {
-    display: block; padding: 9px 14px; border-radius: 10px;
+    display: block; padding: 9px 14px; border-radius: var(--r);
     background: rgba(255,255,255,.1); border: 1px solid var(--stroke);
     color: var(--text); text-decoration: none; font-size: .86em;
 }
@@ -118,11 +125,11 @@ body {
 /* ── панель управления ── */
 .panel { padding: 15px 18px; margin-bottom: 14px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .search {
-    flex: 1; min-width: 200px; padding: 11px 14px; border-radius: 12px;
+    flex: 1; min-width: 200px; padding: 11px 14px; border-radius: var(--r);
     border: 1px solid var(--stroke); background: rgba(0,0,0,.22); color: var(--text); font-size: 15px;
 }
-.search::placeholder { color: rgba(240,240,245,.38); }
-.search:focus { outline: none; border-color: rgba(123,47,247,.65); background: rgba(0,0,0,.3); }
+.search::placeholder { color: rgba(210,232,255,.38); }
+.search:focus { outline: none; border-color: rgba(30,162,234,.7); background: rgba(0,0,0,.3); }
 .toggle { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; font-size: .92em; }
 .toggle input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
 .hint { color: var(--muted); font-size: .84em; }
@@ -148,9 +155,9 @@ body {
 .r-author { font-weight: 600; }
 .r-track { color: var(--muted); font-size: .87em; font-style: italic; margin-top: 2px; }
 .badge {
-    display: inline-block; margin-left: 7px; padding: 1px 7px; border-radius: 6px;
+    display: inline-block; margin-left: 7px; padding: 1px 7px; border-radius: var(--r);
     font-size: .68em; font-weight: 600; vertical-align: middle;
-    background: rgba(123,47,247,.32); border: 1px solid rgba(123,47,247,.45);
+    background: rgba(30,162,234,.26); border: 1px solid rgba(30,162,234,.45);
 }
 .badge.no { background: rgba(255,255,255,.07); border-color: var(--stroke); color: var(--muted); }
 .r-num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -168,7 +175,7 @@ body {
     width: 560px; max-width: 100%; max-height: 86vh; overflow-y: auto;
     padding: 26px 24px 22px; position: relative;
     background: linear-gradient(165deg, rgba(40,32,72,.96), rgba(22,33,62,.96));
-    border: 1px solid var(--stroke); border-radius: 22px;
+    border: 1px solid var(--stroke); border-radius: var(--r);
     box-shadow: 0 24px 70px rgba(0,0,0,.55);
     animation: pop .2s ease;
 }
@@ -190,17 +197,17 @@ body {
 .m-proj { color: var(--muted); font-size: .87em; margin-bottom: 16px; }
 .m-note {
     background: rgba(255,180,80,.14); border: 1px solid rgba(255,180,80,.3);
-    border-radius: 10px; padding: 8px 11px; font-size: .82em; color: #ffd9a8; margin-bottom: 14px;
+    border-radius: var(--r); padding: 8px 11px; font-size: .82em; color: #ffd9a8; margin-bottom: 14px;
 }
 .m-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(112px,1fr)); gap: 9px; margin-bottom: 18px; }
-.m-cell { background: rgba(0,0,0,.24); border: 1px solid var(--stroke); border-radius: 12px; padding: 11px; text-align: center; }
+.m-cell { background: rgba(0,0,0,.24); border: 1px solid var(--stroke); border-radius: var(--r); padding: 11px; text-align: center; }
 .m-cell .v { font-size: 1.22em; font-weight: 700; }
 .m-cell .k { color: var(--muted); font-size: .74em; margin-top: 2px; }
 .m-h { font-size: .95em; margin: 16px 0 9px; color: var(--gold); }
 .vlist { list-style: none; }
 .vlist li {
     display: flex; justify-content: space-between; align-items: center; gap: 10px;
-    padding: 8px 11px; margin-bottom: 5px; border-radius: 10px;
+    padding: 8px 11px; margin-bottom: 5px; border-radius: var(--r);
     background: rgba(255,255,255,.055); font-size: .9em;
 }
 .vlist a { color: var(--text); text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,.3); }
@@ -210,12 +217,13 @@ body {
 
 .foot { padding: 16px 20px; color: var(--muted); font-size: .84em; line-height: 1.65; }
 .foot b { color: var(--text); }
-.foot code { background: rgba(0,0,0,.3); padding: 2px 6px; border-radius: 5px; font-size: .93em; }
+.foot code { background: rgba(0,0,0,.3); padding: 2px 6px; border-radius: var(--r); font-size: .93em; }
 
 @media (max-width: 720px) {
     body { padding: 10px; }
     .hero { flex-direction: column; text-align: center; padding: 22px 18px; gap: 16px; }
-    .hero h1 { font-size: 1.7em; }
+    .hero h1 { font-size: 1.35em; }
+    .logo-slot { width: 100%; max-width: 320px; }
     .podium { grid-template-columns: 1fr; }
     .stats { grid-template-columns: repeat(2,1fr); }
     .row { grid-template-columns: 40px 1fr 68px; padding: 11px 13px; }
@@ -228,14 +236,22 @@ body {
 <div class="wrap">
 
     <header class="hero glass">
-        <div class="logo-slot" id="logoSlot">🎧</div>
+        <div class="logo-slot" id="logoSlot">
+            <img src="logo.jpg" alt="НЕЙРОЗВУК 2026 — конкурс-фестиваль генеративной музыки">
+        </div>
         <div class="hero-text">
-            <h1>НЕЙРОЗВУК 2026</h1>
+            <h1>NEURO<span class="h1-ru">ЗВУК</span> 2026 — таблица отборочного этапа</h1>
             <p class="lede" id="lede">
-                Результаты конкурса. Каждый голосовавший выбирал четыре трека и распределял
-                между ними <b>0.4 / 0.3 / 0.2 / 0.1</b> — метод Борда.
+                Конкурс-фестиваль генеративной музыки.
+                <br><br>
+                Каждый участник выбирал четыре трека и распределял между ними
+                <b>1 балл</b>: 0.4 за первое место, 0.3 за второе, 0.2 за третье, 0.1 за четвёртое.
+                <br><br>
+                Голосовавшие получили коррекционную поправку.
             </p>
-            <p class="desc-slot">Здесь будет описание конкурса — место под текст и логотип.</p>
+            <p class="hero-hint">
+                Клик по участнику — открывает окно с данными голосования.
+            </p>
         </div>
     </header>
 
@@ -265,8 +281,6 @@ body {
         трек доступен меньшему числу избирателей, чем трек того, кто не голосовал.
         Итог домножается на <code>(N−1) / (J − j)</code>: <b>N</b> — всего участников,
         <b>J</b> — голосовавших, <b>j</b> = 1 у голосовавших. Так все приводятся к общей базе.
-        <br><br>
-        Клик по строке или по пьедесталу — кто голосовал за участника и как голосовал он сам.
     </footer>
 
 </div>
