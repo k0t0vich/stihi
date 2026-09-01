@@ -100,8 +100,6 @@ body {
 .pod.g1 .pod-score { color: var(--gold); } .pod.g2 .pod-score { color: var(--silver); } .pod.g3 .pod-score { color: var(--bronze); }
 .pod-raw { font-size: .78em; color: var(--muted); margin-bottom: 10px; }
 .pod-author { font-weight: 700; font-size: 1.06em; margin-bottom: 3px; }
-/* в узкой карточке бейдж уводим на свою строку, иначе рвёт центровку */
-.pod-author .badge { display: block; margin: 6px auto 0; width: fit-content; }
 .pod-track { color: var(--muted); font-size: .89em; font-style: italic; }
 .pod-proj { color: var(--muted); font-size: .8em; margin-top: 4px; opacity: .75; }
 /* клики по плееру не должны открывать попап */
@@ -156,12 +154,25 @@ body {
 .up { color: #5ee6a0; } .down { color: #ff7b8a; }
 .r-author { font-weight: 600; }
 .r-track { color: var(--muted); font-size: .87em; font-style: italic; margin-top: 2px; }
+/* весы: участвовал в голосовании. Перечёркнутые серые — не участвовал. */
 .badge {
-    display: inline-block; margin-left: 7px; padding: 1px 7px; border-radius: var(--r);
-    font-size: .68em; font-weight: 600; vertical-align: middle;
-    background: rgba(30,162,234,.26); border: 1px solid rgba(30,162,234,.45);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; margin-left: 8px;
+    font-size: 20px; line-height: 1;
+    /* подобрано на глаз: выравнивание по оптическому центру строки */
+    vertical-align: -1px;
+    color: var(--cyan-hi);
 }
-.badge.no { background: rgba(255,255,255,.07); border-color: var(--stroke); color: var(--muted); }
+.badge.no {
+    color: rgba(210,232,255,.42);
+    position: relative;
+}
+/* диагональная линия поверх иконки */
+.badge.no::after {
+    content: ''; position: absolute; left: -1px; right: -1px; top: 50%;
+    border-top: 2px solid rgba(210,232,255,.55);
+    transform: rotate(-45deg);
+}
 .r-num { text-align: right; font-variant-numeric: tabular-nums; }
 .r-raw { color: var(--muted); font-size: .9em; }
 .r-fin { font-weight: 700; }

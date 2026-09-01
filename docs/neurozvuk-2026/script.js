@@ -55,13 +55,13 @@ function compute() {
 function renderStats(rows) {
     el('stats').innerHTML = [
         [N, 'участников'],
-        [J, 'с голосом'],
-        [N - J, 'без голоса']
+        [J, 'голосовали'],
+        [N - J, 'не голосовали']
     ].map(([n, l]) => `<div class="stat glass"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`).join('');
 
     const k = J / (J - 1);
     el('corrHint').textContent = el('corr').checked
-        ? `с голосом ×${fmt(k, 4)} (+${fmt((k - 1) * 100, 2)}%), без голоса — как есть`
+        ? `голосовавшим ×${fmt(k, 4)} (+${fmt((k - 1) * 100, 2)}%), остальным — как есть`
         : 'выключен — общая сумма баллов';
 
     // числа в подвале берём из данных, чтобы текст не разошёлся с расчётом
@@ -105,8 +105,8 @@ function renderPodium(rows) {
             <div class="pod-medal">${MEDAL[i]}</div>
             <div class="pod-score">${fmt(r.final)}</div>
             <div class="pod-raw">общий ${fmt(r.raw)}${r.k !== 1 ? ` × ${fmt(r.k, 3)}` : ''}</div>
-            <div class="pod-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}">${
-                r.p.isJudge ? 'с голосом' : 'без голоса'}</span></div>
+            <div class="pod-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}" title="${
+                r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}">⚖</span></div>
             <div class="pod-track">${esc(r.p.track)}</div>
             ${r.p.project ? `<div class="pod-proj">${esc(r.p.project)}</div>` : ''}
             ${r.p.audio ? `<div class="pod-player">${playerHTML(r.p.audio)}</div>` : ''}
@@ -127,8 +127,8 @@ function renderRows(rows) {
         return `<div class="row ${r.raw === 0 ? 'zero' : ''}" data-id="${r.p.id}">
             <div class="r-place">${r.place}${shift}</div>
             <div>
-                <div class="r-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}">${
-                    r.p.isJudge ? 'с голосом' : 'без голоса'}</span></div>
+                <div class="r-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}" title="${
+                    r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}">⚖</span></div>
                 <div class="r-track">${esc(r.p.track)}${r.p.project ? ' · ' + esc(r.p.project) : ''}</div>
             </div>
             <div class="r-num r-raw">${fmt(r.raw)}</div>
@@ -175,7 +175,7 @@ function openModal(id) {
             return `<li><span>${nm} — <i>${esc(t.track)}</i></span>
                  <span class="pts">${fmt(x.pts, 1)}</span></li>`;
         }).join('')}</ul>`;
-    })() : '<p class="empty">Без голоса — только участие как автора.</p>';
+    })() : '<p class="empty">Не участвовал(а) в голосовании.</p>';
 
     el('modalBody').innerHTML = `
         <div class="m-place">${r.place} место из ${N}${
