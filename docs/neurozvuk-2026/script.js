@@ -9,6 +9,13 @@ const byAuthor = new Map(P.map(p => [p.author, p]));
 
 const el = id => document.getElementById(id);
 const fmt = (x, d = 2) => x.toFixed(d);
+// 1 голос / 2 голоса / 5 голосов
+const plural = (n, one, few, many) => {
+    const a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return many;
+    if (b > 1 && b < 5) return few;
+    return b === 1 ? one : many;
+};
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 
 // Бюллетень: за кого отдан голос, от большего балла к меньшему.
@@ -41,8 +48,10 @@ function compute() {
         return { p, raw, k, final: raw * k, places, voters: Object.entries(p.votes).sort((a, b) => b[1] - a[1]) };
     });
 
+    // Баллы дробные, 0.4+0.4+0.2 != 0.4+0.3+0.3 на уровне 1e-16 — сравниваем с допуском,
+    // иначе одинаковые по сути суммы не доходят до сравнения по местам.
     const cmp = key => (a, b) => {
-        if (b[key] !== a[key]) return b[key] - a[key];
+        if (Math.abs(b[key] - a[key]) > 1e-9) return b[key] - a[key];
         for (let i = 0; i < 4; i++) if (b.places[i] !== a.places[i]) return b.places[i] - a.places[i];
         return a.p.id - b.p.id;
     };
@@ -61,14 +70,13 @@ function renderStats(rows) {
 
     const k = J / (J - 1);
     el('corrHint').textContent = el('corr').checked
-        ? `голосовавшим ×${fmt(k, 4)} (+${fmt((k - 1) * 100, 2)}%), остальным — как есть`
+        ? `голосовавшим ×${fmt(k, 4)} (+${fmt((k - 1) * 100, 2)}%)`
         : 'выключен — общая сумма баллов';
 
     // числа в подвале берём из данных, чтобы текст не разошёлся с расчётом
     el('fJ1').textContent = J - 1;
     el('fJ').textContent = J;
     el('fK').textContent = `${J} / ${J - 1} = ${fmt(k, 4)}`;
-    el('fP').textContent = `+${fmt((k - 1) * 100, 2)}%`;
 }
 
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -103,8 +111,8 @@ function renderPodium(rows) {
     el('podium').innerHTML = rows.slice(0, 3).map((r, i) => `
         <div class="pod g${i + 1}" data-id="${r.p.id}">
             <div class="pod-medal">${MEDAL[i]}</div>
-            <div class="pod-score">${fmt(r.final)}</div>
-            <div class="pod-raw">общий ${fmt(r.raw)}${r.k !== 1 ? ` × ${fmt(r.k, 3)}` : ''}</div>
+            <div class="pod-score">${fmt(r.final, 3)}</div>
+            <div class="pod-raw">сумма ${fmt(r.raw, 1)}${r.k !== 1 ? ` × ${fmt(r.k, 3)}` : ''}</div>
             <div class="pod-author">${esc(r.p.author)}<span class="badge ${r.p.isJudge ? '' : 'no'}" title="${
                 r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}"><svg class="ico-scales" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15"/><path d="M8.5 19.5h7"/><path d="M4 9.2 20 6.6"/><path d="M4 9.2 1.6 14.4h4.8z"/><path d="M20 6.6 17.6 11.8h4.8z"/></g></svg></span></div>
             <div class="pod-track">${esc(r.p.track)}</div>
@@ -132,8 +140,8 @@ function renderRows(rows) {
                     r.p.isJudge ? 'участвовал в голосовании' : 'не участвовал в голосовании'}"><svg class="ico-scales" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15"/><path d="M8.5 19.5h7"/><path d="M4 9.2 20 6.6"/><path d="M4 9.2 1.6 14.4h4.8z"/><path d="M20 6.6 17.6 11.8h4.8z"/></g></svg></span></div>
                 <div class="r-track">${esc(r.p.track)}${r.p.project ? ' · ' + esc(r.p.project) : ''}</div>
             </div>
-            <div class="r-num r-raw">${fmt(r.raw)}</div>
-            <div class="r-num r-fin">${fmt(r.final)}</div>
+            <div class="r-num r-raw">${fmt(r.raw, 1)}</div>
+            <div class="r-num r-fin">${fmt(r.final, 3)}</div>
         </div>`;
     }).join('') || '<div class="row" style="justify-items:center"><div></div><div class="empty">Ничего не найдено</div></div>';
 }
@@ -188,10 +196,10 @@ function openModal(id) {
         ${p.project ? `<div class="m-proj">${esc(p.project)}</div>` : '<div class="m-proj"></div>'}
         ${p.trackNote ? `<div class="m-note">${esc(p.trackNote)}</div>` : ''}
         <div class="m-grid">
-            <div class="m-cell"><div class="v">${fmt(r.raw)}</div><div class="k">общий балл</div></div>
+            <div class="m-cell"><div class="v">${fmt(r.raw, 1)}</div><div class="k">сумма</div></div>
             <div class="m-cell"><div class="v">×${fmt(r.k, 3)}</div><div class="k">коэффициент</div></div>
-            <div class="m-cell"><div class="v">${fmt(r.final)}</div><div class="k">итог</div></div>
-            <div class="m-cell"><div class="v">${r.voters.length}</div><div class="k">голосов за него</div></div>
+            <div class="m-cell"><div class="v">${fmt(r.final, 3)}</div><div class="k">итог</div></div>
+            <div class="m-cell"><div class="v">${r.voters.length}</div><div class="k">${plural(r.voters.length, 'голос', 'голоса', 'голосов')}</div></div>
         </div>
         <div class="m-h">Голоса</div>
         ${gotList}
