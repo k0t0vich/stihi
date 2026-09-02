@@ -81,6 +81,9 @@ body {
     color: var(--cyan-hi); background: rgba(30,162,234,.14); border-radius: var(--r); padding: 2px 7px;
 }
 .panel.filters { margin-bottom: 12px; }
+/* временный ползунок подбора: убрать вместе с dbg в graph.js */
+.rng.dbg { opacity: .8; }
+.rng.dbg .rng-val { color: #ffd650; background: rgba(255,214,80,.14); }
 .panel.searchbar { margin-top: 12px; }
 .comp {
     color: var(--muted); font-size: .84em;
@@ -209,6 +212,11 @@ body {
             <span>балл участника от</span>
             <input type="range" id="minScore" min="0" max="36" step="1" value="1">
             <span class="rng-val" id="minScoreVal">0.1</span>
+        </label>
+        <label class="rng dbg">
+            <span>отсечка дрожания</span>
+            <input type="range" id="damp" min="0" max="100" step="1" value="10">
+            <span class="rng-val" id="dampVal">0.10</span>
         </label>
         <span class="comp" id="compInfo"></span>
     </div>
