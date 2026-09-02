@@ -167,14 +167,13 @@ body {
     .comp { font-size: .76em; min-height: 1em; }
     .search { min-width: 100%; padding: 7px 10px; font-size: 13px; }
 
-    /* легенда: только суть, чтобы не съедала холст */
-    .legend { font-size: .62em; left: 6px; bottom: 6px; padding: 6px 8px; line-height: 1.5; }
-    .legend i { width: 14px; margin-right: 5px; }
-    .legend div:nth-child(3), .legend div:nth-child(4) { display: none; }
+    /* легенда съедает холст — на мобильном не нужна */
+    .legend { display: none; }
 
     /* карточка внизу поверх подвала: низкая, списки в две колонки */
+    /* прижата к верху поверх шапки и фильтров — иначе перекрывает граф */
     .tip {
-        left: 8px; right: 8px; top: auto; bottom: 8px; width: auto;
+        left: 8px; right: 8px; top: 8px; bottom: auto; width: auto;
         max-height: 46dvh; font-size: .78em; padding: 9px 11px; z-index: 120;
     }
     .tip .t-name { font-size: 1em; }
