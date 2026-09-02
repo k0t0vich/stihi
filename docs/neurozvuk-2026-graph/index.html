@@ -91,6 +91,24 @@ body {
     flex: 1; min-width: 180px; padding: 9px 13px; border-radius: var(--r);
     border: 1px solid var(--stroke); background: rgba(0,0,0,.22); color: var(--text); font-size: 14px;
 }
+.search-wrap { flex: 1; min-width: 180px; position: relative; display: flex; }
+.search-wrap .search { flex: 1; min-width: 0; padding-right: 34px; }
+.search-clear {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    width: 26px; height: 26px; border: 0; background: none; cursor: pointer;
+    color: var(--muted); font-size: 20px; line-height: 1; font-family: inherit;
+    border-radius: var(--r);
+}
+.search-clear:hover { color: var(--text); background: rgba(255,255,255,.1); }
+.fit {
+    display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+    padding: 8px 14px; border-radius: var(--r); cursor: pointer;
+    font-size: .86em; font-family: inherit; color: var(--text);
+    background: rgba(30,162,234,.18); border: 1px solid rgba(30,162,234,.42);
+    transition: background .16s;
+}
+.fit:hover { background: rgba(30,162,234,.34); }
+.fit .ico { color: var(--cyan-hi); font-size: 1.05em; line-height: 1; }
 .search:focus { outline: none; border-color: rgba(30,162,234,.7); }
 .search::placeholder { color: rgba(210,232,255,.36); }
 
@@ -145,6 +163,13 @@ body {
 .tip .in-list li .pts { color: #ffd650; }
 .tip .out-list li .pts { color: #78bfff; }
 .tip .t-empty { color: var(--muted); font-style: italic; font-size: .9em; }
+.tip .t-close {
+    position: absolute; top: 6px; right: 8px; width: 26px; height: 26px;
+    border: 0; background: none; color: var(--muted); cursor: pointer;
+    font-size: 22px; line-height: 1; font-family: inherit; border-radius: var(--r);
+}
+.tip .t-close:hover { color: var(--text); background: rgba(255,255,255,.1); }
+.tip .t-name { padding-right: 26px; }
 
 @media (max-width: 720px) {
     body { padding: 8px; }
@@ -159,6 +184,8 @@ body {
     .panel { padding: 8px 10px; gap: 8px 12px; font-size: .88em; }
     .panel.filters { margin-bottom: 8px; }
     .panel.searchbar { margin-top: 8px; padding: 6px 8px; }
+    .fit { padding: 7px 10px; }
+    .fit .lbl { display: none; }
     .panel label { font-size: .84em; gap: 6px; }
     .panel .rng { gap: 6px; flex: 1; min-width: 140px; }
     .panel .rng > span:first-child { min-width: 0; }
@@ -225,7 +252,13 @@ body {
     </section>
 
     <div class="panel searchbar glass">
-        <input class="search" id="search" placeholder="Найти участника…">
+        <div class="search-wrap">
+            <input class="search" id="search" placeholder="Найти участника…">
+            <button class="search-clear" id="searchClear" aria-label="Очистить" hidden>×</button>
+        </div>
+        <button id="fit" class="fit" title="Вписать граф в экран">
+            <span class="ico">⤢</span><span class="lbl">Автозум</span>
+        </button>
     </div>
 
 <div class="tip" id="tip"></div>
