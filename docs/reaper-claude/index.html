@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Гранж-демо с нуля: Claude + MCP + REAPER</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         min-height: 100vh; padding: 24px 16px; color: #24243a; line-height: 1.6; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { color: #fff; font-size: 2.1em; line-height: 1.25; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,.2); }
+  article { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  article h2 { font-size: 1.45em; margin: 36px 0 12px; color: #4b3a8f; }
+  article h3 { font-size: 1.15em; margin: 24px 0 10px; color: #4b3a8f; }
+  article p, article ul { margin: 10px 0; }
+  article ul { padding-left: 22px; }
+  article code { background: #f1effa; padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .tbl { overflow-x: auto; margin: 14px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .93em; }
+  th, td { border: 1px solid #e3e0f2; padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f4f2fc; }
+  figure { margin: 18px 0; text-align: center; }
+  figure img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+  figcaption { font-size: .85em; color: #777; margin-top: 6px; }
+  .player { background: #f4f2fc; border-radius: 10px; padding: 16px; margin: 20px 0; }
+  .player-title { font-weight: 600; margin-bottom: 8px; color: #4b3a8f; }
+  .player audio { width: 100%; }
+  .kit { background: #fff8e6; border-radius: 10px; padding: 12px 16px; margin: 0 0 20px; }
+  .back { display: inline-block; color: #fff; text-decoration: none; margin-bottom: 16px; opacity: .85; }
+  article pre { background: #1e1e2e; color: #e6e6f0; padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+  article pre code { background: none; padding: 0; color: inherit; }
+  @media (max-width: 600px) { article { padding: 18px; } h1 { font-size: 1.6em; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Гранж-демо с нуля: Claude + MCP + REAPER</h1>
+<article>
+<p>Я написал Claude пару фраз, и он с нуля собрал в REAPER демо-песню, оживил партии, подключил гитару Odin III и свёл всё в −10 LUFS. В этой статье расскажу, что я просил, что сделала связка инструментов на каждом шаге и где она ошибалась.</p>
+<div class="player"><div class="player-title">🎸 Итоговый мастер · −10 LUFS · 2:00</div>
+<audio controls preload="metadata" src="grunge_demo.m4a"></audio></div>
+<div class="kit">🧰 Скиллы, скрипты и шаблоны из статьи — <a href="install.html">комплект и установка</a>
+· <a href="reaper-claude-kit.zip">reaper-claude-kit.zip</a></div>
+<p><figure><a href="img/reaper_main.jpg" target="_blank"><img alt="Проект в REAPER" src="img/reaper_main.jpg" loading="lazy"></a><figcaption>Проект в REAPER</figcaption></figure></p>
+<h2>Связка инструментов</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Звено</th>
+<th>Что делает</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Claude Code</strong></td>
+<td>агент: читает файлы, пишет и запускает скрипты, мерит результат</td>
+</tr>
+<tr>
+<td><strong>MCP-сервер REAPER</strong></td>
+<td>управляет открытым REAPER: дорожки, FX, параметры, транспорт</td>
+</tr>
+<tr>
+<td><strong>ReaScript (Lua)</strong></td>
+<td>скрипт передаётся в запущенный REAPER командой <code>REAPER -nonewinst script.lua</code>: вставка дорожек, плагинов, рендер, чтение подавления компрессоров</td>
+</tr>
+<tr>
+<td><strong>Python</strong></td>
+<td>генерирует партии, собирает <code>.rpp</code>, анализирует рендер (LUFS, спектр, маскировка)</td>
+</tr>
+<tr>
+<td><strong>Computer use</strong></td>
+<td>скриншоты окон, список keyswitch'ей из интерфейса Odin</td>
+</tr>
+<tr>
+<td><strong>Скиллы Claude</strong></td>
+<td><code>reaper-song</code> (демо с нуля), <code>reaper-mix</code> (сведение), <code>ODIN.md</code> (приёмы Odin): найденное записано, чтобы в следующий раз не искать</td>
+</tr>
+</tbody>
+</table></div>
+<p>Скрипты лежат в репозитории <code>audio2midi</code>:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Скрипт</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/reaper_song.py</code></td>
+<td>партии и проект: секции, ноты, «живость», дорожки с VST</td>
+</tr>
+<tr>
+<td><code>scripts/mix_probe.py</code></td>
+<td>рендер стемов и мастера + замер: LUFS-I/LRA/true peak, кто занимает полосу, стерео, тональный баланс</td>
+</tr>
+<tr>
+<td><code>scripts/mix_apply.py</code></td>
+<td>план сведения (JSON) → плагины с нужными значениями</td>
+</tr>
+<tr>
+<td><code>scripts/mix_calibrate.py</code></td>
+<td>порог компрессора под целевое подавление: REAPER играет отрезок, скрипт читает подавление</td>
+</tr>
+</tbody>
+</table></div>
+<h2>1. «Сделай проект, посмотри, какие есть инструменты»</h2>
+<p>Я попросил гранжевое демо: куплет, припев и бридж. Ударные — в Addictive Drums, бас — собрать из семплов открытого плотного баса, гитара — Ample.</p>
+<p>Claude прочитал списки плагинов REAPER (<code>reaper-vstplugins_arm64.ini</code>) и проверил, что реально работает:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Ожидал</th>
+<th>Нашлось</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ample Bass P</td>
+<td>плагин стоит, но семплы не установлены: «Loading samples failed», рендер молчит (−240 дБ)</td>
+</tr>
+<tr>
+<td>бас</td>
+<td><strong>RS5K</strong> (сэмплер REAPER) на семплах Finger Bass, 12 нот от E1 до D#2</td>
+</tr>
+<tr>
+<td>ударные</td>
+<td>Addictive Drums 2, кит Extreme</td>
+</tr>
+<tr>
+<td>гитара</td>
+<td>Ample Guitar VC → Guitar Rig 7, пресет «AD In The Desert»</td>
+</tr>
+</tbody>
+</table></div>
+<p><figure><a href="img/04_drums_ad2.jpg" target="_blank"><img alt="Addictive Drums 2, кит Extreme" src="img/04_drums_ad2.jpg" loading="lazy"></a><figcaption>Addictive Drums 2, кит Extreme</figcaption></figure>
+<figure><a href="img/07_bass_rs5k.jpg" target="_blank"><img alt="RS5K: один из 12 семплов баса" src="img/07_bass_rs5k.jpg" loading="lazy"></a><figcaption>RS5K: один из 12 семплов баса</figcaption></figure>
+<figure><a href="img/14_guitarR_gr7.jpg" target="_blank"><img alt="Guitar Rig 7 «AD In The Desert»: Fuzz → Dirt → Bass Invader → кабинет → Super Fast 100" src="img/14_guitarR_gr7.jpg" loading="lazy"></a><figcaption>Guitar Rig 7 «AD In The Desert»: Fuzz → Dirt → Bass Invader → кабинет → Super Fast 100</figcaption></figure></p>
+<p>Песня: ми-минор, 108 bpm, около 2 минут. Структура: Intro – Verse – Chorus – Verse – Chorus – Bridge – Chorus – Outro, каждая секция — регион REAPER.</p>
+<p>Партии выдаёт Python, а не готовый «AI-генератор» MCP: так видна каждая нота. Две вещи пришлось учесть:</p>
+<ul>
+<li><strong>Addictive Drums 2 — это не General MIDI.</strong> Нота 42 в GM — закрытый хэт, а в AD2 — сайдстик. Партия пишется сразу в нотах AD2.</li>
+<li><strong>Нижняя нота Ample Guitar — E2.</strong> Drop D (D2) не звучит, поэтому стандартный строй.</li>
+</ul>
+<p>Проверка шла по рендеру, а не «на глаз». У гитары в 24 из 24 тактов припева сильнейшая нота совпала с аккордом. У баса из 349 нот 325 прозвучали верно. Промахи давал октавный подхват вверх: у сэмплера нет нот выше D#2, и подхват заменили полутоном к следующему аккорду.</p>
+<h2>2. «Звучит механистически»</h2>
+<p>Я сказал, что перебивки малого слишком ровные: «прям механизм бьёт». А вот тома и хэты получились хорошо.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>На слух</th>
+<th>Что поменяли</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>дробь малого — ровная линейная лесенка громкости</td>
+<td>крещендо по кривой, ведущая рука сильнее, акцент на долю, тихие удары ободом (Shallow Hit), форшлаги, к концу дробь подгоняет</td>
+</tr>
+<tr>
+<td>одинаковые сбивки</td>
+<td>у каждого припева своя: шестнадцатые, дробь в тома, триоли</td>
+</tr>
+<tr>
+<td>«сделай велосити плавающей, на гитарах тоже»</td>
+<td>громкость медленно дрейфует по фразам (ударные ±6, бас ±7, гитары ±10), аккорд бьётся одной рукой (общий сдвиг ±6), струны разнесены на 3.5 мс</td>
+</tr>
+</tbody>
+</table></div>
+<p>Тома и хэты не трогали: они уже звучали хорошо.</p>
+<h2>3. «Подключи Odin III, без Guitar Rig, на его примочках»</h2>
+<p>Мануала Odin в сети не нашлось. Claude открыл список keyswitch'ей прямо в интерфейсе плагина и снял его со скриншота, а значит, и для меня тоже. Полная таблица — в скилле, в файле <code>ODIN.md</code>.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Приём</th>
+<th>Как включается</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>флажолет, пинч, скрейп медиатором, бенды, слайды, тремоло</td>
+<td>ноты-keyswitch'и ниже C2 (0–35), держать, пока звучит нота</td>
+</tr>
+<tr>
+<td>глушение ладонью трёх степеней</td>
+<td>velocity 25–34 / 15–24 / 0–14</td>
+</tr>
+<tr>
+<td>визг (pinch harmonic)</td>
+<td>velocity 127</td>
+</tr>
+</tbody>
+</table></div>
+<p>Отсюда грабли: «плавающая» велосити могла сама дотянуть до 127 и дать случайный визг. Для Odin потолок 126, а 127 ставится только там, где визг нужен.</p>
+<p>В партии Odin:</p>
+<ul>
+<li>в куплетах глушёные чаги;</li>
+<li>скрейп медиатором перед припевом;</li>
+<li>въезд слайдом в первый аккорд припева;</li>
+<li>визг в конце припевов;</li>
+<li>натуральные флажолеты в бридже;</li>
+<li>съезд вниз в конце.</li>
+</ul>
+<p><figure><a href="img/15_odin.jpg" target="_blank"><img alt="Odin III" src="img/15_odin.jpg" loading="lazy"></a><figcaption>Odin III</figcaption></figure></p>
+<p>Усилитель Odin в итоге стоит <strong>Lead</strong>, звукосниматель <strong>Bridge Modern</strong>: я переключил их сам после первого прослушивания.</p>
+<h2>4. «Сделай сведение: не хватает склеенности, чёткости и плотности на гитарах. Мастеринг в −10 LUFS»</h2>
+<h3>Сначала замер</h3>
+<p>Claude отрендерил стемы и мастер и посчитал громкость по стандарту BS.1770-4. Свой измеритель сверил с эталонным синусом и с измерителем REAPER, расхождение 0.01 LU.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Жалоба</th>
+<th>Что показал замер</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>нет чёткости</td>
+<td>гитары на 2.5–5 кГц на 10–17 дБ тише мастера, весь верх держат тарелки</td>
+</tr>
+<tr>
+<td>нет плотности</td>
+<td>провал середины 315 Гц–1 кГц на 2–3.4 дБ</td>
+</tr>
+<tr>
+<td>муть</td>
+<td>горбы на 79 / 125 / 198 Гц: +2.6 / +4.2 / +2.7 дБ, в полосе 160–315 спорят бас и обе гитары</td>
+</tr>
+<tr>
+<td>нет склейки</td>
+<td>шины не обработаны, ударные «прыгают» (LRA 6.3 против ~2 у остальных)</td>
+</tr>
+<tr>
+<td>мастер</td>
+<td>−10.45 LUFS, но пики +0.27 dBTP — за нулём</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Потом литература</h3>
+<p>Фоновый агент собрал числа из Sound On Sound, Nail The Mix и блогов. Каждое значение в плане сведения подписано: либо «из замера», либо «из источника». Например, шина ударных 2:1, атака 30–35 мс, около 3 дБ подавления (SOS Mix Rescue). Гитары: срез низа 100–120 Гц, муть 250–500 Гц. Склейка на мастере: 2:1, 1–3 дБ.</p>
+<h3>Как устроен микс</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Дорожка</th>
+<th>Инструмент</th>
+<th>Фейдер</th>
+<th>Обработка</th>
+<th>Посыл в Room</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Drums AD2</td>
+<td>Addictive Drums 2 + Ozone Vintage Limiter</td>
+<td>−5.5 дБ</td>
+<td>EQ → компрессор шины</td>
+<td>−5 дБ</td>
+</tr>
+<tr>
+<td>Bass</td>
+<td>RS5K × 12 (Finger Bass)</td>
+<td>−5.0 дБ</td>
+<td>EQ → сатурация «рык» → компрессор</td>
+<td>— (бас в ревер не идёт)</td>
+</tr>
+<tr>
+<td>Guitars bus (папка)</td>
+<td>—</td>
+<td>0</td>
+<td>EQ плотности → сатурация → компрессор шины</td>
+<td>−9 дБ</td>
+</tr>
+<tr>
+<td>├ Guitar L</td>
+<td>Ample + Guitar Rig 7</td>
+<td>заглушена</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr>
+<td>├ Guitar R</td>
+<td>Ample + Guitar Rig 7 «AD In The Desert»</td>
+<td>−10.3 дБ, центр</td>
+<td>EQ гитары</td>
+<td></td>
+</tr>
+<tr>
+<td>└ Odin III</td>
+<td>Odin III, Lead, Bridge Modern</td>
+<td>−6 дБ</td>
+<td>EQ гитары</td>
+<td></td>
+</tr>
+<tr>
+<td>Room</td>
+<td>—</td>
+<td>0</td>
+<td>Pro-R 2 → EQ</td>
+<td></td>
+</tr>
+<tr>
+<td>Master</td>
+<td>—</td>
+<td>0</td>
+<td>(Ozone выключен) EQ → склейка → лимитер</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h3>Плагины и параметры</h3>
+<p><strong>Ударные.</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Плагин</th>
+<th>Параметры</th>
+<th>Зачем</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pro-Q 4 «EQ ударных»</td>
+<td>Bell 400 Гц −2 дБ Q 1; High Shelf 5 кГц −3.5 дБ</td>
+<td>место гитарам в середине; тарелки держали весь верх</td>
+</tr>
+<tr>
+<td>Pro-C 2 «шина ударных»</td>
+<td>Bus, 2:1, колено 6, атака 30 мс, release 100 мс, порог −5.5, makeup +3</td>
+<td>склейка ударных, ~3 дБ подавления</td>
+</tr>
+</tbody>
+</table></div>
+<p><figure><a href="img/05_drums_eq.jpg" target="_blank"><img alt="EQ ударных" src="img/05_drums_eq.jpg" loading="lazy"></a><figcaption>EQ ударных</figcaption></figure>
+<figure><a href="img/06_drums_bus.jpg" target="_blank"><img alt="Шина ударных" src="img/06_drums_bus.jpg" loading="lazy"></a><figcaption>Шина ударных</figcaption></figure></p>
+<p><strong>Бас.</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Плагин</th>
+<th>Параметры</th>
+<th>Зачем</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pro-Q 4 «EQ баса»</td>
+<td>Low Cut 35 Гц 24 дБ/окт; Bell 125 Гц −4 дБ Q 1.2; Bell 900 Гц +3 дБ; High Cut 4 кГц</td>
+<td>без инфранизких; убрать горб 125 Гц; «рык» для маленьких колонок</td>
+</tr>
+<tr>
+<td>Saturn 2 «рык баса»</td>
+<td>Warm Tape, drive 25%, mix 35%</td>
+<td>гармоники баса слышны на ноутбуке</td>
+</tr>
+<tr>
+<td>Pro-C 2 «компрессия баса»</td>
+<td>Clean, 4:1, колено 6, атака 10 мс, release 100 мс, порог −4.1, makeup +4.1</td>
+<td>ровный бас, 4 дБ подавления (SOS: 4–5 дБ)</td>
+</tr>
+</tbody>
+</table></div>
+<p><figure><a href="img/08_bass_eq.jpg" target="_blank"><img alt="EQ баса" src="img/08_bass_eq.jpg" loading="lazy"></a><figcaption>EQ баса</figcaption></figure>
+<figure><a href="img/09_bass_saturn.jpg" target="_blank"><img alt="Рык баса" src="img/09_bass_saturn.jpg" loading="lazy"></a><figcaption>Рык баса</figcaption></figure>
+<figure><a href="img/10_bass_comp.jpg" target="_blank"><img alt="Компрессия баса" src="img/10_bass_comp.jpg" loading="lazy"></a><figcaption>Компрессия баса</figcaption></figure></p>
+<p><strong>Гитары.</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Плагин</th>
+<th>Параметры</th>
+<th>Зачем</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pro-Q 4 «EQ гитары» (Guitar R и Odin)</td>
+<td>Low Cut 100 Гц; High Cut 11 кГц; Bell 250 Гц −3 дБ Q 2; Bell 2 кГц +2 дБ</td>
+<td>меньше мути, у Odin нет широкого низа; чёткость</td>
+</tr>
+<tr>
+<td>Pro-Q 4 «плотность EQ» (шина)</td>
+<td>Bell 600 Гц +3.5 дБ Q 0.6; Bell 180 Гц −2 дБ</td>
+<td>заполнить провал середины; развести с басом</td>
+</tr>
+<tr>
+<td>Saturn 2 «плотность сатурация»</td>
+<td>Warm Tape, drive 15%, mix 40%</td>
+<td>плотность за счёт гармоник</td>
+</tr>
+<tr>
+<td>Pro-C 2 «шина гитар»</td>
+<td>Bus, 2:1, колено 6, атака 30 мс, release 100 мс, порог −2, makeup +1.5</td>
+<td>гитары одной стеной, 1–2 дБ подавления (Nail The Mix)</td>
+</tr>
+</tbody>
+</table></div>
+<p><figure><a href="img/16_odin_eq.jpg" target="_blank"><img alt="EQ Odin" src="img/16_odin_eq.jpg" loading="lazy"></a><figcaption>EQ Odin</figcaption></figure>
+<figure><a href="img/11_gtrbus_eq.jpg" target="_blank"><img alt="Плотность EQ" src="img/11_gtrbus_eq.jpg" loading="lazy"></a><figcaption>Плотность EQ</figcaption></figure>
+<figure><a href="img/12_gtrbus_saturn.jpg" target="_blank"><img alt="Плотность сатурация" src="img/12_gtrbus_saturn.jpg" loading="lazy"></a><figcaption>Плотность сатурация</figcaption></figure>
+<figure><a href="img/13_gtrbus_comp.jpg" target="_blank"><img alt="Шина гитар" src="img/13_gtrbus_comp.jpg" loading="lazy"></a><figcaption>Шина гитар</figcaption></figure></p>
+<p><strong>Общая комната (склейка).</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Плагин</th>
+<th>Параметры</th>
+<th>Зачем</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pro-R 2 «общая комната»</td>
+<td>Space 0.9 с, pre-delay 25 мс, mix 100%</td>
+<td>ударные и гитары в одном помещении</td>
+</tr>
+<tr>
+<td>Pro-Q 4 «EQ комнаты»</td>
+<td>Low Cut 250 Гц; High Cut 9 кГц</td>
+<td>ревер без низа и резкого верха</td>
+</tr>
+</tbody>
+</table></div>
+<p><figure><a href="img/17_room_reverb.jpg" target="_blank"><img alt="Общая комната" src="img/17_room_reverb.jpg" loading="lazy"></a><figcaption>Общая комната</figcaption></figure>
+<figure><a href="img/18_room_eq.jpg" target="_blank"><img alt="EQ комнаты" src="img/18_room_eq.jpg" loading="lazy"></a><figcaption>EQ комнаты</figcaption></figure></p>
+<p><strong>Мастер.</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Плагин</th>
+<th>Параметры</th>
+<th>Зачем</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ozone 12</td>
+<td>выключен, не удалён</td>
+<td>моя прошлая цепочка, оставлена для сравнения</td>
+</tr>
+<tr>
+<td>Pro-Q 4 «тон мастера»</td>
+<td>Low Cut 25 Гц</td>
+<td>чистка инфранизких</td>
+</tr>
+<tr>
+<td>Pro-C 2 «склейка»</td>
+<td>Bus, 2:1, атака 10 мс, auto release, порог −8.6, makeup +2.1</td>
+<td>общая склейка, ~2 дБ</td>
+</tr>
+<tr>
+<td>Pro-L 2 «лимитер»</td>
+<td>Modern, gain +3.5 дБ, потолок −1 dBTP, true peak, oversampling 4x</td>
+<td>−10 LUFS без пиков за нулём</td>
+</tr>
+</tbody>
+</table></div>
+<p><figure><a href="img/01_master_eq.jpg" target="_blank"><img alt="Тон мастера" src="img/01_master_eq.jpg" loading="lazy"></a><figcaption>Тон мастера</figcaption></figure>
+<figure><a href="img/02_master_glue.jpg" target="_blank"><img alt="Склейка" src="img/02_master_glue.jpg" loading="lazy"></a><figcaption>Склейка</figcaption></figure>
+<figure><a href="img/03_master_limiter.jpg" target="_blank"><img alt="Лимитер" src="img/03_master_limiter.jpg" loading="lazy"></a><figcaption>Лимитер</figcaption></figure></p>
+<h3>Где фреймворк ошибался и как это поймали</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Шаг</th>
+<th>Что вышло</th>
+<th>Как поймали</th>
+<th>Исправление</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>пороги компрессоров «на глаз»</td>
+<td>бас просел на 16.6 дБ, ударные на 9</td>
+<td>замер стемов «было/стало»</td>
+<td>колено Pro-C 2 по умолчанию 18 дБ → 6</td>
+</tr>
+<tr>
+<td>порог по симуляции компрессора в Python</td>
+<td>на шине гитар обещал 1.5 дБ, плагин давил 8.5</td>
+<td>индикатор Pro-C 2 на скриншоте</td>
+<td>читать настоящее подавление через <code>GainReduction_dB</code>, пока REAPER играет припев</td>
+</tr>
+<tr>
+<td>калибровка</td>
+<td>2–3 прохода по 18 с звука</td>
+<td>среднее подавление сверено со звуком: ±0.05 дБ</td>
+<td>бас 4.0, ударные 3.0, гитары 1.5, мастер 2.1 дБ</td>
+</tr>
+<tr>
+<td>лимитер</td>
+<td>первый gain дал −7.7 LUFS — пережато</td>
+<td>замер LUFS</td>
+<td>gain +3.5 дБ → −9.98 LUFS с первого раза</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Было → стало</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th></th>
+<th>до</th>
+<th>после</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>громкость мастера</td>
+<td>−10.45 LUFS</td>
+<td><strong>−9.98 LUFS</strong></td>
+</tr>
+<tr>
+<td>пиковый уровень</td>
+<td>+0.27 dBTP</td>
+<td>−0.95 dBTP</td>
+</tr>
+<tr>
+<td>горб 125 / 198 Гц</td>
+<td>+4.2 / +2.7 дБ</td>
+<td>+2.8 / +2.0 дБ</td>
+</tr>
+<tr>
+<td>гитары на 2.5–5 кГц</td>
+<td>−10…−17 дБ от мастера</td>
+<td>−7 дБ</td>
+</tr>
+<tr>
+<td>гитары на 315 Гц–2.5 кГц</td>
+<td>−8…−16 дБ</td>
+<td>−3.5…−4.4 дБ: держат середину</td>
+</tr>
+<tr>
+<td>PSR</td>
+<td>9.2</td>
+<td>7.8</td>
+</tr>
+</tbody>
+</table></div>
+<p>Что осталось:</p>
+<ul>
+<li><strong>Провал 400 Гц–1 кГц почти не ушёл.</strong> Эквалайзером его не вытянуть, это тембр гитары: пробовать пресет или звукосниматель Odin.</li>
+<li><strong>Плотность громкости на пределе:</strong> PSR 7.8 при рекомендуемых ≥ 8. Если на слух пережато — убавить склейку или выбрать цель −11 LUFS.</li>
+</ul>
+</article>
+</div>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Комплект: Claude Code + REAPER</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         min-height: 100vh; padding: 24px 16px; color: #24243a; line-height: 1.6; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { color: #fff; font-size: 2.1em; line-height: 1.25; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,.2); }
+  article { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  article h2 { font-size: 1.45em; margin: 36px 0 12px; color: #4b3a8f; }
+  article h3 { font-size: 1.15em; margin: 24px 0 10px; color: #4b3a8f; }
+  article p, article ul { margin: 10px 0; }
+  article ul { padding-left: 22px; }
+  article code { background: #f1effa; padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .tbl { overflow-x: auto; margin: 14px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .93em; }
+  th, td { border: 1px solid #e3e0f2; padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f4f2fc; }
+  figure { margin: 18px 0; text-align: center; }
+  figure img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+  figcaption { font-size: .85em; color: #777; margin-top: 6px; }
+  .player { background: #f4f2fc; border-radius: 10px; padding: 16px; margin: 20px 0; }
+  .player-title { font-weight: 600; margin-bottom: 8px; color: #4b3a8f; }
+  .player audio { width: 100%; }
+  .kit { background: #fff8e6; border-radius: 10px; padding: 12px 16px; margin: 0 0 20px; }
+  .back { display: inline-block; color: #fff; text-decoration: none; margin-bottom: 16px; opacity: .85; }
+  article pre { background: #1e1e2e; color: #e6e6f0; padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+  article pre code { background: none; padding: 0; color: inherit; }
+  @media (max-width: 600px) { article { padding: 18px; } h1 { font-size: 1.6em; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="./">← к статье</a>
+<h1>Комплект: Claude Code + REAPER</h1>
+<article>
+<p>Всё, чем были сделаны демо и сведение из статьи: три скилла, скрипты, шаблоны цепочек FX, семплы баса и автозапуск моста MCP. Проверено на macOS (Apple Silicon), REAPER 7.</p>
+<p><a href="reaper-claude-kit.zip">Скачать reaper-claude-kit.zip</a></p>
+<h2>Что внутри</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Путь</th>
+<th>Что</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>skills/reaper-song/</code></td>
+<td>скилл «напиши песню в рипере»: инструменты, ноты AD2, оживление партий, Odin III (<code>ODIN.md</code>)</td>
+</tr>
+<tr>
+<td><code>skills/reaper-mix/</code></td>
+<td>скилл «сведи трек»: порядок замер → план → калибровка → лимитер, числа из источников (<code>SOURCES.md</code>), шаблон плана</td>
+</tr>
+<tr>
+<td><code>skills/reaper-plugins/</code></td>
+<td>скилл «какие у меня плагины»: список инструментов, эффектов и цепочек FX из кэшей REAPER</td>
+</tr>
+<tr>
+<td><code>scripts/reaper_song.py</code></td>
+<td>генератор демо: секции, партии, «живость», сборка <code>.rpp</code></td>
+</tr>
+<tr>
+<td><code>scripts/rs5k_bass_sampler.lua</code></td>
+<td>бас на ReaSamplOmatic5000 из семплов <code>&lt;нота&gt;.wav</code></td>
+</tr>
+<tr>
+<td><code>scripts/mix_probe.py</code></td>
+<td>рендер стемов и замер: LUFS, true peak, полосы, маскировка, стерео</td>
+</tr>
+<tr>
+<td><code>scripts/mix_apply.py</code></td>
+<td>план сведения (JSON) → плагины в открытом проекте; точечно <code>--set</code></td>
+</tr>
+<tr>
+<td><code>scripts/mix_calibrate.py</code></td>
+<td>пороги компрессоров по реальному подавлению</td>
+</tr>
+<tr>
+<td><code>scripts/plugin_scan.py</code></td>
+<td>сканер плагинов → <code>PLUGINS.md</code></td>
+</tr>
+<tr>
+<td><code>scripts/rpp_common.py</code>, <code>ad2_keymap.py</code></td>
+<td>общие функции <code>.rpp</code>, раскладка Addictive Drums 2</td>
+</tr>
+<tr>
+<td><code>fxchains/</code></td>
+<td>цепочки: <code>ad2</code>, <code>guitar_ample_gr7</code>, <code>guitar_odin_gr7</code></td>
+</tr>
+<tr>
+<td><code>samples-bass-finger/</code></td>
+<td>12 нот пальцевого баса, E1–D#2 (MIDI 28–39)</td>
+</tr>
+<tr>
+<td><code>mcp/__startup.lua</code></td>
+<td>автозапуск моста MCP при старте REAPER</td>
+</tr>
+</tbody>
+</table></div>
+<h2>Что нужно заранее</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Что</th>
+<th>Зачем</th>
+<th>Без него</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://www.reaper.fm/">REAPER</a> 7, macOS</td>
+<td>всё</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="https://claude.com/claude-code">Claude Code</a></td>
+<td>агент, скиллы</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Python 3.10+</td>
+<td>MCP-сервер и скрипты</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pip install numpy scipy soundfile</code></td>
+<td><code>mix_probe.py</code></td>
+<td>нет замера</td>
+</tr>
+<tr>
+<td>Addictive Drums 2</td>
+<td>ударные</td>
+<td>заменить шаблон <code>ad2</code></td>
+</tr>
+<tr>
+<td>Ample Guitar VC + Guitar Rig 7 или Odin III</td>
+<td>гитары</td>
+<td>генератор спросит, какие есть</td>
+</tr>
+<tr>
+<td>FabFilter Pro-Q 4, Pro-C 2, Saturn 2, Pro-R 2, Pro-L 2</td>
+<td>сведение</td>
+<td>поменять имена плагинов и параметров в плане</td>
+</tr>
+</tbody>
+</table></div>
+<h2>Установка</h2>
+<p><strong>1. MCP-сервер REAPER</strong> — <a href="https://github.com/shiehn/total-reaper-mcp">shiehn/total-reaper-mcp</a>, без изменений в коде:</p>
+<pre><code class="language-bash">git clone https://github.com/shiehn/total-reaper-mcp.git ~/reaper-mcp/total-reaper-mcp
+cd ~/reaper-mcp/total-reaper-mcp
+python3.10 -m venv .venv &amp;&amp; .venv/bin/pip install -e .
+./scripts/install_bridge.sh
+</code></pre>
+<p><code>install_bridge.sh</code> кладёт мост <code>mcp_bridge_file_v2.lua</code> в <code>~/Library/Application Support/REAPER/Scripts/</code>.</p>
+<p><strong>2. Автозапуск моста</strong> — моя доделка: без неё мост надо запускать руками из Actions после каждого старта REAPER.</p>
+<pre><code class="language-bash">cp ~/reaper-claude-kit/mcp/__startup.lua ~/Library/Application\ Support/REAPER/Scripts/
+</code></pre>
+<p>Если <code>__startup.lua</code> уже есть — дописать его содержимое в конец своего. Перезапустить REAPER, в консоли должно появиться <code>REAPER MCP Bridge (File-based, Full API) started</code>.</p>
+<p><strong>3. Подключить к Claude Code:</strong></p>
+<pre><code class="language-bash">claude mcp add reaper -- ~/reaper-mcp/total-reaper-mcp/.venv/bin/python -m server.app --profile dsl-production
+</code></pre>
+<p>Профиль <code>dsl-production</code> — ~53 инструмента (дорожки, FX, MIDI, рендер). <code>full</code> — 600+, многим клиентам столько не принять.</p>
+<p><strong>4. Комплект:</strong></p>
+<pre><code class="language-bash">unzip reaper-claude-kit.zip -d ~
+cp -R ~/reaper-claude-kit/skills/* ~/.claude/skills/
+</code></pre>
+<p>Скрипты ждут комплект именно в <code>~/reaper-claude-kit</code> — пути в скиллах указывают туда.</p>
+<h2>Как пользоваться</h2>
+<p>REAPER должен быть открыт. Дальше — обычными словами в Claude Code:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Фраза</th>
+<th>Скилл</th>
+<th>Что будет</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>«напиши гранж-демо в рипере в папке ~/Documents/reaper/demo»</td>
+<td><code>reaper-song</code></td>
+<td>спросит про гитары, соберёт проект, откроет в новой вкладке</td>
+</tr>
+<tr>
+<td>«звучит механистически»</td>
+<td><code>reaper-song</code></td>
+<td>разброс времени и силы удара, дрейф по фразе</td>
+</tr>
+<tr>
+<td>«какие у меня плагины»</td>
+<td><code>reaper-plugins</code></td>
+<td>список по категориям; первый раз — скан, дальше из <code>PLUGINS.md</code></td>
+</tr>
+<tr>
+<td>«сведи трек, мастер в −10 LUFS»</td>
+<td><code>reaper-mix</code></td>
+<td>замер, план, плагины на копии проекта, калибровка, таблица «было → стало»</td>
+</tr>
+</tbody>
+</table></div>
+<p>Без агента, руками:</p>
+<pre><code class="language-bash">python3 ~/reaper-claude-kit/scripts/reaper_song.py ~/Documents/reaper/demo --guitars odin
+/Applications/REAPER.app/Contents/MacOS/REAPER -nonewinst ~/Documents/reaper/demo/open.lua
+python3 ~/reaper-claude-kit/scripts/mix_probe.py render ~/Documents/reaper/demo/mix/00_before
+python3 ~/reaper-claude-kit/scripts/mix_probe.py analyze ~/Documents/reaper/demo/mix/00_before
+</code></pre>
+<h2>Грабли</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Что</th>
+<th>Как</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REAPER открыл старую версию проекта</td>
+<td>он кэширует проекты по пути: пересобранный проект — только под новым именем</td>
+</tr>
+<tr>
+<td>плагин не встал</td>
+<td>имена в шаблонах и плане — как в списке FX REAPER (<code>VST3: Pro-Q 4 (FabFilter)</code>); у другой версии — поправить</td>
+</tr>
+<tr>
+<td>калибровка компрессоров играет вслух</td>
+<td>так и задумано: каждый проход — около 18 с звука</td>
+</tr>
+</tbody>
+</table></div>
+</article>
+</div>
+</body>
+</html>

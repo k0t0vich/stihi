@@ -1,0 +1,676 @@
+{
+ "why": "замер 00_before: горб 79-198 Гц (+2.6..+4.2), провал 315-1k (-2..-3.4), гитары тёмные (-10..-17 дБ на 2.5-5k), верх только тарелки, нет шин",
+ "bypass_master": [
+  "Ozone 12"
+ ],
+ "folders": [
+  {
+   "name": "Guitars bus",
+   "children": [
+    "Guitar L",
+    "Guitar R",
+    "Odin III"
+   ]
+  }
+ ],
+ "buses": [
+  {
+   "name": "Room",
+   "sends_from": {
+    "Drums AD2": -5,
+    "Guitars bus": -9
+   },
+   "why": "проход 1: Room −51 LUFS при мастере −18.6 — неслышно; цель ~20 дБ под миксом → посылы +13 дБ"
+  }
+ ],
+ "tracks": {
+  "Drums AD2": {
+   "fx": [
+    {
+     "name": "VST3: Pro-Q 4 (FabFilter)",
+     "tag": "EQ ударных",
+     "why": "место гитарам в 315-630; тарелки держат весь верх (+1.9 дБ на 4-8k); проход 2: верх 4–16 кГц всё ещё +2.2..+4.1 — полка глубже",
+     "params": [
+      [
+       "Band 1 Used",
+       "Used"
+      ],
+      [
+       "Band 1 Shape",
+       "Bell"
+      ],
+      [
+       "Band 1 Frequency",
+       400
+      ],
+      [
+       "Band 1 Gain",
+       -2
+      ],
+      [
+       "Band 1 Q",
+       1.0
+      ],
+      [
+       "Band 2 Used",
+       "Used"
+      ],
+      [
+       "Band 2 Shape",
+       "High Shelf"
+      ],
+      [
+       "Band 2 Frequency",
+       5000
+      ],
+      [
+       "Band 2 Gain",
+       -3.5
+      ]
+     ]
+    },
+    {
+     "name": "VST3: Pro-C 2 (FabFilter)",
+     "tag": "шина ударных",
+     "why": "SOS Mix Rescue: 2:1, атака 35 мс, release ~100 мс, ~3 дБ GR; порог по симуляции на сигнале до компрессора (mix_probe thr): 3.0 дБ среднее, 5.7 макс; колено 18 по умолчанию давило ~9 дБ; калибровка по GainReduction_dB: порог -5.5, makeup 3.0",
+     "params": [
+      [
+       "Style",
+       "Bus"
+      ],
+      [
+       "Ratio",
+       2
+      ],
+      [
+       "Knee",
+       6
+      ],
+      [
+       "Attack",
+       30
+      ],
+      [
+       "Release",
+       100
+      ],
+      [
+       "Threshold",
+       -5.5
+      ],
+      [
+       "Auto Gain",
+       "Off"
+      ],
+      [
+       "Output Level",
+       3.0
+      ]
+     ]
+    }
+   ],
+   "vol_db": -5.5
+  },
+  "Bass": {
+   "fx": [
+    {
+     "name": "VST3: Pro-Q 4 (FabFilter)",
+     "tag": "EQ баса",
+     "why": "HPF 30-40 [К]; горб мастера 125 Гц +4.2; рык 630-1.25k (бас там -19.8 дБ); LPF ~3-4 кГц (SOS); проход 2: горб 125 Гц +3.5 — вырез глубже",
+     "params": [
+      [
+       "Band 1 Used",
+       "Used"
+      ],
+      [
+       "Band 1 Shape",
+       "Low Cut"
+      ],
+      [
+       "Band 1 Frequency",
+       35
+      ],
+      [
+       "Band 1 Slope",
+       "24 dB/oct"
+      ],
+      [
+       "Band 2 Used",
+       "Used"
+      ],
+      [
+       "Band 2 Shape",
+       "Bell"
+      ],
+      [
+       "Band 2 Frequency",
+       125
+      ],
+      [
+       "Band 2 Gain",
+       -4
+      ],
+      [
+       "Band 2 Q",
+       1.2
+      ],
+      [
+       "Band 3 Used",
+       "Used"
+      ],
+      [
+       "Band 3 Shape",
+       "Bell"
+      ],
+      [
+       "Band 3 Frequency",
+       900
+      ],
+      [
+       "Band 3 Gain",
+       3
+      ],
+      [
+       "Band 3 Q",
+       1.0
+      ],
+      [
+       "Band 4 Used",
+       "Used"
+      ],
+      [
+       "Band 4 Shape",
+       "High Cut"
+      ],
+      [
+       "Band 4 Frequency",
+       4000
+      ]
+     ]
+    },
+    {
+     "name": "VST3: Saturn 2 (FabFilter)",
+     "tag": "рык баса",
+     "why": "параллельная сатурация для слышимости на малых колонках",
+     "params": [
+      [
+       "Band 1 Drive",
+       25
+      ],
+      [
+       "Band 1 Mix",
+       35
+      ]
+     ]
+    },
+    {
+     "name": "VST3: Pro-C 2 (FabFilter)",
+     "tag": "компрессия баса",
+     "why": "SOS metal: 5:1, 4-5 дБ GR; сэмплы ровные (LRA 2.3) — мягче 4:1; симуляция: 4.0 дБ среднее; Opto+колено 18 в первом проходе срезали бас на 16.6 дБ; калибровка по GainReduction_dB: порог -4.1, makeup 4.1",
+     "params": [
+      [
+       "Style",
+       "Clean"
+      ],
+      [
+       "Ratio",
+       4
+      ],
+      [
+       "Knee",
+       6
+      ],
+      [
+       "Attack",
+       10
+      ],
+      [
+       "Release",
+       100
+      ],
+      [
+       "Threshold",
+       -4.1
+      ],
+      [
+       "Auto Gain",
+       "Off"
+      ],
+      [
+       "Output Level",
+       4.1
+      ]
+     ]
+    }
+   ],
+   "vol_db": -5.0
+  },
+  "Guitar R": {
+   "fx": [
+    {
+     "name": "VST3: Pro-Q 4 (FabFilter)",
+     "tag": "EQ гитары",
+     "why": "HPF 100-120, LPF 10-12k, муть 250-500 [К]; ясность: гитары -8..-13 на 1.25-2.5k",
+     "params": [
+      [
+       "Band 1 Used",
+       "Used"
+      ],
+      [
+       "Band 1 Shape",
+       "Low Cut"
+      ],
+      [
+       "Band 1 Frequency",
+       100
+      ],
+      [
+       "Band 1 Slope",
+       "24 dB/oct"
+      ],
+      [
+       "Band 2 Used",
+       "Used"
+      ],
+      [
+       "Band 2 Shape",
+       "High Cut"
+      ],
+      [
+       "Band 2 Frequency",
+       11000
+      ],
+      [
+       "Band 3 Used",
+       "Used"
+      ],
+      [
+       "Band 3 Shape",
+       "Bell"
+      ],
+      [
+       "Band 3 Frequency",
+       250
+      ],
+      [
+       "Band 3 Gain",
+       -3
+      ],
+      [
+       "Band 3 Q",
+       2.0
+      ],
+      [
+       "Band 4 Used",
+       "Used"
+      ],
+      [
+       "Band 4 Shape",
+       "Bell"
+      ],
+      [
+       "Band 4 Frequency",
+       2000
+      ],
+      [
+       "Band 4 Gain",
+       2
+      ],
+      [
+       "Band 4 Q",
+       0.8
+      ]
+     ]
+    }
+   ]
+  },
+  "Odin III": {
+   "fx": [
+    {
+     "name": "VST3: Pro-Q 4 (FabFilter)",
+     "tag": "EQ гитары",
+     "why": "то же; Odin широкий даже ниже 80 Гц (Side/Mid +1 дБ) — HPF его убирает",
+     "params": [
+      [
+       "Band 1 Used",
+       "Used"
+      ],
+      [
+       "Band 1 Shape",
+       "Low Cut"
+      ],
+      [
+       "Band 1 Frequency",
+       100
+      ],
+      [
+       "Band 1 Slope",
+       "24 dB/oct"
+      ],
+      [
+       "Band 2 Used",
+       "Used"
+      ],
+      [
+       "Band 2 Shape",
+       "High Cut"
+      ],
+      [
+       "Band 2 Frequency",
+       11000
+      ],
+      [
+       "Band 3 Used",
+       "Used"
+      ],
+      [
+       "Band 3 Shape",
+       "Bell"
+      ],
+      [
+       "Band 3 Frequency",
+       250
+      ],
+      [
+       "Band 3 Gain",
+       -3
+      ],
+      [
+       "Band 3 Q",
+       2.0
+      ],
+      [
+       "Band 4 Used",
+       "Used"
+      ],
+      [
+       "Band 4 Shape",
+       "Bell"
+      ],
+      [
+       "Band 4 Frequency",
+       2000
+      ],
+      [
+       "Band 4 Gain",
+       2
+      ],
+      [
+       "Band 4 Q",
+       0.8
+      ]
+     ]
+    }
+   ]
+  },
+  "Guitars bus": {
+   "fx": [
+    {
+     "name": "VST3: Pro-Q 4 (FabFilter)",
+     "tag": "плотность EQ",
+     "why": "SOS: +4-5 дБ на 200/600 для плотности; у нас 200 уже горб — только 600, мастер проваливается 315-1k; проход 2: провал 400–1k −3..−4 при +2.5 на 600 — шире и +3.5; 160–315 спорят шина и бас — −2 на 180",
+     "params": [
+      [
+       "Band 1 Used",
+       "Used"
+      ],
+      [
+       "Band 1 Shape",
+       "Bell"
+      ],
+      [
+       "Band 1 Frequency",
+       600
+      ],
+      [
+       "Band 1 Gain",
+       3.5
+      ],
+      [
+       "Band 1 Q",
+       0.6
+      ],
+      [
+       "Band 2 Used",
+       "Used"
+      ],
+      [
+       "Band 2 Shape",
+       "Bell"
+      ],
+      [
+       "Band 2 Frequency",
+       180
+      ],
+      [
+       "Band 2 Gain",
+       -2
+      ],
+      [
+       "Band 2 Q",
+       1.4
+      ]
+     ]
+    },
+    {
+     "name": "VST3: Saturn 2 (FabFilter)",
+     "tag": "плотность сатурация",
+     "why": "SOS: сатурация полезнее EQ для presence",
+     "params": [
+      [
+       "Band 1 Drive",
+       15
+      ],
+      [
+       "Band 1 Mix",
+       40
+      ]
+     ]
+    },
+    {
+     "name": "VST3: Pro-C 2 (FabFilter)",
+     "tag": "шина гитар",
+     "why": "NTM: гитарная шина 1-2 дБ GR; симуляция: 1.5 дБ среднее, 2.4 макс; калибровка по GainReduction_dB: порог -2.0, makeup 1.5",
+     "params": [
+      [
+       "Style",
+       "Bus"
+      ],
+      [
+       "Ratio",
+       2
+      ],
+      [
+       "Knee",
+       6
+      ],
+      [
+       "Attack",
+       30
+      ],
+      [
+       "Auto Release",
+       "Off"
+      ],
+      [
+       "Release",
+       100
+      ],
+      [
+       "Threshold",
+       -2.0
+      ],
+      [
+       "Auto Gain",
+       "Off"
+      ],
+      [
+       "Output Level",
+       1.5
+      ]
+     ]
+    }
+   ]
+  },
+  "Room": {
+   "fx": [
+    {
+     "name": "VST3: Pro-R 2 (FabFilter)",
+     "tag": "общая комната",
+     "why": "общий ревер = общая комната [К]; pre-delay 20-30 мс; бас не посылать",
+     "params": [
+      [
+       "Space",
+       900
+      ],
+      [
+       "Predelay",
+       25
+      ],
+      [
+       "Mix",
+       100
+      ]
+     ]
+    },
+    {
+     "name": "VST3: Pro-Q 4 (FabFilter)",
+     "tag": "EQ комнаты",
+     "why": "без низа и резкого верха, SOS LPF 12k на ревере",
+     "params": [
+      [
+       "Band 1 Used",
+       "Used"
+      ],
+      [
+       "Band 1 Shape",
+       "Low Cut"
+      ],
+      [
+       "Band 1 Frequency",
+       250
+      ],
+      [
+       "Band 2 Used",
+       "Used"
+      ],
+      [
+       "Band 2 Shape",
+       "High Cut"
+      ],
+      [
+       "Band 2 Frequency",
+       9000
+      ]
+     ]
+    }
+   ]
+  }
+ },
+ "master": {
+  "fx": [
+   {
+    "name": "VST3: Pro-Q 4 (FabFilter)",
+    "tag": "тон мастера",
+    "why": "чистка инфранизких; воздух: 12.7k -1.3 от прямой; проход 2: 16 кГц +4.1 — воздух не нужен",
+    "params": [
+     [
+      "Band 1 Used",
+      "Used"
+     ],
+     [
+      "Band 1 Shape",
+      "Low Cut"
+     ],
+     [
+      "Band 1 Frequency",
+      25
+     ],
+     [
+      "Band 1 Slope",
+      "24 dB/oct"
+     ],
+     [
+      "Band 2 Used",
+      "Used"
+     ],
+     [
+      "Band 2 Shape",
+      "High Shelf"
+     ],
+     [
+      "Band 2 Frequency",
+      12000
+     ],
+     [
+      "Band 2 Gain",
+      0
+     ]
+    ]
+   },
+   {
+    "name": "VST3: Pro-C 2 (FabFilter)",
+    "tag": "склейка",
+    "why": "SSL-стиль [К]: 2:1, атака 10-30 мс, auto release, 1-3 дБ GR; калибровка: порог -8.6 → 2.1 дБ (макс 3.1)",
+    "params": [
+     [
+      "Style",
+      "Bus"
+     ],
+     [
+      "Ratio",
+      2
+     ],
+     [
+      "Attack",
+      10
+     ],
+     [
+      "Auto Release",
+      "On"
+     ],
+     [
+      "Threshold",
+      -8.6
+     ],
+     [
+      "Auto Gain",
+      "Off"
+     ],
+     [
+      "Output Level",
+      2.1
+     ]
+    ]
+   },
+   {
+    "name": "VST3: Pro-L 2 (FabFilter)",
+    "tag": "лимитер",
+    "why": "потолок -1 dBTP [К]; gain подбирается замером под -10 LUFS",
+    "params": [
+     [
+      "Style",
+      "Modern"
+     ],
+     [
+      "Oversampling",
+      "4x"
+     ],
+     [
+      "True Peak Limiting",
+      "On"
+     ],
+     [
+      "Output Level",
+      -1.0
+     ],
+     [
+      "Gain",
+      3.5
+     ]
+    ]
+   }
+  ]
+ },
+ "balance_why": "исходный баланс пользователя: после обработки бас −1.7, ударные −1.2, гитары −0.7 дБ от «до» — фейдеры бас +1, ударные +0.5"
+}
