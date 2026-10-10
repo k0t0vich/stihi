@@ -1,6 +1,6 @@
 # Комплект: Claude Code + REAPER
 
-Всё, чем были сделаны демо и сведение из статьи: три скилла, скрипты, шаблоны цепочек FX, семплы баса и автозапуск моста MCP. Проверено на macOS (Apple Silicon), REAPER 7.
+Всё, чем были сделаны демо и сведение из статьи: три скилла, скрипты, шаблоны цепочек FX, семплы баса и автозапуск моста MCP. Проверено на macOS (Apple Silicon), REAPER 7. Под Windows комплект надо переписать — промпт-установщик просит Claude сделать это первым шагом.
 
 [Скачать reaper-claude-kit.zip](reaper-claude-kit.zip)
 
@@ -11,7 +11,8 @@
 | `skills/reaper-song/` | скилл «напиши песню в рипере»: инструменты, ноты AD2, оживление партий, Odin III (`ODIN.md`) |
 | `skills/reaper-mix/` | скилл «сведи трек»: порядок замер → план → калибровка → лимитер, числа из источников (`SOURCES.md`), шаблон плана |
 | `skills/reaper-plugins/` | скилл «какие у меня плагины»: список инструментов, эффектов и цепочек FX из кэшей REAPER |
-| `scripts/reaper_song.py` | генератор демо: секции, партии, «живость», сборка `.rpp` |
+| `scripts/song_kit.py` | готовые детали: ноты AD2, приёмы Odin, дроби, оживление, дорожки, сборка `.rpp` |
+| `scripts/songs/grunge_demo.py` | песня из статьи: форма, аккорды, партии и журнал правок — пример для своих |
 | `scripts/rs5k_bass_sampler.lua` | бас на ReaSamplOmatic5000 из семплов `<нота>.wav` |
 | `scripts/mix_probe.py` | рендер стемов и замер: LUFS, true peak, полосы, маскировка, стерео |
 | `scripts/mix_apply.py` | план сведения (JSON) → плагины в открытом проекте; точечно `--set` |
@@ -20,6 +21,7 @@
 | `scripts/rpp_common.py`, `ad2_keymap.py` | общие функции `.rpp`, раскладка Addictive Drums 2 |
 | `fxchains/` | цепочки: `ad2`, `guitar_ample_gr7`, `guitar_odin_gr7` |
 | `samples-bass-finger/` | 12 нот пальцевого баса, E1–D#2 (MIDI 28–39) |
+| `INSTALL-PROMPT.md` | промпт для Claude: проверить, поставить, настроить под себя |
 | `mcp/__startup.lua` | автозапуск моста MCP при старте REAPER |
 
 ## Что нужно заранее
@@ -35,6 +37,11 @@
 | FabFilter Pro-Q 4, Pro-C 2, Saturn 2, Pro-R 2, Pro-L 2 | сведение | поменять имена плагинов и параметров в плане |
 
 ## Установка
+
+**Проще всего — через Claude.** «Скачал и запустил» может не сработать: у вас другие плагины, пути и версии. Распакуйте архив, откройте Claude Code в папке `reaper-claude-kit` и вставьте [промпт-установщик](install-prompt.html) (в архиве — `INSTALL-PROMPT.md`). Claude проверит, что есть, поставит недостающее, проверит связь с REAPER и спросит, на какие фразы подключать скиллы.
+
+Руками — по шагам ниже.
+
 
 **1. MCP-сервер REAPER** — [shiehn/total-reaper-mcp](https://github.com/shiehn/total-reaper-mcp), без изменений в коде:
 
@@ -86,7 +93,7 @@ REAPER должен быть открыт. Дальше — обычными с�
 Без агента, руками:
 
 ```bash
-python3 ~/reaper-claude-kit/scripts/reaper_song.py ~/Documents/reaper/demo --guitars odin
+python3 ~/reaper-claude-kit/scripts/song_kit.py ~/reaper-claude-kit/scripts/songs/grunge_demo.py ~/Documents/reaper/demo --guitars odin
 /Applications/REAPER.app/Contents/MacOS/REAPER -nonewinst ~/Documents/reaper/demo/open.lua
 python3 ~/reaper-claude-kit/scripts/mix_probe.py render ~/Documents/reaper/demo/mix/00_before
 python3 ~/reaper-claude-kit/scripts/mix_probe.py analyze ~/Documents/reaper/demo/mix/00_before

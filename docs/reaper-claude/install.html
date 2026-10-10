@@ -6,7 +6,10 @@
 <title>Комплект: Claude Code + REAPER</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #333;
+         background-image: repeating-linear-gradient(90deg, #4a4a4a 0 1px, transparent 1px 128px),
+                           repeating-linear-gradient(90deg, #3b3b3b 0 1px, transparent 1px 32px),
+                           repeating-linear-gradient(180deg, transparent 0 83px, #2a2a2a 83px 84px);
          min-height: 100vh; padding: 24px 16px; color: #24243a; line-height: 1.6; }
   .wrap { max-width: 900px; margin: 0 auto; }
   h1 { color: #fff; font-size: 2.1em; line-height: 1.25; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,.2); }
@@ -29,7 +32,7 @@
   .kit { background: #fff8e6; border-radius: 10px; padding: 12px 16px; margin: 0 0 20px; }
   .back { display: inline-block; color: #fff; text-decoration: none; margin-bottom: 16px; opacity: .85; }
   article pre { background: #1e1e2e; color: #e6e6f0; padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
-  article pre code { background: none; padding: 0; color: inherit; }
+  article pre code { background: none; padding: 0; color: inherit; white-space: pre-wrap; }
   @media (max-width: 600px) { article { padding: 18px; } h1 { font-size: 1.6em; } }
 </style>
 </head>
@@ -38,7 +41,7 @@
 <a class="back" href="./">← к статье</a>
 <h1>Комплект: Claude Code + REAPER</h1>
 <article>
-<p>Всё, чем были сделаны демо и сведение из статьи: три скилла, скрипты, шаблоны цепочек FX, семплы баса и автозапуск моста MCP. Проверено на macOS (Apple Silicon), REAPER 7.</p>
+<p>Всё, чем были сделаны демо и сведение из статьи: три скилла, скрипты, шаблоны цепочек FX, семплы баса и автозапуск моста MCP. Проверено на macOS (Apple Silicon), REAPER 7. Под Windows комплект надо переписать — промпт-установщик просит Claude сделать это первым шагом.</p>
 <p><a href="reaper-claude-kit.zip">Скачать reaper-claude-kit.zip</a></p>
 <h2>Что внутри</h2>
 <div class="tbl"><table>
@@ -62,8 +65,12 @@
 <td>скилл «какие у меня плагины»: список инструментов, эффектов и цепочек FX из кэшей REAPER</td>
 </tr>
 <tr>
-<td><code>scripts/reaper_song.py</code></td>
-<td>генератор демо: секции, партии, «живость», сборка <code>.rpp</code></td>
+<td><code>scripts/song_kit.py</code></td>
+<td>готовые детали: ноты AD2, приёмы Odin, дроби, оживление, дорожки, сборка <code>.rpp</code></td>
+</tr>
+<tr>
+<td><code>scripts/songs/grunge_demo.py</code></td>
+<td>песня из статьи: форма, аккорды, партии и журнал правок — пример для своих</td>
 </tr>
 <tr>
 <td><code>scripts/rs5k_bass_sampler.lua</code></td>
@@ -96,6 +103,10 @@
 <tr>
 <td><code>samples-bass-finger/</code></td>
 <td>12 нот пальцевого баса, E1–D#2 (MIDI 28–39)</td>
+</tr>
+<tr>
+<td><code>INSTALL-PROMPT.md</code></td>
+<td>промпт для Claude: проверить, поставить, настроить под себя</td>
 </tr>
 <tr>
 <td><code>mcp/__startup.lua</code></td>
@@ -151,6 +162,8 @@
 </tbody>
 </table></div>
 <h2>Установка</h2>
+<p><strong>Проще всего — через Claude.</strong> «Скачал и запустил» может не сработать: у вас другие плагины, пути и версии. Распакуйте архив, откройте Claude Code в папке <code>reaper-claude-kit</code> и вставьте <a href="install-prompt.html">промпт-установщик</a> (в архиве — <code>INSTALL-PROMPT.md</code>). Claude проверит, что есть, поставит недостающее, проверит связь с REAPER и спросит, на какие фразы подключать скиллы.</p>
+<p>Руками — по шагам ниже.</p>
 <p><strong>1. MCP-сервер REAPER</strong> — <a href="https://github.com/shiehn/total-reaper-mcp">shiehn/total-reaper-mcp</a>, без изменений в коде:</p>
 <pre><code class="language-bash">git clone https://github.com/shiehn/total-reaper-mcp.git ~/reaper-mcp/total-reaper-mcp
 cd ~/reaper-mcp/total-reaper-mcp
@@ -205,7 +218,7 @@ cp -R ~/reaper-claude-kit/skills/* ~/.claude/skills/
 </tbody>
 </table></div>
 <p>Без агента, руками:</p>
-<pre><code class="language-bash">python3 ~/reaper-claude-kit/scripts/reaper_song.py ~/Documents/reaper/demo --guitars odin
+<pre><code class="language-bash">python3 ~/reaper-claude-kit/scripts/song_kit.py ~/reaper-claude-kit/scripts/songs/grunge_demo.py ~/Documents/reaper/demo --guitars odin
 /Applications/REAPER.app/Contents/MacOS/REAPER -nonewinst ~/Documents/reaper/demo/open.lua
 python3 ~/reaper-claude-kit/scripts/mix_probe.py render ~/Documents/reaper/demo/mix/00_before
 python3 ~/reaper-claude-kit/scripts/mix_probe.py analyze ~/Documents/reaper/demo/mix/00_before

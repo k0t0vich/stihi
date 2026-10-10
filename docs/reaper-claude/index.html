@@ -3,10 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Гранж-демо с нуля: Claude + MCP + REAPER</title>
+<title>Рок демка с нуля: Эксперименты с Claude + MCP + REAPER</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #333;
+         background-image: repeating-linear-gradient(90deg, #4a4a4a 0 1px, transparent 1px 128px),
+                           repeating-linear-gradient(90deg, #3b3b3b 0 1px, transparent 1px 32px),
+                           repeating-linear-gradient(180deg, transparent 0 83px, #2a2a2a 83px 84px);
          min-height: 100vh; padding: 24px 16px; color: #24243a; line-height: 1.6; }
   .wrap { max-width: 900px; margin: 0 auto; }
   h1 { color: #fff; font-size: 2.1em; line-height: 1.25; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,.2); }
@@ -29,19 +32,20 @@
   .kit { background: #fff8e6; border-radius: 10px; padding: 12px 16px; margin: 0 0 20px; }
   .back { display: inline-block; color: #fff; text-decoration: none; margin-bottom: 16px; opacity: .85; }
   article pre { background: #1e1e2e; color: #e6e6f0; padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
-  article pre code { background: none; padding: 0; color: inherit; }
+  article pre code { background: none; padding: 0; color: inherit; white-space: pre-wrap; }
   @media (max-width: 600px) { article { padding: 18px; } h1 { font-size: 1.6em; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Гранж-демо с нуля: Claude + MCP + REAPER</h1>
+<h1>Рок демка с нуля: Эксперименты с Claude + MCP + REAPER</h1>
 <article>
 <p>Я написал Claude пару фраз, и он с нуля собрал в REAPER демо-песню, оживил партии, подключил гитару Odin III и свёл всё в −10 LUFS. В этой статье расскажу, что я просил, что сделала связка инструментов на каждом шаге и где она ошибалась.</p>
 <div class="player"><div class="player-title">🎸 Итоговый мастер · −10 LUFS · 2:00</div>
 <audio controls preload="metadata" src="grunge_demo.m4a"></audio></div>
 <div class="kit">🧰 Скиллы, скрипты и шаблоны из статьи — <a href="install.html">комплект и установка</a>
 · <a href="reaper-claude-kit.zip">reaper-claude-kit.zip</a></div>
+<p>Это чистая демка для проверки связки скиллов, MCP и скриптов. Сделана с первого запроса и двух уточнений. По пути я доделывал сами скиллы: подключение Odin, его артикуляции, борьбу с «механистичностью».</p>
 <p><figure><a href="img/reaper_main.jpg" target="_blank"><img alt="Проект в REAPER" src="img/reaper_main.jpg" loading="lazy"></a><figcaption>Проект в REAPER</figcaption></figure></p>
 <h2>Связка инструментов</h2>
 <div class="tbl"><table>
@@ -54,7 +58,7 @@
 <tbody>
 <tr>
 <td><strong>Claude Code</strong></td>
-<td>агент: читает файлы, пишет и запускает скрипты, мерит результат</td>
+<td>агент: читает файлы, пишет и запускает скрипты, измеряет результат</td>
 </tr>
 <tr>
 <td><strong>MCP-сервер REAPER</strong></td>
@@ -66,7 +70,7 @@
 </tr>
 <tr>
 <td><strong>Python</strong></td>
-<td>генерирует партии, собирает <code>.rpp</code>, анализирует рендер (LUFS, спектр, маскировка)</td>
+<td>переводит партии Claude в MIDI, собирает <code>.rpp</code>, анализирует рендер (LUFS, спектр, маскировка)</td>
 </tr>
 <tr>
 <td><strong>Computer use</strong></td>
@@ -78,7 +82,7 @@
 </tr>
 </tbody>
 </table></div>
-<p>Скрипты лежат в репозитории <code>audio2midi</code>:</p>
+<p>Скрипты — в <a href="https://k0t0vich.github.io/stihi/reaper-claude/install.html">комплекте для скачивания</a>, папка <code>scripts/</code>:</p>
 <div class="tbl"><table>
 <thead>
 <tr>
@@ -88,8 +92,12 @@
 </thead>
 <tbody>
 <tr>
-<td><code>scripts/reaper_song.py</code></td>
-<td>партии и проект: секции, ноты, «живость», дорожки с VST</td>
+<td><code>scripts/song_kit.py</code></td>
+<td>готовые детали: ноты инструментов, приёмы Odin, дроби, «живость», дорожки с VST, сборка проекта</td>
+</tr>
+<tr>
+<td><code>scripts/songs/grunge_demo.py</code></td>
+<td>то, что Claude сочинил в диалоге: форма, аккорды, партии и журнал «запрос → что поменял»</td>
 </tr>
 <tr>
 <td><code>scripts/mix_probe.py</code></td>
@@ -111,15 +119,11 @@
 <div class="tbl"><table>
 <thead>
 <tr>
-<th>Ожидал</th>
-<th>Нашлось</th>
+<th>Партия</th>
+<th>Инструмент</th>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>Ample Bass P</td>
-<td>плагин стоит, но семплы не установлены: «Loading samples failed», рендер молчит (−240 дБ)</td>
-</tr>
 <tr>
 <td>бас</td>
 <td><strong>RS5K</strong> (сэмплер REAPER) на семплах Finger Bass, 12 нот от E1 до D#2</td>
@@ -130,7 +134,7 @@
 </tr>
 <tr>
 <td>гитара</td>
-<td>Ample Guitar VC → Guitar Rig 7, пресет «AD In The Desert»</td>
+<td>Ample Guitar VC, Odin III. На первом этапе — Ample Guitar VC → Guitar Rig 7, пресет «AD In The Desert»; Odin III со своим усилителем добавлен в шаге 3</td>
 </tr>
 </tbody>
 </table></div>
@@ -138,7 +142,7 @@
 <figure><a href="img/07_bass_rs5k.jpg" target="_blank"><img alt="RS5K: один из 12 семплов баса" src="img/07_bass_rs5k.jpg" loading="lazy"></a><figcaption>RS5K: один из 12 семплов баса</figcaption></figure>
 <figure><a href="img/14_guitarR_gr7.jpg" target="_blank"><img alt="Guitar Rig 7 «AD In The Desert»: Fuzz → Dirt → Bass Invader → кабинет → Super Fast 100" src="img/14_guitarR_gr7.jpg" loading="lazy"></a><figcaption>Guitar Rig 7 «AD In The Desert»: Fuzz → Dirt → Bass Invader → кабинет → Super Fast 100</figcaption></figure></p>
 <p>Песня: ми-минор, 108 bpm, около 2 минут. Структура: Intro – Verse – Chorus – Verse – Chorus – Bridge – Chorus – Outro, каждая секция — регион REAPER.</p>
-<p>Партии выдаёт Python, а не готовый «AI-генератор» MCP: так видна каждая нота. Две вещи пришлось учесть:</p>
+<p>Партии сочинил Claude и записал нотами прямо в MIDI через Python-скрипт — без специализированных музыкальных генераторов, которые выдают готовый WAV. Поэтому видна и правится каждая нота. Две вещи пришлось учесть:</p>
 <ul>
 <li><strong>Addictive Drums 2 — это не General MIDI.</strong> Нота 42 в GM — закрытый хэт, а в AD2 — сайдстик. Партия пишется сразу в нотах AD2.</li>
 <li><strong>Нижняя нота Ample Guitar — E2.</strong> Drop D (D2) не звучит, поэтому стандартный строй.</li>
@@ -168,7 +172,20 @@
 </tr>
 </tbody>
 </table></div>
-<p>Тома и хэты не трогали: они уже звучали хорошо.</p>
+<p>Что сделано по шагам:</p>
+<ul>
+<li><strong>Причина «механизма».</strong> Все удары дроби шли одной нотой, велосити росла по прямой, шестнадцатые стояли ровно в сетке. На томах звучало живо, потому что удары разнесены по разным барабанам.</li>
+<li><strong>Дробь снейра.</strong> Громкость растёт неравномерно: сначала медленно, к концу быстрее. Ведущая рука бьёт сильнее, первый удар доли с акцентом, плюс случайный разброс. Тихие удары — по краю пластика (Snare Shallow Hit в AD2), громкие — открытым ударом, иногда с форшлагом.</li>
+<li><strong>Подгон.</strong> К концу сбивки барабанщик чуть торопится: отклонения от сетки от −11 до +4 мс вместо нуля.</li>
+<li><strong>Пример.</strong> Перед первым припевом было 86→124 ровной лесенкой, стало <code>102, 73, 87, 87, 115, 99, 115, 122</code>.</li>
+<li><strong>Сбивки.</strong> У каждого припева своя: первый — дробь шестнадцатыми, второй — дробь, уходящая в тома, третий — триоли. Конец бриджа тоже заканчивается томами.</li>
+<li><strong>Дрейф велосити.</strong> Громкость медленно гуляет по фразам, опорная точка раз в два такта: ударные ±6, бас ±7, гитары ±10. В первом припеве средняя велосити гитары по тактам 101–116, в куплете 76–91.</li>
+<li><strong>Аккорд целиком.</strong> Все ноты аккорда получают общий сдвиг ±6, как один удар рукой, и сверху ±2 на каждую ноту.</li>
+<li><strong>Гитарные аккорды.</strong> Струны звучат не в одну точку, а с разносом около 3.5 мс, как при ударе медиатором вниз. Об этом я не просил — Claude предложил сам и пообещал убрать, если не понравится.</li>
+</ul>
+<p>Хэты не трогали: они уже звучали хорошо. Отзыв Claude записал в скилл — следующие демо сразу будут с этим.</p>
+<p>Так это выглядело в диалоге:</p>
+<p><figure><a href="img/19_dialog_humanize.jpg" target="_blank"><img alt="Ответ Claude после «звучит механистически»" src="img/19_dialog_humanize.jpg" loading="lazy"></a><figcaption>Ответ Claude после «звучит механистически»</figcaption></figure></p>
 <h2>3. «Подключи Odin III, без Guitar Rig, на его примочках»</h2>
 <p>Мануала Odin в сети не нашлось. Claude открыл список keyswitch'ей прямо в интерфейсе плагина и снял его со скриншота, а значит, и для меня тоже. Полная таблица — в скилле, в файле <code>ODIN.md</code>.</p>
 <div class="tbl"><table>
@@ -543,6 +560,14 @@
 <ul>
 <li><strong>Провал 400 Гц–1 кГц почти не ушёл.</strong> Эквалайзером его не вытянуть, это тембр гитары: пробовать пресет или звукосниматель Odin.</li>
 <li><strong>Плотность громкости на пределе:</strong> PSR 7.8 при рекомендуемых ≥ 8. Если на слух пережато — убавить склейку или выбрать цель −11 LUFS.</li>
+</ul>
+<h2>От автора</h2>
+<p>На универсальность не претендую — просто показываю свои эксперименты. Может, кому-то пригодится.</p>
+<p>Скиллы и скрипты можно <a href="https://k0t0vich.github.io/stihi/reaper-claude/install.html">скачать комплектом</a>, но «скачал и запустил» может не сработать: у вас другие плагины, пути и версии. Надёжнее отдать папку комплекта самому Claude вместе с промптом-установщиком (он лежит в комплекте, <code>INSTALL-PROMPT.md</code>): Claude проверит, что работает, поставит недостающее, разложит скиллы и спросит, на какие фразы их подключать. Всё собрано под macOS; под Windows промпт просит Claude сначала переписать скрипты и пути под неё.</p>
+<p>Если интересно — подписывайтесь, я тут пощу всякое:</p>
+<ul>
+<li>Telegram: <a href="https://t.me/otryadKotovskaga">Отряд Котовскага</a></li>
+<li>VK: <a href="https://vk.ru/otryad_kotovskaga">vk.ru/otryad_kotovskaga</a></li>
 </ul>
 </article>
 </div>

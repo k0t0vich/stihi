@@ -47,12 +47,14 @@ for name in ('reaper-song', 'reaper-mix', 'reaper-plugins'):
 for f in ('mix_probe.py', 'mix_apply.py', 'mix_calibrate.py', 'rs5k_bass_sampler.lua', 'plugin_scan.py'):
     put(f'scripts/{f}', open(os.path.join(A2M, 'scripts', f), encoding='utf-8').read())
 put('scripts/ad2_keymap.py', open(os.path.join(A2M, 'ad2_keymap.py'), encoding='utf-8').read())
-song = open(os.path.join(A2M, 'scripts', 'reaper_song.py'), encoding='utf-8').read()
+song = open(os.path.join(A2M, 'scripts', 'song_kit.py'), encoding='utf-8').read()
 song = song.replace('from make_project import track_head\nfrom suno_project import fx, col, guid, A2M, BASS_SAMPLES',
                     'from rpp_common import track_head, fx, col, guid, A2M, BASS_SAMPLES')
-assert 'rpp_common' in song, 'импорты reaper_song.py поменялись'
-put('scripts/reaper_song.py', song)
-common = ['"""Общее для reaper_song.py: выжимка из audio2midi (suno_project.py, make_project.py)."""',
+assert 'rpp_common' in song, 'импорты song_kit.py поменялись'
+put('scripts/song_kit.py', song)
+for f in glob.glob(os.path.join(A2M, 'scripts', 'songs', '*.py')):
+    put(f'scripts/songs/{os.path.basename(f)}', open(f, encoding='utf-8').read())
+common = ['"""Общее для song_kit.py: выжимка из audio2midi (suno_project.py, make_project.py)."""',
           'import os, uuid', '',
           "A2M = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))",
           "FXCHAINS = os.path.join(A2M, 'fxchains')",
@@ -67,6 +69,7 @@ shutil.copytree(SP.BASS_SAMPLES, os.path.join(KIT, 'samples-bass-finger'))
 # автозапуск моста MCP в REAPER
 put('mcp/__startup.lua', open(os.path.join(REAPER_SCRIPTS, '__startup.lua'), encoding='utf-8').read())
 shutil.copy(os.path.join(HERE, 'INSTALL.md'), os.path.join(KIT, 'INSTALL.md'))
+shutil.copy(os.path.join(HERE, 'INSTALL-PROMPT.md'), os.path.join(KIT, 'INSTALL-PROMPT.md'))
 
 # архив
 z = os.path.join(HERE, 'reaper-claude-kit.zip')

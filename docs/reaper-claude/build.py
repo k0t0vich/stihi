@@ -38,7 +38,10 @@ def page(title, body, back=''):
 <title>{title}</title>
 <style>
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #333;
+         background-image: repeating-linear-gradient(90deg, #4a4a4a 0 1px, transparent 1px 128px),
+                           repeating-linear-gradient(90deg, #3b3b3b 0 1px, transparent 1px 32px),
+                           repeating-linear-gradient(180deg, transparent 0 83px, #2a2a2a 83px 84px);
          min-height: 100vh; padding: 24px 16px; color: #24243a; line-height: 1.6; }}
   .wrap {{ max-width: 900px; margin: 0 auto; }}
   h1 {{ color: #fff; font-size: 2.1em; line-height: 1.25; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,.2); }}
@@ -61,7 +64,7 @@ def page(title, body, back=''):
   .kit {{ background: #fff8e6; border-radius: 10px; padding: 12px 16px; margin: 0 0 20px; }}
   .back {{ display: inline-block; color: #fff; text-decoration: none; margin-bottom: 16px; opacity: .85; }}
   article pre {{ background: #1e1e2e; color: #e6e6f0; padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }}
-  article pre code {{ background: none; padding: 0; color: inherit; }}
+  article pre code {{ background: none; padding: 0; color: inherit; white-space: pre-wrap; }}
   @media (max-width: 600px) {{ article {{ padding: 18px; }} h1 {{ font-size: 1.6em; }} }}
 </style>
 </head>
@@ -79,9 +82,10 @@ def page(title, body, back=''):
 
 
 open(os.path.join(HERE, 'index.html'), 'w', encoding='utf-8').write(page(title, body))
-inst = open(os.path.join(HERE, 'INSTALL.md'), encoding='utf-8').read()
-open(os.path.join(HERE, 'install.html'), 'w', encoding='utf-8').write(page(
-    inst.splitlines()[0].lstrip('# ').strip(),
-    markdown.markdown(inst.split('\n', 1)[1], extensions=['tables', 'fenced_code']),
-    '<a class="back" href="./">← к статье</a>\n'))
-print('→ index.html, install.html')
+for src, out, back in (('INSTALL.md', 'install.html', '<a class="back" href="./">← к статье</a>\n'),
+                       ('INSTALL-PROMPT.md', 'install-prompt.html', '<a class="back" href="install.html">← к установке</a>\n')):
+    t = open(os.path.join(HERE, src), encoding='utf-8').read()
+    open(os.path.join(HERE, out), 'w', encoding='utf-8').write(page(
+        t.splitlines()[0].lstrip('# ').strip(),
+        markdown.markdown(t.split('\n', 1)[1], extensions=['tables', 'fenced_code']), back))
+print('→ index.html, install.html, install-prompt.html')

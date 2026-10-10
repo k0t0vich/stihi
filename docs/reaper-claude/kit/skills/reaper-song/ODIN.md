@@ -5,7 +5,7 @@
 
 **Keyswitch'и не залипают** (`Keyswitch Latching` = Off): нота-keyswitch должна
 звучать, пока звучат ноты с этим приёмом, и начинаться **раньше** них (в
-`reaper_song.py` на 0.03 доли, без humanize, на одном тике идёт первой).
+`song_kit.py` на 0.03 доли, без humanize, на одном тике идёт первой).
 
 ## Keyswitch'и
 
@@ -54,7 +54,7 @@
 | 7 / 8 / 19 | Guitar 01 / 02 Pan, Pan Link | Odin — сразу дабл L/R (±50) |
 
 Без Guitar Rig: Amp Choice → Rhythm. Шаблон `guitar_odin_gr7` хранит DI под GR7,
-`reaper_song.odin_chain()` берёт из него только Odin.
+`song_kit.odin_chain()` берёт из него только Odin.
 
 ## Что делает `odin_guitar` в демо
 

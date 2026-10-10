@@ -1,4 +1,4 @@
-"""Общее для reaper_song.py: выжимка из audio2midi (suno_project.py, make_project.py)."""
+"""Общее для song_kit.py: выжимка из audio2midi (suno_project.py, make_project.py)."""
 
 import os, uuid
 
