@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Рок демка с нуля, часть 2: вокал. Claude + REAPER + YuE2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #333;
+         background-image: repeating-linear-gradient(90deg, #4a4a4a 0 1px, transparent 1px 128px),
+                           repeating-linear-gradient(90deg, #3b3b3b 0 1px, transparent 1px 32px),
+                           repeating-linear-gradient(180deg, transparent 0 83px, #2a2a2a 83px 84px);
+         min-height: 100vh; padding: 24px 16px; color: #24243a; line-height: 1.6; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { color: #fff; font-size: 2.1em; line-height: 1.25; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,.2); }
+  article { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  article h2 { font-size: 1.45em; margin: 36px 0 12px; color: #4b3a8f; }
+  article h3 { font-size: 1.15em; margin: 24px 0 10px; color: #4b3a8f; }
+  article p, article ul { margin: 10px 0; }
+  article ul { padding-left: 22px; }
+  article code { background: #f1effa; padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .tbl { overflow-x: auto; margin: 14px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .93em; }
+  th, td { border: 1px solid #e3e0f2; padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f4f2fc; }
+  figure { margin: 18px 0; text-align: center; }
+  figure img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+  figcaption { font-size: .85em; color: #777; margin-top: 6px; }
+  .player { background: #f4f2fc; border-radius: 10px; padding: 16px; margin: 20px 0; }
+  .player-title { font-weight: 600; margin-bottom: 8px; color: #4b3a8f; }
+  .player audio { width: 100%; }
+  .kit { background: #fff8e6; border-radius: 10px; padding: 12px 16px; margin: 0 0 20px; }
+  .back { display: inline-block; color: #fff; text-decoration: none; margin-bottom: 16px; opacity: .85; }
+  article pre { background: #1e1e2e; color: #e6e6f0; padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+  article pre code { background: none; padding: 0; color: inherit; white-space: pre-wrap; }
+  @media (max-width: 600px) { article { padding: 18px; } h1 { font-size: 1.6em; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Рок демка с нуля, часть 2: вокал. Claude + REAPER + YuE2</h1>
+<article>
+<p>В <a href="../reaper-claude/">прошлой статье</a> я делал инструментальную композицию с помощью Claude и REAPER и сводил её. Сегодня пойдём дальше — добавим вокал. Для этого я подключил нейросеть YuE2: локально на маке и в облаке на Modal.</p>
+<div class="player"><div class="player-title">🎸 Исходный микс без вокала (из прошлой статьи) · −10 LUFS · 2:00</div>
+<audio controls preload="metadata" src="../reaper-claude/grunge_demo.m4a"></audio>
+<div class="player-title" style="margin-top:12px">🎤 Демо + вокал YuE2 (UVR), подмешан без сведения · 2:00</div>
+<audio controls preload="metadata" src="mix_vocal.m4a"></audio></div>
+<script>document.addEventListener('play', e => document.querySelectorAll('audio').forEach(a => a !== e.target && a.pause()), true);</script>
+<p>Идея такая. YuE2 сама пишет партитуру песни, а потом по ней генерирует звук. Но формат партитуры открытый: можно написать свою и скормить модели только для генерации звука. А у нас уже есть партии баса и гитары, которые написал Claude. Вот пусть он и напишет к ним вокальную партию.</p>
+<h2>Связка инструментов</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Звено</th>
+<th>Что делает</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Claude Code</strong></td>
+<td>смотрит бас и гитары в проекте, сочиняет мелодию вокала, пишет партитуру и промпт, проверяет результат замерами</td>
+</tr>
+<tr>
+<td><strong>REAPER</strong></td>
+<td>проект из прошлой статьи; ноты вокала ложатся туда MIDI-дорожкой с пианино — послушать и поправить руками</td>
+</tr>
+<tr>
+<td><strong>YuE2-3B</strong></td>
+<td>генерация песни по тексту, стилю и партитуре (<a href="https://github.com/multimodal-art-projection/YuE">GitHub</a>, <a href="https://neurohive.io/ru/papers/yue2-nejroset-dlya-sozdaniya-pesen/">обзор на русском</a>)</td>
+</tr>
+<tr>
+<td><strong>Modal</strong></td>
+<td>облако с GPU, YuE2 крутится там на L40S 48 ГБ</td>
+</tr>
+<tr>
+<td><strong>Студия YuE</strong></td>
+<td>мой локальный веб-интерфейс к генерации</td>
+</tr>
+<tr>
+<td><strong>UVR (BS-Roformer)</strong></td>
+<td>достаёт голос из сгенерированной песни</td>
+</tr>
+<tr>
+<td><strong>Скилл <code>yue-score</code></strong></td>
+<td>записанный порядок действий: от стихов до дорожки в REAPER</td>
+</tr>
+</tbody>
+</table></div>
+<h2>Где крутится YuE2</h2>
+<p>Локально YuE2 работает и на маке, но медленно: минута-полторы песни генерируется около 10 минут. Поэтому я завёл её на <a href="https://modal.com">Modal</a> — это облако, где платишь посекундно только за время работы GPU. Код деплоится из Python одной командой, контейнер с моделью сам поднимается на запрос и сам засыпает. На бесплатном тарифе дают 30 долларов в месяц — для экспериментов хватает с запасом. У меня там видеокарта L40S на 48 ГБ.</p>
+<p>Сверху я навайбкодил с помощью Claude студию — веб-морду для генерации. Идея как у Udio, со всеми плюшками:</p>
+<ul>
+<li><strong>короткие демо</strong> — сначала генерируешь кусок на 30–60 секунд, а не всю песню сразу, экономишь время GPU;</li>
+<li><strong>ветвление</strong> — песня растёт деревом: любой кусок можно дописать с любого места, послушать все ветки и выбрать лучшую;</li>
+<li><strong>смена промпта по пути</strong> — продолжение можно делать с тем же или новым текстом и стилем, с той же партитурой или новой;</li>
+<li><strong>лучше для контекста</strong> — песня дописывается кусками, и модель не деградирует к концу песни.</li>
+</ul>
+<p>Ещё можно скормить свою партитуру, сгенерировать сразу целиком и скачать в MP3/M4A.</p>
+<p><figure><a href="img/studio.jpg" target="_blank"><img alt="Студия YuE: дерево вариантов песни и панель продолжения" src="img/studio.jpg" loading="lazy"></a><figcaption>Студия YuE: дерево вариантов песни и панель продолжения</figcaption></figure></p>
+<h2>Партитура YuE2</h2>
+<p>Партитура YuE2 — это текстовый нотный формат ABC: ноты, длительности, аккорды над голосом, секции. Например, первые такты припева «Let it burn, let it fall»:</p>
+<pre><code>% chorus
+V: Vocal
+&quot;Em&quot;z2G2A2B8z2|&quot;C&quot;z2G2A2e8z2|&quot;G&quot;zBd2zd3B2z2A4|&quot;D&quot;A2F8z6|
+</code></pre>
+<p>У формата свой диалект: только определённые длительности, без триолей и форшлагов, фразы группами по 4 такта, мужской голос записан октавой выше, чем звучит. Всё это Claude выяснил по партитурам, которые пишет сама YuE2, и по официальному справочнику, а потом записал в скилл.</p>
+<p>Сама YuE2 пишет довольно квадратно: 4/4, простенькие ритмы. А мне хотелось сложной, интересной мелодики — со сломанными синкопами, сменой размера. Для этого я и дописал скилл.</p>
+<h2>Как это работает</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Шаг</th>
+<th>Кто</th>
+<th>Что происходит</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. стихи и задача</td>
+<td>я</td>
+<td>текст песни, к какому проекту, что хочу от мелодии</td>
+</tr>
+<tr>
+<td>2. гармония</td>
+<td>Claude</td>
+<td>читает из проекта REAPER ноты баса <strong>и</strong> гитар по тактам</td>
+</tr>
+<tr>
+<td>3. мелодия</td>
+<td>Claude</td>
+<td>сочиняет вокал так, чтобы он обыгрывал бас, а не спорил с ним</td>
+</tr>
+<tr>
+<td>4. проверка</td>
+<td>Claude</td>
+<td>валидатор диалекта YuE + интервалы к каждой звучащей ноте баса и гитар; жёстких (малая секунда, тритон, большая септима) на длинных нотах — ноль</td>
+</tr>
+<tr>
+<td>5. ноты в REAPER</td>
+<td>Claude</td>
+<td>мелодия ложится MIDI-дорожкой с пианино, строки текста — подписями, секции — маркерами</td>
+</tr>
+<tr>
+<td>6. правка</td>
+<td>я</td>
+<td>слушаю с группой, двигаю ноты в MIDI-редакторе</td>
+</tr>
+<tr>
+<td>7. обратно в партитуру</td>
+<td>Claude</td>
+<td>забирает правленые ноты из REAPER и переписывает партитуру: аккорды и секции на месте, лиги и знаки расставлены, подсказывает, где поменялось число нот и надо поправить слоги</td>
+</tr>
+<tr>
+<td>8. генерация</td>
+<td>Claude</td>
+<td>партитура + текст + стиль уходят на мой сервер генерации → Modal</td>
+</tr>
+<tr>
+<td>9. голос отдельно</td>
+<td>Claude</td>
+<td>UVR (или Demucs — по усмотрению), при желании ещё чистка от эха отдельным шагом</td>
+</tr>
+<tr>
+<td>10. в проект</td>
+<td>Claude</td>
+<td>голос ложится аудиодорожкой в REAPER ровно под сетку</td>
+</tr>
+</tbody>
+</table></div>
+<p>Приёмы, которыми Claude «обыгрывает» бас, тоже записаны в скилл:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Приём</th>
+<th>Пример</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>вопрос-ответ</td>
+<td>голос поёт, пока бас стоит, и молчит, когда бас ходит</td>
+</tr>
+<tr>
+<td>длинные ноты — терция или квинта аккорда, не тоника</td>
+<td>«burn» — си над ми, «fall» — ми над до</td>
+</tr>
+<tr>
+<td>вводный тон в конце фразы</td>
+<td>ре-диез над си → разрешение в ми в начале следующей</td>
+</tr>
+<tr>
+<td>предъём</td>
+<td>слог перед тактом — уже нотой следующего аккорда</td>
+</tr>
+<tr>
+<td>кульминация</td>
+<td>верх диапазона на сильном аккорде припева: «break» — соль</td>
+</tr>
+</tbody>
+</table></div>
+<p><figure><a href="img/reaper_vocal.jpg" target="_blank"><img alt="Проект в REAPER: ноты вокала пианино-дорожкой и голос YuE после UVR" src="img/reaper_vocal.jpg" loading="lazy"></a><figcaption>Проект в REAPER: ноты вокала пианино-дорожкой и голос YuE после UVR</figcaption></figure></p>
+<h2>Что получилось</h2>
+<p>Сначала Claude сгенерировал кусок в 45 секунд: вступление, куплет, припев. Мне он понравился больше всего, хотя был без паузы перед входом в куплет. Тогда Claude взял его за основу: партитура продолжения начинается с тех же 20 тактов слово в слово, дальше второй куплет, припев, бридж, припев и концовка. Модель дописала песню, слыша свой же кусок, — так голос и звук не меняются на стыке.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Что</th>
+<th>Итог</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>длина</td>
+<td>118 с при партитуре на 120 с — модель идёт по ней и заканчивает сама</td>
+</tr>
+<tr>
+<td>темп</td>
+<td>держит 108 bpm, к концу не уплывает</td>
+</tr>
+<tr>
+<td>входы секций</td>
+<td>на 0.2–0.5 с раньше партитуры, ошибка не накапливается: куплет 2 — 44.3 с вместо 44.7, бридж — 80.9 вместо 81.1</td>
+</tr>
+<tr>
+<td>высота нот (на прошлой пробе)</td>
+<td>точно в ноту — 48%, ±полутон — 60%; тональность в среднем точная (−0.02 полутона)</td>
+</tr>
+<tr>
+<td>ритм нот (на прошлой пробе)</td>
+<td>64% атак в пределах ±150 мс от партитуры</td>
+</tr>
+<tr>
+<td>UVR против Demucs</td>
+<td>UVR чище: группа протекает в голос на 81 дБ ниже голоса против 49 у Demucs</td>
+</tr>
+</tbody>
+</table></div>
+<p>Вокал в плеере ниже просто подмешан к мастеру из прошлой статьи — без сведения, без эквалайзера и компрессии.</p>
+<h2>Что не получилось</h2>
+<p>Чистая а капелла не выходит. Без аккордов модель теряет сетку, а с аккордами всё равно играет группа. Зато «а капелла» у YuE звучит как джаз/фанк с <strong>битбоксом</strong> вместо барабанов — это можно брать как отдельный приём.</p>
+<p>Да, пока есть косяки и со звуком, и с вписыванием: голос местами съезжает с нот, YuE поёт чуть раньше сетки, сам голос с призвуками генерации. Но это даёт прям хорошие возможности по управлению. Можно управлять каждой ноткой, каждой длительностью, менять голоса в партитуре, менять стиль пения — и прочее. Можно взять готовую MIDI-партию, например бас, и дописать к ней мелодию.</p>
+<h2>От автора</h2>
+<p>На универсальность не претендую — просто показываю свои эксперименты. Может, кому-то пригодится.</p>
+<p>PS. Собираюсь завести Boosty и снять ролики по своим изысканиям, а ещё выложить свои скиллы и скрипты для подписчиков. Будет ли вам такое интересно? Пишите.</p>
+<p>Если интересно — подписывайтесь, я тут пощу всякое:</p>
+<ul>
+<li>Telegram: <a href="https://t.me/otryadKotovskaga">Отряд Котовскага</a></li>
+<li>VK: <a href="https://vk.ru/otryad_kotovskaga">vk.ru/otryad_kotovskaga</a></li>
+</ul>
+</article>
+</div>
+</body>
+</html>
