@@ -20,7 +20,9 @@ player = '''<div class="player"><div class="player-title">🎸 Исходный 
 <div class="player-title" style="margin-top:12px">🎤 Демо + вокал YuE2 (UVR), подмешан без сведения · 2:00</div>
 <audio controls preload="metadata" src="mix_vocal.m4a"></audio></div>
 <script>document.addEventListener('play', e => document.querySelectorAll('audio').forEach(a => a !== e.target && a.pause()), true);</script>'''
-body = body.replace('</p>', '</p>\n' + player, 1)
+# плеер — после абзаца про прошлую статью, приветствие идёт выше
+i = body.index('</p>', body.index('Сегодня пойдём дальше')) + 4
+body = body[:i] + '\n' + player + body[i:]
 
 
 def page(title, body, back=''):

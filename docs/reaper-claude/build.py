@@ -26,7 +26,9 @@ player = '''<div class="player"><div class="player-title">🎸 Итоговый 
 <audio controls preload="metadata" src="grunge_demo.m4a"></audio></div>
 <div class="kit">🧰 Скиллы, скрипты и шаблоны из статьи — <a href="install.html">комплект и установка</a>
 · <a href="reaper-claude-kit.zip">reaper-claude-kit.zip</a></div>'''
-body = body.replace('</p>', '</p>\n' + player, 1)
+# плеер — после абзаца «Я написал Claude…», вводные абзацы автора идут выше
+i = body.index('</p>', body.index('Я написал Claude')) + 4
+body = body[:i] + '\n' + player + body[i:]
 
 
 def page(title, body, back=''):
