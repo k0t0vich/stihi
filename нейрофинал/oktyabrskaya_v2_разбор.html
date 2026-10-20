@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>scan_okt2.txt — разбор строф</title>
+<style>
+  :root{
+    --c0:#2a7fb8;   /* безударный  */
+    --c1:#9aa0a6;   /* слабоударный*/
+    --c2:#111;      /* ударный     */
+    --bg:#fff; --fg:#222; --line:#e3e3e3;
+    --cellw:52px;   /* фикс-ширина клетки (~5 симв + пробел) */
+    --cellh:30px;
+  }
+  body{font:14px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--fg);background:var(--bg);margin:24px;}
+  h1{font-size:18px;font-weight:600;margin:0 0 4px;}
+  .sub{color:#888;margin:0 0 20px;}
+  .strofa{margin:0 0 20px;padding:0 0 14px;border-bottom:1px solid var(--line);}
+  .row{display:flex;align-items:center;gap:0;margin:3px 0;flex-wrap:nowrap;overflow-x:auto;}
+  .rownum{flex:0 0 34px;text-align:right;color:#888;font-size:12px;
+          font-variant-numeric:tabular-nums;padding-right:10px;}
+  .cell{position:relative;flex:0 0 var(--cellw);height:var(--cellh);border-radius:3px;margin-right:3px;
+        display:flex;align-items:center;justify-content:center;
+        color:#fff;font-size:13px;white-space:nowrap;overflow:visible;
+        font-family:"Menlo","SF Mono",Consolas,monospace;}
+  .cell .syl{overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  /* хвост знаков (запятая/тире/пробел) — абсолютно, не влияет на ширину клетки */
+  .cell .suf{position:absolute;left:100%;top:0;height:100%;display:flex;align-items:center;
+             color:#999;font-size:12px;padding-left:1px;white-space:pre;pointer-events:none;z-index:1;}
+  .c0{background:var(--c0);} .c1{background:var(--c1);} .c2{background:var(--c2);}
+  .ruler .cell{background:transparent;color:#bbb;font-size:10px;height:16px;}
+  .unkmark{color:#c0392b;font-weight:700;margin-left:6px;}
+  .legend{display:flex;gap:18px;margin-top:8px;font-size:12px;color:#555;flex-wrap:wrap;}
+  .legend .sw{width:16px;height:16px;border-radius:3px;display:inline-block;vertical-align:-3px;margin-right:5px;}
+  .stats{margin-top:16px;font-size:12px;color:#555;background:#fafafa;border:1px solid var(--line);
+         border-radius:6px;padding:10px 12px;}
+  .stats b{color:#222;}
+  .controls{margin:0 0 16px;font-size:13px;color:#555;}
+  .controls input{width:120px;vertical-align:middle;}
+</style>
+</head>
+<body>
+<h1>Разбор строф: scan_okt2.txt</h1>
+<p class="sub">Каждая клетка — слог; фон по ударности: 0 безударный, 1 слабоударный, 2 ударный. Строфы бьются по пустым строкам.</p>
+<div class="controls">
+  Ширина клетки: <input type="range" id="w" min="34" max="80" value="52"> <span id="wv">52px</span>
+</div>
+<div id="root"></div>
+<div class="legend">
+  <span><span class="sw c0"></span>безударный (0)</span>
+  <span><span class="sw c1"></span>слабоударный (1)</span>
+  <span><span class="sw c2"></span>ударный (2)</span>
+</div>
+<div class="stats" id="stats"></div>
+
+<script>
+const DATA = [[{"n": 13, "codes": [1, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0], "text": "Кольцевая на ощупь глотает перроны", "unk": false, "cells": [{"t": "Коль", "suf": "", "c": 1}, {"t": "це", "suf": "", "c": 0}, {"t": "ва", "suf": "", "c": 2}, {"t": "я", "suf": " ", "c": 0}, {"t": "на", "suf": " ", "c": 0}, {"t": "о", "suf": "", "c": 2}, {"t": "щупь", "suf": " ", "c": 0}, {"t": "гло", "suf": "", "c": 0}, {"t": "та", "suf": "", "c": 2}, {"t": "ет", "suf": " ", "c": 0}, {"t": "пер", "suf": "", "c": 0}, {"t": "ро", "suf": "", "c": 2}, {"t": "ны", "suf": "", "c": 0}]}, {"n": 13, "codes": [2, 0, 0, 0, 2, 2, 0, 0, 2, 0, 0, 0, 2], "text": "голод города грохот гудящий по кругу", "unk": false, "cells": [{"t": "го", "suf": "", "c": 2}, {"t": "лод", "suf": " ", "c": 0}, {"t": "го", "suf": "", "c": 0}, {"t": "ро", "suf": "", "c": 0}, {"t": "да", "suf": " ", "c": 2}, {"t": "гро", "suf": "", "c": 2}, {"t": "хот", "suf": " ", "c": 0}, {"t": "гу", "suf": "", "c": 0}, {"t": "дя", "suf": "", "c": 2}, {"t": "щий", "suf": " ", "c": 0}, {"t": "по", "suf": " ", "c": 0}, {"t": "кру", "suf": "", "c": 0}, {"t": "гу", "suf": "", "c": 2}]}, {"n": 14, "codes": [2, 0, 0, 2, 0, 2, 2, 0, 0, 2, 0, 0, 2, 0], "text": "В чёрном стекле твоё платье плывёт по вагону", "unk": true, "cells": [{"t": "В чёр", "suf": "", "c": 2}, {"t": "ном", "suf": " ", "c": 0}, {"t": "стек", "suf": "", "c": 0}, {"t": "ле", "suf": " ", "c": 2}, {"t": "тво", "suf": "", "c": 0}, {"t": "ё", "suf": " ", "c": 2}, {"t": "плат", "suf": "", "c": 2}, {"t": "ье", "suf": " ", "c": 0}, {"t": "плы", "suf": "", "c": 0}, {"t": "вёт", "suf": " ", "c": 2}, {"t": "по", "suf": " ", "c": 0}, {"t": "ва", "suf": "", "c": 0}, {"t": "го", "suf": "", "c": 2}, {"t": "ну", "suf": "", "c": 0}]}, {"n": 16, "codes": [0, 0, 2, 0, 2, 2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0], "text": "и плечо к плечу только пустое по-прежнему рядом", "unk": false, "cells": [{"t": "и", "suf": " ", "c": 0}, {"t": "пле", "suf": "", "c": 0}, {"t": "чо", "suf": " к  ", "c": 2}, {"t": "пле", "suf": "", "c": 0}, {"t": "чу", "suf": " ", "c": 2}, {"t": "толь", "suf": "", "c": 2}, {"t": "ко", "suf": " ", "c": 0}, {"t": "пус", "suf": "", "c": 0}, {"t": "то", "suf": "", "c": 2}, {"t": "е", "suf": " ", "c": 0}, {"t": "по-п", "suf": "", "c": 0}, {"t": "реж", "suf": "", "c": 2}, {"t": "не", "suf": "", "c": 0}, {"t": "му", "suf": " ", "c": 1}, {"t": "ря", "suf": "", "c": 2}, {"t": "дом", "suf": "", "c": 0}]}, {"n": 13, "codes": [1, 0, 1, 0, 0, 2, 2, 0, 2, 0, 0, 0, 2], "text": "Гул да гарь ни конца этой ленте ни края", "unk": false, "cells": [{"t": "Гул", "suf": " ", "c": 1}, {"t": "да", "suf": " ", "c": 0}, {"t": "гарь", "suf": " ", "c": 1}, {"t": "ни", "suf": " ", "c": 0}, {"t": "кон", "suf": "", "c": 0}, {"t": "ца", "suf": " ", "c": 2}, {"t": "э", "suf": "", "c": 2}, {"t": "той", "suf": " ", "c": 0}, {"t": "лен", "suf": "", "c": 2}, {"t": "те", "suf": " ", "c": 0}, {"t": "ни", "suf": " ", "c": 0}, {"t": "кра", "suf": "", "c": 0}, {"t": "я", "suf": "", "c": 2}]}, {"n": 13, "codes": [0, 0, 2, 0, 0, 2, 0, 0, 2, 1, 0, 2, 0], "text": "колея по кольцу колесом укачала", "unk": false, "cells": [{"t": "ко", "suf": "", "c": 0}, {"t": "ле", "suf": "", "c": 0}, {"t": "я", "suf": " ", "c": 2}, {"t": "по", "suf": " ", "c": 0}, {"t": "коль", "suf": "", "c": 0}, {"t": "цу", "suf": " ", "c": 2}, {"t": "ко", "suf": "", "c": 0}, {"t": "ле", "suf": "", "c": 0}, {"t": "сом", "suf": " ", "c": 2}, {"t": "у", "suf": "", "c": 1}, {"t": "ка", "suf": "", "c": 0}, {"t": "ча", "suf": "", "c": 2}, {"t": "ла", "suf": "", "c": 0}]}, {"n": 12, "codes": [0, 0, 2, 1, 0, 2, 2, 0, 2, 0, 0, 2], "text": "Я купил свой жетон в этот вечный притон", "unk": false, "cells": [{"t": "Я", "suf": " ", "c": 0}, {"t": "ку", "suf": "", "c": 0}, {"t": "пил", "suf": " ", "c": 2}, {"t": "свой", "suf": " ", "c": 1}, {"t": "же", "suf": "", "c": 0}, {"t": "тон", "suf": " в  ", "c": 2}, {"t": "э", "suf": "", "c": 2}, {"t": "тот", "suf": " ", "c": 0}, {"t": "веч", "suf": "", "c": 2}, {"t": "ный", "suf": " ", "c": 0}, {"t": "при", "suf": "", "c": 0}, {"t": "тон", "suf": "", "c": 2}]}, {"n": 15, "codes": [0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 2, 0, 2, 0, 1], "text": "и качусь и качусь и качаю в себе этот тон", "unk": false, "cells": [{"t": "и", "suf": " ", "c": 0}, {"t": "ка", "suf": "", "c": 0}, {"t": "чусь", "suf": " ", "c": 2}, {"t": "и", "suf": " ", "c": 0}, {"t": "ка", "suf": "", "c": 0}, {"t": "чусь", "suf": " ", "c": 2}, {"t": "и", "suf": " ", "c": 0}, {"t": "ка", "suf": "", "c": 0}, {"t": "ча", "suf": "", "c": 2}, {"t": "ю", "suf": " в  ", "c": 0}, {"t": "се", "suf": "", "c": 2}, {"t": "бе", "suf": " ", "c": 0}, {"t": "э", "suf": "", "c": 2}, {"t": "тот", "suf": " ", "c": 0}, {"t": "тон", "suf": "", "c": 1}]}], [{"n": 13, "codes": [0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0], "text": "Мы кормили собой этот поезд-воронку", "unk": true, "cells": [{"t": "Мы", "suf": " ", "c": 0}, {"t": "кор", "suf": "", "c": 0}, {"t": "ми", "suf": "", "c": 2}, {"t": "ли", "suf": " ", "c": 0}, {"t": "со", "suf": "", "c": 0}, {"t": "бой", "suf": " ", "c": 2}, {"t": "э", "suf": "", "c": 2}, {"t": "тот", "suf": " ", "c": 0}, {"t": "по", "suf": "", "c": 0}, {"t": "езд-", "suf": "", "c": 0}, {"t": "во", "suf": "", "c": 0}, {"t": "рон", "suf": "", "c": 0}, {"t": "ку", "suf": "", "c": 0}]}, {"n": 13, "codes": [0, 0, 2, 2, 0, 0, 2, 0, 2, 0, 0, 2, 0], "text": "он глотал наши ночи и шёпот и площадь", "unk": true, "cells": [{"t": "он", "suf": " ", "c": 0}, {"t": "гло", "suf": "", "c": 0}, {"t": "тал", "suf": " ", "c": 2}, {"t": "на", "suf": "", "c": 2}, {"t": "ши", "suf": " ", "c": 0}, {"t": "но", "suf": "", "c": 0}, {"t": "чи", "suf": " ", "c": 2}, {"t": "и", "suf": " ", "c": 0}, {"t": "шё", "suf": "", "c": 2}, {"t": "пот", "suf": " ", "c": 0}, {"t": "и", "suf": " ", "c": 0}, {"t": "пло", "suf": "", "c": 2}, {"t": "щадь", "suf": "", "c": 0}]}, {"n": 13, "codes": [1, 0, 2, 0, 0, 2, 0, 0, 2, 2, 0, 2, 0], "text": "разговоры в потёмках теперь еле слышно", "unk": true, "cells": [{"t": "раз", "suf": "", "c": 1}, {"t": "го", "suf": "", "c": 0}, {"t": "во", "suf": "", "c": 2}, {"t": "ры", "suf": " в  ", "c": 0}, {"t": "по", "suf": "", "c": 0}, {"t": "тём", "suf": "", "c": 2}, {"t": "ках", "suf": " ", "c": 0}, {"t": "те", "suf": "", "c": 0}, {"t": "перь", "suf": " ", "c": 2}, {"t": "е", "suf": "", "c": 2}, {"t": "ле", "suf": " ", "c": 0}, {"t": "слыш", "suf": "", "c": 2}, {"t": "но", "suf": "", "c": 0}]}, {"n": 13, "codes": [1, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0], "text": "дым в дубовом эфире почти не колышет", "unk": false, "cells": [{"t": "дым", "suf": " в  ", "c": 1}, {"t": "ду", "suf": "", "c": 0}, {"t": "бо", "suf": "", "c": 2}, {"t": "вом", "suf": " ", "c": 0}, {"t": "э", "suf": "", "c": 0}, {"t": "фи", "suf": "", "c": 2}, {"t": "ре", "suf": " ", "c": 0}, {"t": "поч", "suf": "", "c": 0}, {"t": "ти", "suf": " ", "c": 2}, {"t": "не", "suf": " ", "c": 0}, {"t": "ко", "suf": "", "c": 0}, {"t": "лы", "suf": "", "c": 2}, {"t": "шет", "suf": "", "c": 0}]}, {"n": 13, "codes": [0, 0, 2, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0], "text": "Я держусь за поручень будто за прошлое", "unk": false, "cells": [{"t": "Я", "suf": " ", "c": 0}, {"t": "дер", "suf": "", "c": 0}, {"t": "жусь", "suf": " ", "c": 2}, {"t": "за", "suf": " ", "c": 0}, {"t": "по", "suf": "", "c": 2}, {"t": "ру", "suf": "", "c": 0}, {"t": "чень", "suf": " ", "c": 0}, {"t": "буд", "suf": "", "c": 2}, {"t": "то", "suf": " ", "c": 0}, {"t": "за", "suf": " ", "c": 0}, {"t": "прош", "suf": "", "c": 2}, {"t": "ло", "suf": "", "c": 0}, {"t": "е", "suf": "", "c": 0}]}, {"n": 15, "codes": [0, 0, 2, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0], "text": "за тепло твоих пальцев на промозглой на площади", "unk": false, "cells": [{"t": "за", "suf": " ", "c": 0}, {"t": "теп", "suf": "", "c": 0}, {"t": "ло", "suf": " ", "c": 2}, {"t": "тво", "suf": "", "c": 0}, {"t": "их", "suf": " ", "c": 2}, {"t": "паль", "suf": "", "c": 2}, {"t": "цев", "suf": " ", "c": 0}, {"t": "на", "suf": " ", "c": 0}, {"t": "про", "suf": "", "c": 0}, {"t": "мозг", "suf": "", "c": 2}, {"t": "лой", "suf": " ", "c": 0}, {"t": "на", "suf": " ", "c": 0}, {"t": "пло", "suf": "", "c": 2}, {"t": "ща", "suf": "", "c": 0}, {"t": "ди", "suf": "", "c": 0}]}, {"n": 13, "codes": [1, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 1], "text": "Отраженье в окне мне кивает пора мол", "unk": false, "cells": [{"t": "От", "suf": "", "c": 1}, {"t": "ра", "suf": "", "c": 0}, {"t": "жен", "suf": "", "c": 2}, {"t": "ье", "suf": " в  ", "c": 0}, {"t": "ок", "suf": "", "c": 0}, {"t": "не", "suf": " ", "c": 2}, {"t": "мне", "suf": " ", "c": 0}, {"t": "ки", "suf": "", "c": 0}, {"t": "ва", "suf": "", "c": 2}, {"t": "ет", "suf": " ", "c": 0}, {"t": "по", "suf": "", "c": 0}, {"t": "ра", "suf": " ", "c": 2}, {"t": "мол", "suf": "", "c": 1}]}, {"n": 13, "codes": [0, 0, 2, 2, 0, 2, 0, 1, 2, 0, 0, 0, 2], "text": "но состав тащит талый мой профиль по кругу", "unk": false, "cells": [{"t": "но", "suf": " ", "c": 0}, {"t": "сос", "suf": "", "c": 0}, {"t": "тав", "suf": " ", "c": 2}, {"t": "та", "suf": "", "c": 2}, {"t": "щит", "suf": " ", "c": 0}, {"t": "та", "suf": "", "c": 2}, {"t": "лый", "suf": " ", "c": 0}, {"t": "мой", "suf": " ", "c": 1}, {"t": "про", "suf": "", "c": 2}, {"t": "филь", "suf": " ", "c": 0}, {"t": "по", "suf": " ", "c": 0}, {"t": "кру", "suf": "", "c": 0}, {"t": "гу", "suf": "", "c": 2}]}]];
+
+function render(){
+  const root = document.getElementById('root');
+  let tot={0:0,1:0,2:0}, sizes=[];
+  DATA.forEach(strofa=>{
+    const box=document.createElement('div'); box.className='strofa';
+    strofa.forEach(l=>{
+      sizes.push(l.n);
+      const row=document.createElement('div'); row.className='row';
+      const num=document.createElement('div'); num.className='rownum'; num.textContent=l.n;
+      row.appendChild(num);
+      (l.cells||[]).forEach(cell=>{
+        tot[cell.c]=(tot[cell.c]||0)+1;
+        const d=document.createElement('div'); d.className='cell c'+cell.c;
+        const syl=document.createElement('span'); syl.className='syl'; syl.textContent=cell.t;
+        d.appendChild(syl);
+        if(cell.suf && cell.suf.trim()!==''){
+          const s=document.createElement('span'); s.className='suf'; s.textContent=cell.suf.replace(/\s+$/,'');
+          d.appendChild(s);
+        }
+        d.title=cell.t+(cell.suf||'')+' ['+cell.c+']';
+        row.appendChild(d);
+      });
+      if(l.unk){const u=document.createElement('span');u.className='unkmark';u.textContent='?';u.title='есть слова не из словаря';row.appendChild(u);}
+      box.appendChild(row);
+    });
+    root.appendChild(box);
+  });
+  const sum=tot[0]+tot[1]+tot[2];
+  const uniq=[...new Set(sizes)].sort((a,b)=>a-b);
+  const reg = uniq.length<=2 ? 'регулярный' : 'скачет';
+  document.getElementById('stats').innerHTML =
+    `Строф: <b>${DATA.length}</b>. Размеры строк: <b>${uniq.join(', ')}</b> (${reg}).<br>`+
+    `Слоги: безударные <b>${tot[0]||0}</b>, слабоударные <b>${tot[1]||0}</b> `+
+    `(${Math.round(100*(tot[1]||0)/Math.max(sum,1))}%), ударные <b>${tot[2]||0}</b>. `+
+    `Норма слабоударных ~20–25%.`;
+}
+render();
+
+// регулятор ширины клетки
+const w=document.getElementById('w'), wv=document.getElementById('wv');
+w.addEventListener('input',()=>{document.documentElement.style.setProperty('--cellw',w.value+'px');wv.textContent=w.value+'px';});
+</script>
+</body>
+</html>

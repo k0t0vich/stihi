@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>posledniy_vagon_v15.txt — разбор строф</title>
+<style>
+  :root{
+    --c0:#2a7fb8;   /* безударный  */
+    --c1:#9aa0a6;   /* слабоударный*/
+    --c2:#111;      /* ударный     */
+    --bg:#fff; --fg:#222; --line:#e3e3e3;
+  }
+  body{font:14px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--fg);background:var(--bg);margin:24px;}
+  h1{font-size:18px;font-weight:600;margin:0 0 4px;}
+  .sub{color:#888;margin:0 0 20px;}
+  .strofa{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;align-items:center;
+          margin:0 0 22px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .num{justify-self:end;color:#888;font-variant-numeric:tabular-nums;font-size:12px;}
+  .cells{display:flex;gap:3px;align-items:center;}
+  .cell{width:22px;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;
+        color:#fff;font-size:11px;font-weight:600;flex:0 0 auto;}
+  .c0{background:var(--c0);} .c1{background:var(--c1);} .c2{background:var(--c2);}
+  .line-text{grid-column:2;color:#333;font-size:13px;margin:-2px 0 6px;}
+  .line-text.unk::after{content:" ?";color:#c0392b;font-weight:700;}
+  .ruler{display:flex;gap:3px;margin-left:0;}
+  .ruler .cell{background:transparent;color:#bbb;font-size:10px;}
+  .legend{display:flex;gap:18px;margin-top:8px;font-size:12px;color:#555;flex-wrap:wrap;}
+  .legend .cell{width:16px;height:16px;}
+  .stats{margin-top:16px;font-size:12px;color:#555;background:#fafafa;border:1px solid var(--line);
+         border-radius:6px;padding:10px 12px;}
+  .stats b{color:#222;}
+</style>
+</head>
+<body>
+<h1>Разбор строф: posledniy_vagon_v15.txt</h1>
+<p class="sub">0 — безударный, 1 — слабоударный, 2 — ударный слог. Строфы бьются по пустым строкам.</p>
+<div id="root"></div>
+<div class="legend">
+  <span><span class="cell c0"></span> безударный (0)</span>
+  <span><span class="cell c1"></span> слабоударный (1)</span>
+  <span><span class="cell c2"></span> ударный (2)</span>
+</div>
+<div class="stats" id="stats"></div>
+
+<script>
+const DATA = [[{"n": 11, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0], "text": "Тысячи окон продрогли, промокли,", "unk": false}, {"n": 11, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0], "text": "в каждом — потёмки, ни искры, ни проку,", "unk": true}, {"n": 11, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0], "text": "в каждом мерцает бессменно, без срока", "unk": false}, {"n": 11, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0], "text": "кто-то, увязший в бессоннице, скомкан.", "unk": false}], [{"n": 14, "codes": [2, 0, 0, 2, 0, 1, 0, 2, 0, 2, 1, 0, 2, 0], "text": "В сотах бетонных, где морок в чужом шевелится,", "unk": false}, {"n": 15, "codes": [2, 0, 0, 2, 0, 1, 1, 1, 0, 2, 0, 1, 2, 0, 0], "text": "город ворочает хмарь, задыхается, стелется.", "unk": false}, {"n": 14, "codes": [1, 1, 0, 2, 0, 1, 0, 1, 0, 2, 0, 2, 0, 0], "text": "Свет — фиолетовая, ледяная изморозь,", "unk": false}, {"n": 15, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0], "text": "стёкла тоннеля глаза мертвецам повылизали.", "unk": true}], [{"n": 16, "codes": [0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 0, 0, 2], "text": "Но чёрным окном под ребро мне толкается зарево —", "unk": true}, {"n": 16, "codes": [1, 0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 0, 1, 0, 2, 0], "text": "Твой силуэт из весны, будто рана, не заживает.", "unk": false}], [{"n": 14, "codes": [0, 2, 0, 0, 2, 0, 0, 0, 1, 0, 2, 0, 0, 2], "text": "Ты — пятнышко тёплое на запотевшем стекле,", "unk": true}, {"n": 15, "codes": [1, 0, 2, 0, 0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1], "text": "Свет из-под чьих-то плечей, из-под общей унылости.", "unk": true}, {"n": 17, "codes": [0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 1, 0, 2, 0, 0], "text": "Не сберёг, не сумел, но и намертво не отпускаю я,", "unk": true}, {"n": 18, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 2, 2, 0, 0, 2, 0, 1, 2, 0, 0], "text": "Чёрным тоннелем везу тебя — самой последнею памятью.", "unk": true}], [{"n": 18, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0], "text": "Тёплое марево, тёмное зеркало, город-ловушечка,", "unk": true}, {"n": 16, "codes": [2, 0, 0, 0, 0, 0, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0], "text": "Люди под наволкой наушников тонут, наслушавшись.", "unk": true}, {"n": 17, "codes": [0, 0, 2, 0, 1, 1, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1], "text": "Ты — единственный кадр, что не выцвел, не стёрся, не скомкан весь,", "unk": true}, {"n": 17, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 2, 2, 0, 1, 1, 0, 2, 2, 0], "text": "Стынет вагон, а внутри — твоё лето, твой смех, твоя громкость.", "unk": true}], [{"n": 13, "codes": [0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0], "text": "Мы были случайной пометкой на скатерти,", "unk": false}, {"n": 13, "codes": [0, 2, 0, 1, 2, 0, 0, 2, 0, 0, 2, 0, 1], "text": "недопитым наспех, забытым, растраченным,", "unk": false}, {"n": 13, "codes": [0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0], "text": "свиданьем, что таяло где-то за завтраком,", "unk": false}, {"n": 13, "codes": [0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 1], "text": "за птицами, за суетой, за трамвайчиком.", "unk": false}], [{"n": 14, "codes": [1, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0], "text": "В шарф ты ныряла по кончик озябшего носа,", "unk": false}, {"n": 14, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0], "text": "хмуро сипела: «Останься, чудак, вот заноза».", "unk": false}, {"n": 16, "codes": [0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0, 1, 0, 2, 0], "text": "Я, будто бы ставень, в промёрзшую раму заколочен,", "unk": true}, {"n": 14, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0], "text": "мямлил, что рано, что тесно, что скоро уж полночь.", "unk": false}], [{"n": 18, "codes": [0, 0, 0, 2, 0, 0, 2, 0, 0, 2, 1, 0, 2, 0, 0, 2, 0, 1], "text": "Ты бы напиться дала мне глотка, ну хотя бы немножечко,", "unk": false}, {"n": 18, "codes": [0, 0, 0, 2, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0], "text": "Я разменял тебя на тишину да пустую обложечку.", "unk": true}], [{"n": 18, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0], "text": "Тёплое марево, тёмное зеркало, город-ловушечка,", "unk": true}, {"n": 16, "codes": [2, 0, 0, 0, 0, 0, 0, 2, 0, 1, 2, 0, 0, 0, 0, 0], "text": "Люди под наволкой наушников тонут, наслушавшись.", "unk": true}, {"n": 17, "codes": [0, 0, 2, 0, 1, 1, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1], "text": "Ты — единственный кадр, что не выцвел, не стёрся, не скомкан весь,", "unk": true}, {"n": 17, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 2, 2, 0, 1, 1, 0, 2, 2, 0], "text": "Стынет вагон, а внутри — твоё лето, твой смех, твоя громкость.", "unk": true}], [{"n": 10, "codes": [0, 2, 0, 2, 2, 0, 0, 2, 0, 1], "text": "Апрель тогда плавил проталины,", "unk": false}, {"n": 11, "codes": [0, 0, 1, 0, 2, 0, 0, 1, 0, 2, 0], "text": "А мы разбежались вполоборота:", "unk": false}, {"n": 13, "codes": [0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0], "text": "Ты — в улицу, я — в турникетные ворота,", "unk": true}, {"n": 9, "codes": [0, 2, 0, 1, 2, 0, 0, 2, 0], "text": "В подземные, гулкие спальни.", "unk": false}], [{"n": 14, "codes": [0, 2, 0, 0, 2, 1, 0, 2, 0, 0, 2, 0, 0, 2], "text": "Ты, вскинув ладонь, растворилась в бегущих плащах,", "unk": false}, {"n": 14, "codes": [0, 1, 0, 0, 2, 0, 0, 0, 2, 0, 2, 0, 0, 2], "text": "я всё горевал у ступеней, в бетонных ключах.", "unk": false}, {"n": 14, "codes": [2, 0, 1, 2, 0, 0, 2, 0, 0, 2, 0, 1, 2, 0], "text": "Контур твой таял в проулке крупинкою в чае,", "unk": false}, {"n": 15, "codes": [0, 2, 0, 0, 2, 1, 0, 2, 0, 0, 2, 0, 0, 0, 0], "text": "я канул в тоннель, задыхаясь, ослепший, отчаясь.", "unk": true}], [{"n": 20, "codes": [2, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0], "text": "Больше ни отклика, ни огонька — постарел, зачерствел, поседел я,", "unk": false}, {"n": 18, "codes": [0, 2, 0, 0, 2, 0, 1, 1, 1, 0, 2, 0, 1, 2, 0, 0, 2, 0], "text": "Но каждый тоннель до сих пор окликает сквозь бельма и время.", "unk": false}], [{"n": 14, "codes": [0, 2, 0, 0, 2, 0, 0, 0, 1, 0, 2, 0, 0, 2], "text": "Ты — пятнышко тёплое на запотевшем стекле,", "unk": true}, {"n": 15, "codes": [1, 0, 2, 0, 0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1], "text": "Свет из-под чьих-то плечей, из-под общей унылости.", "unk": true}, {"n": 17, "codes": [0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 1, 0, 2, 0, 0], "text": "Не сберёг, не сумел, но и намертво не отпускаю я,", "unk": true}, {"n": 18, "codes": [2, 0, 0, 2, 0, 0, 2, 0, 2, 2, 0, 0, 2, 0, 1, 2, 0, 0], "text": "Чёрным тоннелем везу тебя — самой последнею памятью.", "unk": true}]];
+
+function maxLen(strofa){return Math.max(...strofa.map(l=>l.codes.length),0);}
+
+function render(){
+  const root = document.getElementById('root');
+  let tot={0:0,1:0,2:0}, sizes=[];
+  DATA.forEach((strofa,si)=>{
+    const box=document.createElement('div'); box.className='strofa';
+    // линейка номеров слогов сверху
+    const ml=maxLen(strofa);
+    const rNum=document.createElement('div'); rNum.className='num'; rNum.textContent='';
+    const ruler=document.createElement('div'); ruler.className='cells ruler';
+    for(let i=1;i<=ml;i++){const c=document.createElement('div');c.className='cell';c.textContent=(i%10);ruler.appendChild(c);}
+    box.appendChild(rNum); box.appendChild(ruler);
+    // строки
+    strofa.forEach(l=>{
+      sizes.push(l.n);
+      const num=document.createElement('div'); num.className='num'; num.textContent=l.n;
+      const cells=document.createElement('div'); cells.className='cells';
+      l.codes.forEach(code=>{
+        tot[code]=(tot[code]||0)+1;
+        const c=document.createElement('div'); c.className='cell c'+code; c.textContent=code; cells.appendChild(c);
+      });
+      box.appendChild(num); box.appendChild(cells);
+      const txt=document.createElement('div'); txt.className='line-text'+(l.unk?' unk':''); txt.textContent=l.text;
+      box.appendChild(txt);
+    });
+    root.appendChild(box);
+  });
+  // статистика
+  const sum=tot[0]+tot[1]+tot[2];
+  const uniq=[...new Set(sizes)].sort((a,b)=>a-b);
+  const reg = uniq.length<=2 ? 'регулярный' : 'скачет';
+  document.getElementById('stats').innerHTML =
+    `Строф: <b>${DATA.length}</b>. Размеры строк: <b>${uniq.join(', ')}</b> (${reg}).<br>`+
+    `Слоги: безударные <b>${tot[0]||0}</b>, слабоударные <b>${tot[1]||0}</b> `+
+    `(${Math.round(100*(tot[1]||0)/Math.max(sum,1))}%), ударные <b>${tot[2]||0}</b>. `+
+    `Норма слабоударных ~20–25%.`;
+}
+render();
+</script>
+</body>
+</html>

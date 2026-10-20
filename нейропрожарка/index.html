@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Нейропрожарка — оценки</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2d3348;
+      --text: #e8eaef;
+      --muted: #8b92a8;
+      --ai: #6b9fff;
+      --mine: #ff8c5a;
+      --accent: #c45cff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding: 1.5rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    button:hover { border-color: var(--accent); }
+    .wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th, td {
+      padding: 0.55rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th {
+      background: #222633;
+      font-weight: 600;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+    .num { text-align: center; width: 2.5rem; color: var(--muted); }
+    .title-cell { min-width: 14rem; }
+    .full-title {
+      font-weight: 500;
+    }
+    .parts {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+    .verdict {
+      max-width: 22rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .scores {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+      justify-content: center;
+      min-width: 11rem;
+    }
+    .score-box {
+      flex: 1;
+      text-align: center;
+      padding: 0.35rem 0.5rem;
+      border-radius: 8px;
+      min-width: 4.5rem;
+    }
+    .score-box.ai {
+      background: rgba(107, 159, 255, 0.12);
+      border: 1px solid rgba(107, 159, 255, 0.35);
+    }
+    .score-box.mine {
+      background: rgba(255, 140, 90, 0.12);
+      border: 1px solid rgba(255, 140, 90, 0.35);
+    }
+    .score-box .label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.2rem;
+    }
+    .score-box.ai .label { color: var(--ai); }
+    .score-box.mine .label { color: var(--mine); }
+    .score-box .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .score-box.ai .value { color: var(--ai); }
+    .score-box.mine input {
+      width: 3.2rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: var(--mine);
+      font-variant-numeric: tabular-nums;
+      -moz-appearance: textfield;
+    }
+    .score-box.mine input::-webkit-outer-spin-button,
+    .score-box.mine input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .score-box.mine input:focus {
+      outline: 1px solid var(--mine);
+      border-radius: 4px;
+    }
+    .score-box.na .value {
+      font-size: 1rem;
+      color: var(--muted);
+    }
+    .diff {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      min-width: 3rem;
+    }
+    .diff.pos { color: #6bcf8a; }
+    .diff.neg { color: #ff6b7a; }
+    th.scores-head { text-align: center; }
+    .saved {
+      font-size: 0.8rem;
+      color: #6bcf8a;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .saved.show { opacity: 1; }
+
+    .hidden-ai .value { filter: blur(8px); user-select: none; pointer-events: none; }
+    .hidden-ai .label::after { content: ' 🔒'; font-size: 0.7rem; }
+    .verdict.hidden-verdict { filter: blur(6px); user-select: none; }
+    .diff.hidden-diff { visibility: hidden; }
+
+    .chart-section {
+      margin-top: 2rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      padding: 1.25rem;
+    }
+    .chart-section h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+    }
+    .chart-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.35rem;
+      height: 220px;
+      padding-bottom: 1.8rem;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+    }
+    .chart-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .chart-bars {
+      display: flex;
+      gap: 2px;
+      align-items: flex-end;
+      width: 100%;
+      justify-content: center;
+      flex: 1;
+    }
+    .chart-bar {
+      width: 16px;
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      transition: height 0.4s ease;
+      position: relative;
+    }
+    .chart-bar.ai-bar { background: var(--ai); opacity: 0.85; }
+    .chart-bar.mine-bar { background: var(--mine); opacity: 0.85; }
+    .chart-bar.locked { background: var(--border); opacity: 0.4; }
+    .chart-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 4.5rem;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 1.2rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+    }
+    .chart-legend span::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .legend-ai::before { background: var(--ai); }
+    .legend-mine::before { background: var(--mine); }
+  </style>
+</head>
+<body>
+  <h1>Нейропрожарка</h1>
+  <p class="sub">Две колонки оценок: от ИИ-рецензии и ваши (сохраняются в браузере).</p>
+
+  <div class="toolbar">
+    <button type="button" id="btnReset">Сбросить мои оценки в 0</button>
+    <button type="button" id="btnExport">Скопировать мои оценки (TSV)</button>
+    <span class="saved" id="savedHint">Сохранено</span>
+  </div>
+
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="num">№</th>
+          <th>Название (транскрипт)</th>
+          <th class="verdict">Вывод</th>
+          <th class="scores-head" colspan="1">Оценки / 100</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="chart-section">
+    <h2>Диаграмма оценок</h2>
+    <div class="chart-wrap" id="chartWrap"></div>
+    <div class="chart-legend">
+      <span class="legend-ai">ИИ</span>
+      <span class="legend-mine">Моя</span>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'nejroprozharka_my_scores_v1';
+
+    const TRACKS = [
+      { id: '01', artist: 'Андрей Молотов', group: 'NOTAUTOR', track: 'Ритуал', ai: 41, verdict: 'Бледная копия пост-панка: штампы в тексте, ноль индивидуальности.' },
+      { id: '02', artist: 'Sergey', group: 'ⓈⓃⓈ𝕠𝕦𝕟𝕕', track: 'Midnight dancer', ai: null, verdict: 'Рецензия в файле отсутствует.' },
+      { id: '03', artist: 'Кирилл', group: 'bdboom', track: 'Контроль', ai: 46, verdict: 'Вторичный инди-электро, банальные «неон» и «контроль».' },
+      { id: '04', artist: 'Mertvetzky', group: 'Изабелло-Кадарко', track: 'Вишенка', ai: 63, verdict: 'Кабаре-рок: духовая секция тащит, текст слабый.' },
+      { id: '05', artist: 'Максим Яшин', group: 'chipperforge', track: 'Тёмный лес', ai: 35, verdict: 'Ню-метал по шаблону, клише и ИИ-звук.' },
+      { id: '06', artist: 'Roman', group: 'Vita Nostra', track: 'Шляпных дел мастер', ai: 61, verdict: '«Алиса в хрущёвке»' },
+      { id: '07', artist: 'Никита Комаров', group: 'DisturberDevil', track: 'Ярость', ai: 44, verdict: 'Киберпанк-метал без идей, клише неон/бетон.' },
+      { id: '08', artist: 'Илья Дорожкин', group: 'девять грамм оптимизма', track: 'Тролль!', ai: 39, verdict: 'Мем-кор про тролля: заедает, слабые рифмы и звук.' },
+      { id: '09', artist: 'katharsys', group: '—', track: 'puppy girl', ai: 31, verdict: 'Пустой ИИ-поп, ноль смысла.' },
+      { id: '10', artist: 'Мон Романовский', group: 'Китано', track: 'Олег Биткраш', ai: 38, verdict: 'Мем про айтишника, нейросетевой фастфуд.' },
+      { id: '11', artist: 'Андрей Угренюк', group: 'UGRENYUK', track: 'Мы всё проебали', ai: 31, verdict: 'Паразит на меме Гагарина, без оригинальности.' },
+      { id: '12', artist: 'Максим Дикарев', group: 'БалАкирь', track: 'Птичье царство', ai: 61, verdict: 'Аллегория про воронов, минус ИИ-вокал.' },
+      { id: '13', artist: 'Вадим Бартуков', group: 'MC скачать', track: 'Полина', ai: 37, verdict: 'Кибер-треш: мем ок, как трек слабый.' },
+    ];
+
+    /** Собирает читаемое «транскрипт» названия: Исполнитель — Группа — Трек */
+    function transcribeName(t) {
+      const g = t.group && t.group !== '—' ? t.group : '';
+      const parts = [t.artist, g, t.track].filter(Boolean);
+      return parts.join(' — ');
+    }
+
+    function loadScores() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return {};
+        return JSON.parse(raw);
+      } catch {
+        return {};
+      }
+    }
+
+    function saveScores(scores) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+      const hint = document.getElementById('savedHint');
+      hint.classList.add('show');
+      clearTimeout(hint._t);
+      hint._t = setTimeout(() => hint.classList.remove('show'), 1200);
+    }
+
+    function defaultMine() {
+      const o = {};
+      TRACKS.forEach(t => { o[t.id] = 0; });
+      return o;
+    }
+
+    let myScores = { ...defaultMine(), ...loadScores() };
+    TRACKS.forEach(t => {
+      if (myScores[t.id] === undefined || myScores[t.id] === '') myScores[t.id] = 0;
+    });
+
+    function clampScore(v) {
+      if (v === '' || v === null || isNaN(v)) return 0;
+      return Math.max(0, Math.min(100, Math.round(Number(v))));
+    }
+
+    function renderDiff(ai, mine, hidden) {
+      if (ai == null) return `<span class="diff${hidden ? ' hidden-diff' : ''}">—</span>`;
+      const d = mine - ai;
+      const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : '';
+      const sign = d > 0 ? '+' : '';
+      return `<span class="diff ${cls}${hidden ? ' hidden-diff' : ''}">${sign}${d}</span>`;
+    }
+
+    function isRevealed(id) {
+      return myScores[id] > 0;
+    }
+
+    function renderRow(t) {
+      const mine = clampScore(myScores[t.id]);
+      const revealed = isRevealed(t.id);
+      const aiDisplay = t.ai == null ? '—' : t.ai;
+      const aiClass = t.ai == null ? ' na' : '';
+      const hiddenAi = !revealed ? ' hidden-ai' : '';
+      const hiddenVerdict = !revealed ? ' hidden-verdict' : '';
+      const hiddenDiff = !revealed ? ' hidden-diff' : '';
+
+      return `<tr data-id="${t.id}">
+        <td class="num">${t.id}</td>
+        <td class="title-cell">
+          <div class="full-title">${escapeHtml(transcribeName(t))}</div>
+          <div class="parts">${escapeHtml(t.artist)} · ${escapeHtml(t.group)} · ${escapeHtml(t.track)}</div>
+        </td>
+        <td class="verdict${hiddenVerdict}">${escapeHtml(t.verdict)}</td>
+        <td>
+          <div class="scores">
+            <div class="score-box ai${aiClass}${hiddenAi}">
+              <div class="label">ИИ</div>
+              <div class="value">${aiDisplay}</div>
+            </div>
+            <div class="score-box mine">
+              <div class="label">Моя</div>
+              <input type="number" min="0" max="100" step="1" value="${mine}"
+                aria-label="Моя оценка ${transcribeName(t)}"
+                data-id="${t.id}">
+            </div>
+            ${renderDiff(t.ai, mine, !revealed)}
+          </div>
+        </td>
+      </tr>`;
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function renderChart() {
+      const wrap = document.getElementById('chartWrap');
+      if (!wrap) return;
+      const maxVal = 100;
+      const barHeight = 190;
+      wrap.innerHTML = TRACKS.map(t => {
+        const mine = clampScore(myScores[t.id]);
+        const revealed = isRevealed(t.id);
+        const mineH = (mine / maxVal) * barHeight;
+        const aiH = t.ai != null ? (t.ai / maxVal) * barHeight : 0;
+        const aiBar = revealed && t.ai != null
+          ? `<div class="chart-bar ai-bar" style="height:${aiH}px" title="ИИ: ${t.ai}"></div>`
+          : `<div class="chart-bar locked" style="height:20px" title="Поставьте оценку"></div>`;
+        const mineBar = mine > 0
+          ? `<div class="chart-bar mine-bar" style="height:${mineH}px" title="Моя: ${mine}"></div>`
+          : `<div class="chart-bar mine-bar" style="height:2px"></div>`;
+        return `<div class="chart-group">
+          <div class="chart-bars">${aiBar}${mineBar}</div>
+          <div class="chart-label">${t.id}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function render() {
+      document.getElementById('tbody').innerHTML = TRACKS.map(renderRow).join('');
+      bindInputs();
+      renderChart();
+    }
+
+    function bindInputs() {
+      document.querySelectorAll('.score-box.mine input').forEach(inp => {
+        inp.addEventListener('change', onScoreCommit);
+        inp.addEventListener('input', onScoreLive);
+      });
+    }
+
+    function onScoreLive(e) {
+      const id = e.target.dataset.id;
+      let raw = Number(e.target.value);
+      const row = e.target.closest('tr');
+      if (!isNaN(raw) && raw > 100) {
+        raw = 100;
+        e.target.value = 100;
+      }
+      if (raw > 0 && !isNaN(raw)) {
+        setRowRevealed(row, true);
+        myScores[id] = clampScore(raw);
+      } else {
+        setRowRevealed(row, false);
+        myScores[id] = 0;
+      }
+      renderChart();
+    }
+
+    function setRowRevealed(row, show) {
+      const aiBox = row.querySelector('.score-box.ai');
+      const verdictCell = row.querySelector('.verdict');
+      const diffEl = row.querySelector('.diff');
+      if (aiBox) aiBox.classList.toggle('hidden-ai', !show);
+      if (verdictCell) verdictCell.classList.toggle('hidden-verdict', !show);
+      if (diffEl) diffEl.classList.toggle('hidden-diff', !show);
+    }
+
+    function onScoreCommit(e) {
+      const id = e.target.dataset.id;
+      myScores[id] = clampScore(e.target.value);
+      e.target.value = myScores[id];
+      saveScores(myScores);
+      const row = e.target.closest('tr');
+      const t = TRACKS.find(x => x.id === id);
+      const revealed = isRevealed(id);
+
+      const aiBox = row.querySelector('.score-box.ai');
+      if (aiBox) {
+        if (revealed) aiBox.classList.remove('hidden-ai');
+        else aiBox.classList.add('hidden-ai');
+      }
+      const verdictCell = row.querySelector('.verdict');
+      if (verdictCell) {
+        if (revealed) verdictCell.classList.remove('hidden-verdict');
+        else verdictCell.classList.add('hidden-verdict');
+      }
+
+      const diffEl = row.querySelector('.diff');
+      if (diffEl && t) {
+        if (!revealed) {
+          diffEl.classList.add('hidden-diff');
+        } else {
+          diffEl.classList.remove('hidden-diff');
+          const mine = myScores[id];
+          if (t.ai == null) {
+            diffEl.outerHTML = '<span class="diff">—</span>';
+          } else {
+            const d = mine - t.ai;
+            const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : '';
+            const sign = d > 0 ? '+' : '';
+            diffEl.className = `diff ${cls}`.trim();
+            diffEl.textContent = `${sign}${d}`;
+          }
+        }
+      }
+      renderChart();
+    }
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      if (!confirm('Обнулить все ваши оценки?')) return;
+      myScores = defaultMine();
+      saveScores(myScores);
+      render();
+    });
+
+    document.getElementById('btnExport').addEventListener('click', () => {
+      const lines = ['№\tНазвание\tИИ\tМоя\tΔ'];
+      TRACKS.forEach(t => {
+        const mine = clampScore(myScores[t.id]);
+        const ai = t.ai == null ? '' : t.ai;
+        const delta = t.ai == null ? '' : mine - t.ai;
+        lines.push([t.id, transcribeName(t), ai, mine, delta].join('\t'));
+      });
+      navigator.clipboard.writeText(lines.join('\n')).then(() => {
+        alert('Таблица скопирована в буфер (TSV).');
+      }).catch(() => {
+        prompt('Скопируйте вручную:', lines.join('\n'));
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>
