@@ -44,7 +44,7 @@
 <h1>Рэп-критик: разбор текста</h1>
 <article>
 <p>Соберите промпт для разбора рэп-текста: смысл, образы, впечатление и оценки, а затем рифмы, ритм и клише. Получите разбор с примерами из текста.</p>
-<div class="note">Промпт собирается в браузере. При открытии ChatGPT или Claude он передаётся выбранному сервису в ссылке; ChatGPT может сразу начать ответ. Для DeepSeek и Gemini вставьте скопированный промпт вручную.</div>
+<div class="note">Промпт собирается в браузере. Он слишком длинный для передачи в ссылке, поэтому его нужно вставить в чат вручную.</div>
 <h2>Подготовить промпт</h2>
 <div class="settings">
   <label for="tone">Тон критика
@@ -59,18 +59,13 @@
 <label for="context">Контекст и пожелания <span style="font-weight:400">необязательно</span></label>
 <textarea class="context" id="context" placeholder="Например, жанр, задумка или вопросы к критику"></textarea>
 <div class="btns"><button id="copy" type="button">Копировать промпт</button></div>
-<p>Открыть с промптом:</p>
-<div class="btns" role="group" aria-label="Открыть чат с промптом">
-  <button class="ghost" type="button" data-chat="chatgpt">ChatGPT</button>
-  <button class="ghost" type="button" data-chat="claude">Claude</button>
-</div>
-<p>Промпт также скопируется. Если чат не примет длинную ссылку, откройте пустой чат и вставьте его вручную.</p>
-<p>Скопировать промпт и открыть чат:</p>
+<p>Выберите чат: промпт скопируется, а чат откроется в новой вкладке. Вставьте промпт через Ctrl+V или Cmd+V и отправьте.</p>
 <div class="btns" role="group" aria-label="Скопировать промпт и открыть чат">
-  <button class="ghost" type="button" data-chat="deepseek">DeepSeek</button>
-  <button class="ghost" type="button" data-chat="gemini">Gemini</button>
+  <button class="ghost" type="button" data-chat="chatgpt">Скопировать и открыть ChatGPT</button>
+  <button class="ghost" type="button" data-chat="claude">Скопировать и открыть Claude</button>
+  <button class="ghost" type="button" data-chat="deepseek">Скопировать и открыть DeepSeek</button>
+  <button class="ghost" type="button" data-chat="gemini">Скопировать и открыть Gemini</button>
 </div>
-<p>Для DeepSeek и Gemini вставьте промпт в открывшемся чате.</p>
 <p id="status" role="status" aria-live="polite"></p>
 <details id="preview"><summary>Показать промпт</summary><pre id="prompt"></pre></details>
 <h2>Скилл для агента</h2>
@@ -98,9 +93,9 @@ const update = () => { promptView.textContent = makePrompt(); };
 [lyrics, context, tone, depth].forEach(el => el.addEventListener('input', update));
 update();
 const chats = {
-  chatgpt: { name: 'ChatGPT', url: 'https://chatgpt.com/', direct: true },
+  chatgpt: { name: 'ChatGPT', url: 'https://chatgpt.com/' },
   deepseek: { name: 'DeepSeek', url: 'https://chat.deepseek.com/' },
-  claude: { name: 'Claude', url: 'https://claude.ai/new', direct: true },
+  claude: { name: 'Claude', url: 'https://claude.ai/new' },
   gemini: { name: 'Gemini', url: 'https://gemini.google.com/app' }
 };
 const showManualCopy = (prompt = makePrompt()) => {
@@ -121,12 +116,6 @@ document.querySelectorAll('[data-chat]').forEach(button => {
   button.addEventListener('click', async () => {
     const chat = chats[button.dataset.chat];
     const prompt = makePrompt();
-    let destination;
-    try {
-      destination = chat.direct ? chat.url + '?q=' + encodeURIComponent(prompt) : chat.url;
-    } catch {
-      destination = null;
-    }
     let copy;
     try {
       copy = navigator.clipboard.writeText(prompt);
@@ -135,7 +124,7 @@ document.querySelectorAll('[data-chat]').forEach(button => {
     }
     let tab = null;
     try {
-      if (destination) tab = window.open(destination, '_blank');
+      tab = window.open(chat.url, '_blank');
       if (tab) tab.opener = null;
     } catch {
       tab = null;
@@ -149,16 +138,16 @@ document.querySelectorAll('[data-chat]').forEach(button => {
       showManualCopy(prompt);
     }
     status.textContent = copied
-      ? (chat.direct ? 'Промпт скопирован на случай, если чат не примет ссылку.' : 'Промпт скопирован. Вставьте его в чат и отправьте.')
+      ? 'Промпт скопирован. Вставьте его в чат и отправьте.'
       : 'Не удалось скопировать автоматически. Выделите и скопируйте промпт ниже.';
     if (!tab) status.append(' Вкладка не открылась.');
-    if (chat.direct || !tab) {
+    if (!tab) {
       status.append(' ');
       const link = document.createElement('a');
       link.href = chat.url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      link.textContent = chat.direct ? 'Открыть пустой чат' : `Открыть ${chat.name}`;
+      link.textContent = `Открыть ${chat.name}`;
       status.append(link, '.');
     }
   });
