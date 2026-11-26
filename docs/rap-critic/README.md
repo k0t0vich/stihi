@@ -4,6 +4,6 @@
 
 | Действие | Команда |
 |---|---|
-| Обновить промпт на странице после правки `prompts/rap_critic_prompt.txt` | `python3 docs/rap-critic/build.py` |
-| Проверить, что страница соответствует исходному промпту | `python3 docs/rap-critic/build.py --check` |
+| Обновить страницу, промпт скилла и ZIP после правки `prompts/rap_critic_prompt.txt` | `python3 docs/rap-critic/build.py` |
+| Проверить синхронизацию страницы, скилла и ZIP | `python3 docs/rap-critic/build.py --check` |
 | Открыть локально | `python3 -m http.server --directory docs` и перейти на `http://localhost:8000/rap-critic/` |

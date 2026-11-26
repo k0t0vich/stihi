@@ -1,0 +1,4 @@
+interface:
+  display_name: "Рэп-критик"
+  short_description: "Художественный разбор рэп-текста с оценками"
+  default_prompt: "Используй $rap-critic: разбери жёстко мой текст."
