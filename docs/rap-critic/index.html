@@ -26,6 +26,7 @@
   .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
   button { font: inherit; border: none; border-radius: 8px; padding: 10px 16px; cursor: pointer; background: #6a55c9; color: #fff; }
   button:hover { filter: brightness(1.08); }
+  button.ghost { background: #fff; color: #4b3a8f; border: 1px solid #cfc8ef; }
   :focus-visible { outline: 3px solid #e09b27; outline-offset: 3px; }
   details { margin: 18px 0; }
   summary { cursor: pointer; color: #4b3a8f; font-weight: 600; }
@@ -58,6 +59,13 @@
 <label for="context">Контекст и пожелания <span style="font-weight:400">необязательно</span></label>
 <textarea class="context" id="context" placeholder="Например, жанр, задумка или вопросы к критику"></textarea>
 <div class="btns"><button id="copy" type="button">Копировать промпт</button></div>
+<p>Промпт скопируется; вставьте его в открывшемся чате и отправьте.</p>
+<div class="btns" role="group" aria-label="Скопировать промпт и открыть чат">
+  <button class="ghost" type="button" data-chat="chatgpt">ChatGPT</button>
+  <button class="ghost" type="button" data-chat="deepseek">DeepSeek</button>
+  <button class="ghost" type="button" data-chat="claude">Claude</button>
+  <button class="ghost" type="button" data-chat="gemini">Gemini</button>
+</div>
 <p id="status" role="status" aria-live="polite"></p>
 <details id="preview"><summary>Показать промпт</summary><pre id="prompt"></pre></details>
 <p>Нужен разбор музыки и записи? Попробуйте <a href="../ai-critic/">ИИ-критика песен</a>.</p>
@@ -81,16 +89,58 @@ const makePrompt = () => {
 const update = () => { promptView.textContent = makePrompt(); };
 [lyrics, context, tone, depth].forEach(el => el.addEventListener('input', update));
 update();
+const chats = {
+  chatgpt: { name: 'ChatGPT', url: 'https://chatgpt.com/' },
+  deepseek: { name: 'DeepSeek', url: 'https://chat.deepseek.com/' },
+  claude: { name: 'Claude', url: 'https://claude.ai/new' },
+  gemini: { name: 'Gemini', url: 'https://gemini.google.com/app' }
+};
+const showManualCopy = () => {
+  preview.open = true;
+  update();
+};
 document.getElementById('copy').addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(makePrompt());
     status.textContent = 'Промпт скопирован. Вставьте его в чат с нейросетью.';
   } catch {
-    preview.open = true;
-    update();
+    showManualCopy();
     status.textContent = 'Не удалось скопировать автоматически. Выделите текст промпта ниже и скопируйте его.';
     preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+});
+document.querySelectorAll('[data-chat]').forEach(button => {
+  button.addEventListener('click', async () => {
+    const chat = chats[button.dataset.chat];
+    let copy;
+    try {
+      copy = navigator.clipboard.writeText(makePrompt());
+    } catch {
+      copy = null;
+    }
+    const tab = window.open(chat.url, '_blank');
+    if (tab) tab.opener = null;
+    let copied = false;
+    try {
+      if (!copy) throw new Error('Clipboard недоступен');
+      await copy;
+      copied = true;
+    } catch {
+      showManualCopy();
+    }
+    status.textContent = copied
+      ? 'Промпт скопирован. Вставьте его в чат и отправьте.'
+      : 'Не удалось скопировать автоматически. Выделите и скопируйте промпт ниже, затем вставьте его в чат.';
+    if (!tab) {
+      status.append(' Вкладка не открылась. ');
+      const link = document.createElement('a');
+      link.href = chat.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = `Открыть ${chat.name}`;
+      status.append(link, '.');
+    }
+  });
 });
 </script>
 </body>
